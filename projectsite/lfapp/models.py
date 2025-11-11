@@ -12,7 +12,7 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 def validate_psu_email(value):
-    """" Check email if ends with @psu.palawan.edu.ph"""
+    """ Check email if ends with @psu.palawan.edu.ph"""
     if not value.endswith('@psu.palawan.edu.ph'):
         raise ValidationError(
             'Be gone outsider'
@@ -39,7 +39,7 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=20, blank=True, default='')
     student_id = models.CharField(max_length=50, blank=True, default='')
     profile_picture = models.ImageField(
-        upload_to='#', #'profiles/', 
+        upload_to='profiles/', 
         blank=True, 
         null=True
     )
@@ -149,7 +149,7 @@ class Item(TimeStampedModel):
         verbose_name_plural = 'Items'
 
     def __str__(self):
-        return f"{self.title} ({self.get_item_type_display()}: {self.title})"
+        return f"({self.get_item_type_display()}: {self.title})"
     
 """Reclaim, Recover"""
 class Claim(TimeStampedModel):
@@ -195,7 +195,7 @@ class Claim(TimeStampedModel):
     def __str__(self):
         return f"Claim by {self.claimed_by.email} on {self.item.title}"
     
-class Notification(models.Model):
+class Notification(TimeStampedModel):
     """Notifs for users"""
     NOTIFICATION_TYPES = [
         ('item_approved', 'Item Approved'),
