@@ -1,3 +1,247 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import EmailValidator # Validator for email field
+from django.core.exceptions import ValidationError
 
-# Create your models here.
+class TimeStampedModel(models.Model):
+    """ Will be inherited by all"""
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+def validate_psu_email(value):
+    """ Check email if ends with @psu.palawan.edu.ph"""
+    if not value.endswith('@psu.palawan.edu.ph'):
+        raise ValidationError(
+            'Be gone outsider'
+        )
+    
+
+class CustomUser(AbstractUser):
+    """ 3 roels, public, verified, admin"""
+    ROLE_CHOICES = (
+        ('public', 'Public User'), 
+        ('verified', 'Verified User'),
+        ('admin', 'Admin'),
+    )
+
+    email = models.EmailField(
+        unique=True,
+        validators=[EmailValidator()]
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='public')
+    is_verified = models.BooleanField(
+        default=False,
+        help_text='Email verification status'
+    )
+    phone_number = models.CharField(max_length=20, blank=True, default='')
+    student_id = models.CharField(max_length=50, blank=True, default='')
+    profile_picture = models.ImageField(
+        upload_to='profiles/', 
+        blank=True, 
+        null=True
+    )
+
+    USERNAME_FIELD = 'email' # unique id 
+    REQUIRED_FIELDS = ['username']  # username is still required
+
+    class Meta:
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
+    def __str__(self):
+        return self.email
+    
+    def is_psu_user(self):
+        """Check if user has a verified psu email"""
+        return (
+            self.is_verified and
+            self.email.endswith('@psu.palawan.edu.ph')
+        )
+    
+    def can_post_items(self):
+        """Check if user can post items"""
+        return self.is_verified and self.role in ['verified', 'admin']
+    
+    def is_admin_user(self):
+        """Check if user is admin"""
+        return self.role == 'admin' or self.is_superuser
+    
+    def clean(self):
+        """Validate psu email only for verified/admin roles"""
+        super().clean()
+        if self.role in ['verified', 'admin']:
+            validate_psu_email(self.email)
+
+"""Items"""
+
+class Item(TimeStampedModel):
+    """POST Lost and Found Items"""
+    ITEM_TYPE_CHOICES = [
+        ('lost', 'Lost Item'),
+        ('found', 'Found Item'),
+    ]
+    
+    """add lang kayo if may naisip pa"""
+    CATEGORY_CHOICES = [
+        ('electronics', 'Electronics (Phone, Laptop, etc.)'),
+        ('accessories', 'Accessories (Wallet, Watch, etc.)'),
+        ('documents', 'Documents/IDs'),
+        ('clothing', 'Clothing & Wearables'),
+        ('bags', 'Bags & Backpacks'),
+        ('keys', 'Keys & Keychains'),
+        ('books', 'Books & School Supplies'),
+        ('sports', 'Sports Equipment'),
+        ('other', 'Other'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('claimed', 'Claimed'),
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    item_type = models.CharField(max_length=10, choices=ITEM_TYPE_CHOICES) # lost or found
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default='other',
+        help_text='Item category for easier filtering' 
+    )
+    location_found = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Where the item was found'
+    )
+    location_lost = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Where do you think you lost the item'
+    )
+    date_found = models.DateField(blank=True, null=True)
+    date_lost = models.DateField(blank=True, null=True)
+    image = models.ImageField(upload_to='item_images/', blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    posted_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='posted_items'
+    )
+    approved_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_items'
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Item'
+        verbose_name_plural = 'Items'
+
+    def __str__(self):
+        return f"({self.get_item_type_display()}: {self.title})"
+    
+"""Reclaim, Recover"""
+class Claim(TimeStampedModel):
+    """ Claims made on items"""
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='claims')
+    claimed_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='claims'
+    )
+    claim_message = models.TextField(
+        help_text='Describe why you believe this is your item' #la maisip
+    )
+    contact_info = models.CharField(
+        max_length=200,
+        help_text='Additional contact information'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_claims',
+        help_text='Admin who resolved the claim'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('item', 'claimed_by') # One claim per user per item dapat
+        verbose_name = 'Claim'
+        verbose_name_plural = 'Claims'
+
+
+    def __str__(self):
+        return f"Claim by {self.claimed_by.email} on {self.item.title}"
+    
+class Notification(TimeStampedModel):
+    """Notifs for users"""
+    NOTIFICATION_TYPES = [
+        ('item_approved', 'Item Approved'),
+        ('item_rejected', 'Item Rejected'),
+        ('claim_received', 'New Claim Received'),
+        ('claim_approved', 'Claim Approved'),
+        ('claim_rejected', 'Claim Rejected'),
+    ]
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
+    message = models.TextField()
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notifications'
+    )
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notifications'
+    )
+
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.get_notification_type_display()}"
+
+
+
+
+    
+
+
+
