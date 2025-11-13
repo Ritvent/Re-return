@@ -8,8 +8,8 @@
 - Only accepts merges from `dev` via Pull Requests
 
 ### Dev Branch (`dev`)
-- Integration branch for all x - branches (***x is your name***)
-- All feature branches merge here first
+- Integration branch for all x - branches (***x is yourname***)
+- All our branches merge here first
 - Should be stable and tested before merging to `main`
 
 ## Initial Setup (First Time Only)
@@ -67,12 +67,21 @@ git branch
 git checkout dev
 git pull origin dev # you will pull the latest from dev remote
 
-# Create your first <yourname - branch>
-git checkout -b <yourname - branch>
+# Create your first <yourname-branch>
+git checkout -b <yourname-branch>
 # Example: 
 # git checkout ross-branch
 # git checkout kim-branch
+
+git push -u origin <yourname-branch> # To first time push your local dedicated branch to our repository
+# Example:
+# git push -u origin ross-branch
+
+# Note: You do "-u" for the first time only, next pushes remove the "-u"
+# Example:
+# git push origin ross-branch
 ```
+
 
 
 ## Workflow
