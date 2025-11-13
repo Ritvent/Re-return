@@ -1,0 +1,167 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}HanApp - Find What You Lost{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-primary/10 via-background to-accent/20">
+        <div class="container mx-auto px-4 py-20">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Left side - Content -->
+                <div class="space-y-6">
+                    <div class="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+                        <i data-lucide="search" class="h-4 w-4 text-primary"></i>
+                        <span class="text-sm font-medium text-primary">PalSU Lost & Found</span>
+                    </div>
+
+                    <h1 class="text-5xl lg:text-6xl font-bold text-balance leading-tight">
+                        Han<span class="text-primary">App</span>
+                    </h1>
+
+                    <p class="text-xl text-muted-foreground text-pretty leading-relaxed">
+                        A simple platform to help reunite people with their lost belongings. Report lost items, browse found
+                        items, and help make someone's day.
+                    </p>
+
+                    <div class="flex flex-wrap gap-6 pt-4">
+                        <div class="flex items-start gap-3">
+                            <div class="mt-1 rounded-full bg-primary/10 p-2">
+                                <i data-lucide="package" class="h-5 w-5 text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Easy Reporting</h3>
+                                <p class="text-sm text-muted-foreground">Report lost or found items in seconds</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="mt-1 rounded-full bg-primary/10 p-2">
+                                <i data-lucide="check-circle" class="h-5 w-5 text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Quick Matches</h3>
+                                <p class="text-sm text-muted-foreground">Find your items faster with our search</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right side - Login Form -->
+                <div class="flex justify-center lg:justify-end">
+                    <div class="w-full max-w-md bg-card rounded-xl border py-6 shadow-xl">
+                        <div class="px-6 mb-6">
+                            <h2 class="text-2xl font-semibold mb-2">Welcome Back</h2>
+                            <p class="text-sm text-muted-foreground">Sign in to access your lost and found items</p>
+                        </div>
+                        <div class="px-6">
+                            <form method="post" action="{% url 'login' %}" class="space-y-4">
+                                {% csrf_token %}
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                {% if form.errors %}
+                                    <div class="p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
+                                        {% for field, errors in form.errors.items %}
+                                            {% for error in errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="space-y-2">
+                                    <label for="email" class="text-sm font-medium">Email</label>
+                                    <input
+                                        id="email"
+                                        name="username"
+                                        type="email"
+                                        placeholder="example@psu.palawan.edu.ph"
+                                        required
+                                        class="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label for="password" class="text-sm font-medium">Password</label>
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        placeholder="Enter your password"
+                                        required
+                                        class="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                </div>
+
+                                <button type="submit" class="w-full px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                                    Sign In
+                                </button>
+
+                                <div class="mt-4 p-4 bg-muted rounded-lg">
+                                    <p class="text-sm font-medium mb-2 text-foreground">Demo Accounts:</p>
+                                    <div class="space-y-1 text-xs text-muted-foreground">
+                                        <p>Admin: test / test</p>
+                                        <p>User: test / test</p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-card">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">How It Works</h2>
+                <p class="text-muted-foreground text-lg max-w-2xl mx-auto">
+                    Our platform makes it simple to report and find lost items our University.<br>
+                    Relay and Return or Retrieve and Recover
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center space-y-4">
+                    <div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <i data-lucide="search" class="h-8 w-8 text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">1. Report an Item</h3>
+                    <p class="text-muted-foreground">
+                        Lost something? Found something? Create a listing with details and photos
+                    </p>
+                </div>
+
+                <div class="text-center space-y-4">
+                    <div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <i data-lucide="package" class="h-8 w-8 text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">2. Browse Listings</h3>
+                    <p class="text-muted-foreground">Search through recent lost and found items in your area</p>
+                </div>
+
+                <div class="text-center space-y-4">
+                    <div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <i data-lucide="check-circle" class="h-8 w-8 text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">3. Get Reunited</h3>
+                    <p class="text-muted-foreground">Connect with the person who found your item and arrange pickup</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
+

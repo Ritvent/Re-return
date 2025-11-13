@@ -1,0 +1,96 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Home - HanApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Welcome Section -->
+        <section class="mb-12">
+            <div class="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-xl p-8 md:p-12">
+                <h1 class="text-4xl font-bold mb-4 text-balance">
+                    Welcome back, {{ user.get_full_name|default:user.username }}!
+                </h1>
+                <p class="text-xl text-muted-foreground mb-6 text-pretty">
+                    Browse the latest lost and found items in our University
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="{% url 'lost_items' %}">
+                        <button class="px-6 py-3 text-lg rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                            View All Lost Items
+                        </button>
+                    </a>
+                    <a href="{% url 'found_items' %}">
+                        <button class="px-6 py-3 text-lg rounded-md border border-input bg-background text-foreground font-medium hover:bg-accent hover:text-accent-foreground transition-all">
+                            View All Found Items
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Lost Items -->
+        <section class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Recently Lost</h2>
+                    <p class="text-muted-foreground">Help someone find their belongings</p>
+                </div>
+                <a href="{% url 'lost_items' %}">
+                    <button class="px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2">
+                        View All
+                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    </button>
+                </a>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% if recent_lost %}
+                    {% for item in recent_lost %}
+                        {% include 'lfapp/item_card.html' with item=item %}
+                    {% endfor %}
+                {% else %}
+                    <div class="col-span-full text-center py-12 text-muted-foreground">
+                        No recently lost items
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Recent Found Items -->
+        <section class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Recently Found</h2>
+                    <p class="text-muted-foreground">Check if your item has been found</p>
+                </div>
+                <a href="{% url 'found_items' %}">
+                    <button class="px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2">
+                        View All
+                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    </button>
+                </a>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% if recent_found %}
+                    {% for item in recent_found %}
+                        {% include 'lfapp/item_card.html' with item=item %}
+                    {% endfor %}
+                {% else %}
+                    <div class="col-span-full text-center py-12 text-muted-foreground">
+                        No recently found items
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
