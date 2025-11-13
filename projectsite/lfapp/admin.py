@@ -22,13 +22,9 @@ class CustomUserAdmin(UserAdmin): # shortcut for admin.site.register()
         ('Additional Info', {
             'fields': ('role', 'is_verified', 'phone_number', 'student_id', 'profile_picture')
         }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
     )
 
-    readonly_fields = ['created_at', 'updated_at', 'date_joined', 'last_login']
+    readonly_fields = ['date_joined', 'last_login']
 
     def is_psu_user(self, obj):
         """Display PSU User status with green or red stat color"""
