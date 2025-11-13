@@ -1,3 +1,154 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Q, Count
+from django.core.paginator import Paginator
+from .models import Item, CustomUser
 
-# Create your views here.
+def landing_view(request):
+    """Landing page with login form"""
+    if request.user.is_authenticated:
+        return redirect('home')
+    
+    if request.method == 'POST':
+        from django.contrib.auth import authenticate
+        email = request.POST.get('username')  # Using username field for email
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=email, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid email or password')
+    
+    return render(request, 'lfapp/landing.html')
+
+@login_required
+def home_view(request):
+    """Home page showing recent lost and found items"""
+    # Get recent lost items (limit to 3)
+    recent_lost = Item.objects.filter(
+        item_type='lost',
+        status='approved'
+    ).select_related('posted_by').order_by('-created_at')[:3]
+    
+    # Get recent found items (limit to 3)
+    recent_found = Item.objects.filter(
+        item_type='found',
+        status='approved'
+    ).select_related('posted_by').order_by('-created_at')[:3]
+    
+    context = {
+        'recent_lost': recent_lost,
+        'recent_found': recent_found,
+    }
+    
+    return render(request, 'lfapp/home.html', context)
+
+@login_required
+def lost_items_view(request):
+    """View all lost items with search and filter"""
+    items = Item.objects.filter(
+        item_type='lost',
+        status='approved'
+    ).select_related('posted_by').order_by('-created_at')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(location_lost__icontains=search_query)
+        )
+    
+    # Category filter
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        items = items.filter(category=category_filter)
+    
+    # Get all categories for filter dropdown
+    categories = Item.ITEM_TYPE_CHOICES  # This should be CATEGORY_CHOICES
+    categories = Item.CATEGORY_CHOICES
+    
+    context = {
+        'items': items,
+        'categories': categories,
+    }
+    
+    return render(request, 'lfapp/lost_items.html', context)
+
+@login_required
+def found_items_view(request):
+    """View all found items with search and filter"""
+    items = Item.objects.filter(
+        item_type='found',
+        status='approved'
+    ).select_related('posted_by').order_by('-created_at')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(location_found__icontains=search_query)
+        )
+    
+    # Category filter
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        items = items.filter(category=category_filter)
+    
+    # Get all categories for filter dropdown
+    categories = Item.CATEGORY_CHOICES
+    
+    context = {
+        'items': items,
+        'categories': categories,
+    }
+    
+    return render(request, 'lfapp/found_items.html', context)
+
+@login_required
+def admin_dashboard_view(request):
+    """Admin dashboard with statistics"""
+    # Check if user is admin
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('home')
+    
+    # Get all items
+    all_items = Item.objects.select_related('posted_by').order_by('-created_at')
+    
+    # Calculate statistics
+    total_items = all_items.count()
+    lost_count = all_items.filter(item_type='lost').count()
+    found_count = all_items.filter(item_type='found').count()
+    
+    # Calculate percentages
+    lost_percentage = round((lost_count / total_items * 100), 0) if total_items > 0 else 0
+    found_percentage = round((found_count / total_items * 100), 0) if total_items > 0 else 0
+    
+    # Get unique category count
+    category_count = all_items.values('category').distinct().count()
+    
+    context = {
+        'all_items': all_items,
+        'total_items': total_items,
+        'lost_count': lost_count,
+        'found_count': found_count,
+        'lost_percentage': int(lost_percentage),
+        'found_percentage': int(found_percentage),
+        'category_count': category_count,
+    }
+    
+    return render(request, 'lfapp/admin_dashboard.html', context)
+
+def logout_view(request):
+    """Logout user"""
+    logout(request)
+    return redirect('landing')

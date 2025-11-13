@@ -1,0 +1,81 @@
+{% load static %}
+<nav class="border-b border-border bg-card">
+    <div class="container mx-auto px-4">
+        <div class="flex h-16 items-center justify-between">
+            <div class="flex items-center gap-8">
+                <a href="{% url 'home' %}" class="flex items-center gap-2">
+                    <i data-lucide="search" class="h-6 w-6 text-primary"></i>
+                    <span class="text-xl font-bold text-foreground">HanApp</span>
+                </a>
+
+                <div class="hidden md:flex items-center gap-4">
+                    <a href="{% url 'home' %}">
+                        <button class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'home' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                            Home
+                        </button>
+                    </a>
+                    <a href="{% url 'lost_items' %}">
+                        <button class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'lost_items' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                            Lost Items
+                        </button>
+                    </a>
+                    <a href="{% url 'found_items' %}">
+                        <button class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'found_items' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                            Found Items
+                        </button>
+                    </a>
+                    {% if user.is_authenticated and user.is_admin_user %}
+                    <a href="{% url 'admin_dashboard' %}">
+                        <button class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                            <i data-lucide="shield" class="h-4 w-4"></i>
+                            Admin
+                        </button>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                {% if user.is_authenticated %}
+                <div class="relative">
+                    <button id="user-menu-btn" class="p-2 rounded-md hover:bg-accent">
+                        <i data-lucide="user" class="h-5 w-5"></i>
+                    </button>
+                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-56 bg-card border rounded-md shadow-xl z-50">
+                        <div class="p-4 border-b">
+                            <p class="font-medium">{{ user.get_full_name|default:user.email }}</p>
+                            <p class="text-xs text-muted-foreground">{{ user.email }}</p>
+                        </div>
+                        <div class="p-2">
+                            <a href="{% url 'logout' %}" class="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-accent text-sm">
+                                <i data-lucide="log-out" class="h-4 w-4"></i>
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Toggle user menu
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuBtn = document.getElementById('user-menu-btn');
+        const menu = document.getElementById('user-menu');
+        
+        if (menuBtn && menu) {
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function() {
+                menu.classList.add('hidden');
+            });
+        }
+    });
+</script>
+

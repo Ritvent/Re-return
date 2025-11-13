@@ -1,0 +1,57 @@
+{% load static %}
+<div class="bg-card text-card-foreground rounded-xl border overflow-hidden hover:shadow-lg transition-shadow">
+    <div class="relative h-48 bg-muted">
+        {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+        {% else %}
+            <img src="{% static 'lfapp/images/placeholder.svg' %}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+        {% endif %}
+        <span class="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+            {{ item.get_item_type_display }}
+        </span>
+    </div>
+
+    <div class="p-4 space-y-3">
+        <div>
+            <h3 class="font-semibold text-lg mb-1 line-clamp-1">{{ item.title }}</h3>
+            <p class="text-sm text-muted-foreground line-clamp-2">{{ item.description }}</p>
+        </div>
+
+        <div class="space-y-2">
+            {% if item.location_found or item.location_lost %}
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <i data-lucide="map-pin" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                <span class="line-clamp-1">
+                    {% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            {% if item.date_found or item.date_lost %}
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                <span>
+                    {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if item.posted_by %}
+        <div class="pt-2 border-t">
+            <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
+            <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if item.posted_by.email %}
+    <div class="px-4 pb-4 pt-0">
+        <a href="mailto:{{ item.posted_by.email }}" class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
+            <i data-lucide="mail" class="h-4 w-4"></i>
+            Contact
+        </a>
+    </div>
+    {% endif %}
+</div>
+

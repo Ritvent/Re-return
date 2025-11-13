@@ -1,0 +1,140 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - HanApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <section class="mb-8">
+            <div class="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-xl p-8 md:p-12">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="rounded-full bg-primary/10 p-2">
+                        <i data-lucide="users" class="h-6 w-6 text-primary"></i>
+                    </div>
+                    <h1 class="text-4xl font-bold">Admin Dashboard</h1>
+                </div>
+                <p class="text-xl text-muted-foreground text-pretty">
+                    Manage and monitor all lost and found items in the system
+                </p>
+            </div>
+        </section>
+
+        <!-- Stats Grid -->
+        <section class="mb-8">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Total Items</h3>
+                        <i data-lucide="package" class="h-4 w-4 text-muted-foreground"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold">{{ total_items }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">All reported items</p>
+                    </div>
+                </div>
+
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Lost Items</h3>
+                        <i data-lucide="search" class="h-4 w-4 text-destructive"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold">{{ lost_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            {% if total_items > 0 %}{{ lost_percentage }}% of total{% else %}0% of total{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Found Items</h3>
+                        <i data-lucide="trending-up" class="h-4 w-4 text-primary"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold">{{ found_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            {% if total_items > 0 %}{{ found_percentage }}% of total{% else %}0% of total{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Categories</h3>
+                        <i data-lucide="package" class="h-4 w-4 text-muted-foreground"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold">{{ category_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Unique categories</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Items Table -->
+        <section>
+            <div class="bg-card text-card-foreground rounded-xl border shadow-sm">
+                <div class="px-6 py-6 border-b">
+                    <h2 class="font-semibold text-lg">All Items</h2>
+                    <p class="text-sm text-muted-foreground">Complete list of all lost and found items</p>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="rounded-md border overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Title</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Status</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Category</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Location</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Date</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in all_items %}
+                                <tr class="border-b hover:bg-muted/50">
+                                    <td class="px-4 py-3 font-medium">{{ item.title }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                            {{ item.get_item_type_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.get_category_display }}</td>
+                                    <td class="px-4 py-3 max-w-[200px] truncate">
+                                        {% if item.item_type == 'found' %}{{ item.location_found|default:"—" }}{% else %}{{ item.location_lost|default:"—" }}{% endif %}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {% if item.item_type == 'found' and item.date_found %}{{ item.date_found|date:"M d, Y" }}{% elif item.item_type == 'lost' and item.date_lost %}{{ item.date_lost|date:"M d, Y" }}{% else %}—{% endif %}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="space-y-1">
+                                            <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">No items found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
+
