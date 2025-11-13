@@ -37,6 +37,27 @@
 
             <div class="flex items-center gap-4">
                 {% if user.is_authenticated %}
+                <!-- Post Item Dropdown -->
+                {% if user.can_post_items %}
+                <div class="relative">
+                    <button id="post-menu-btn" class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
+                        <i data-lucide="plus" class="h-4 w-4"></i>
+                        Post Item
+                    </button>
+                    <div id="post-menu" class="hidden absolute right-0 mt-2 w-48 bg-card border rounded-md shadow-xl z-50">
+                        <div class="p-2">
+                            <a href="{% url 'post_lost' %}" class="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-accent text-sm">
+                                Report Lost Item
+                            </a>
+                            <a href="{% url 'post_found' %}" class="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-accent text-sm">
+                                Report Found Item
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- User Menu -->
                 <div class="relative">
                     <button id="user-menu-btn" class="p-2 rounded-md hover:bg-accent">
                         <i data-lucide="user" class="h-5 w-5"></i>
@@ -61,8 +82,23 @@
 </nav>
 
 <script>
-    // Toggle user menu
+    // Toggle dropdown menus
     document.addEventListener('DOMContentLoaded', function() {
+        // Post Item Menu
+        const postMenuBtn = document.getElementById('post-menu-btn');
+        const postMenu = document.getElementById('post-menu');
+        
+        if (postMenuBtn && postMenu) {
+            postMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                postMenu.classList.toggle('hidden');
+                // Close user menu if open
+                const userMenu = document.getElementById('user-menu');
+                if (userMenu) userMenu.classList.add('hidden');
+            });
+        }
+        
+        // User Menu
         const menuBtn = document.getElementById('user-menu-btn');
         const menu = document.getElementById('user-menu');
         
@@ -70,12 +106,16 @@
             menuBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 menu.classList.toggle('hidden');
-            });
-            
-            document.addEventListener('click', function() {
-                menu.classList.add('hidden');
+                // Close post menu if open
+                if (postMenu) postMenu.classList.add('hidden');
             });
         }
+        
+        // Close menus when clicking outside
+        document.addEventListener('click', function() {
+            if (menu) menu.classList.add('hidden');
+            if (postMenu) postMenu.classList.add('hidden');
+        });
     });
 </script>
 

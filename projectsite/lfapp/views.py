@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from .models import Item, CustomUser
+from .forms import ItemForm
 
 def landing_view(request):
     """Landing page with login form"""
@@ -152,3 +153,57 @@ def logout_view(request):
     """Logout user"""
     logout(request)
     return redirect('landing')
+
+@login_required
+def post_lost_item_view(request):
+    """Form to post a lost item"""
+    # Check if user can post items
+    if not request.user.can_post_items():
+        messages.error(request, 'You must be a verified user to post items.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, item_type='lost')
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.item_type = 'lost'
+            item.posted_by = request.user
+            item.status = 'pending'  # Items need admin approval
+            item.save()
+            messages.success(request, 'Your lost item has been submitted and is pending approval.')
+            return redirect('lost_items')
+    else:
+        form = ItemForm(item_type='lost')
+    
+    context = {
+        'form': form,
+        'item_type': 'lost',
+    }
+    return render(request, 'lfapp/post_item.html', context)
+
+@login_required
+def post_found_item_view(request):
+    """Form to post a found item"""
+    # Check if user can post items
+    if not request.user.can_post_items():
+        messages.error(request, 'You must be a verified user to post items.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, item_type='found')
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.item_type = 'found'
+            item.posted_by = request.user
+            item.status = 'pending'  # Items need admin approval
+            item.save()
+            messages.success(request, 'Your found item has been submitted and is pending approval.')
+            return redirect('found_items')
+    else:
+        form = ItemForm(item_type='found')
+    
+    context = {
+        'form': form,
+        'item_type': 'found',
+    }
+    return render(request, 'lfapp/post_item.html', context)

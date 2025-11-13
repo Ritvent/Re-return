@@ -1,0 +1,167 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Report {{ item_type|title }} Item - Lost & Found{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Card -->
+            <div class="bg-card border border-border rounded-lg shadow-sm">
+                <!-- Card Header -->
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-2xl font-bold text-card-foreground">
+                        Report {{ item_type|title }} Item
+                    </h2>
+                    <p class="text-muted-foreground mt-2">
+                        Fill out the form below to report a {{ item_type }} item. Provide as much detail as possible to help reunite items with their owners.
+                    </p>
+                </div>
+
+                <!-- Card Content -->
+                <div class="p-6">
+                    <!-- Display Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-destructive/10 text-destructive{% else %}bg-primary/10 text-primary{% endif %}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" class="space-y-6">
+                        {% csrf_token %}
+
+                        <!-- Title -->
+                        <div class="space-y-2">
+                            <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.title.label }} *
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <p class="text-sm text-destructive">{{ form.title.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="space-y-2">
+                            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.description.label }} *
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <p class="text-sm text-destructive">{{ form.description.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Category and Date -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Category -->
+                            <div class="space-y-2">
+                                <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                    {{ form.category.label }} *
+                                </label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <p class="text-sm text-destructive">{{ form.category.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Date -->
+                            <div class="space-y-2">
+                                {% if item_type == 'lost' %}
+                                    <label for="{{ form.date_lost.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                        {{ form.date_lost.label }} *
+                                    </label>
+                                    {{ form.date_lost }}
+                                    {% if form.date_lost.errors %}
+                                        <p class="text-sm text-destructive">{{ form.date_lost.errors.0 }}</p>
+                                    {% endif %}
+                                {% else %}
+                                    <label for="{{ form.date_found.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                        {{ form.date_found.label }} *
+                                    </label>
+                                    {{ form.date_found }}
+                                    {% if form.date_found.errors %}
+                                        <p class="text-sm text-destructive">{{ form.date_found.errors.0 }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="space-y-2">
+                            {% if item_type == 'lost' %}
+                                <label for="{{ form.location_lost.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                    {{ form.location_lost.label }} *
+                                </label>
+                                {{ form.location_lost }}
+                                {% if form.location_lost.errors %}
+                                    <p class="text-sm text-destructive">{{ form.location_lost.errors.0 }}</p>
+                                {% endif %}
+                            {% else %}
+                                <label for="{{ form.location_found.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                    {{ form.location_found.label }} *
+                                </label>
+                                {{ form.location_found }}
+                                {% if form.location_found.errors %}
+                                    <p class="text-sm text-destructive">{{ form.location_found.errors.0 }}</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="space-y-2">
+                            <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.image.label }}
+                            </label>
+                            <div class="flex gap-2">
+                                {{ form.image }}
+                            </div>
+                            {% if form.image.errors %}
+                                <p class="text-sm text-destructive">{{ form.image.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground">
+                                Upload a photo of the item to help with identification
+                            </p>
+                        </div>
+
+                        <!-- User Info Notice -->
+                        <div class="bg-muted/50 rounded-md p-4 border border-border">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="info" class="h-5 w-5 text-muted-foreground mt-0.5"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-foreground">Contact Information</p>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        Your contact details ({{ user.email }}) will be shared with interested users. 
+                                        Items are subject to admin approval before being published.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="flex gap-4">
+                            <button type="submit" class="flex-1 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                                Report {{ item_type|title }} Item
+                            </button>
+                            <a href="{% if item_type == 'lost' %}{% url 'lost_items' %}{% else %}{% url 'found_items' %}{% endif %}">
+                                <button type="button" class="px-6 py-3 rounded-md border border-input bg-background text-foreground font-medium hover:bg-accent hover:text-accent-foreground transition-all">
+                                    Cancel
+                                </button>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
