@@ -11,12 +11,21 @@
         <!-- Welcome Section -->
         <section class="mb-12">
             <div class="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-xl p-8 md:p-12">
-                <h1 class="text-4xl font-bold mb-4 text-balance">
-                    Welcome back, {{ user.get_full_name|default:user.username }}!
-                </h1>
-                <p class="text-xl text-muted-foreground mb-6 text-pretty">
-                    Browse the latest lost and found items in our University
-                </p>
+                {% if user.is_authenticated %}
+                    <h1 class="text-4xl font-bold mb-4 text-balance">
+                        Welcome back, {{ user.get_full_name|default:user.username }}!
+                    </h1>
+                    <p class="text-xl text-muted-foreground mb-6 text-pretty">
+                        Browse the latest lost and found items in our University
+                    </p>
+                {% else %}
+                    <h1 class="text-4xl font-bold mb-4 text-balance">
+                        Welcome to HanApp!
+                    </h1>
+                    <p class="text-xl text-muted-foreground mb-6 text-pretty">
+                        Browse lost and found items. Sign in with your PSU email to report items.
+                    </p>
+                {% endif %}
                 <div class="flex flex-wrap gap-4">
                     <a href="{% url 'lost_items' %}">
                         <button class="px-6 py-3 text-lg rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
@@ -28,6 +37,14 @@
                             View All Found Items
                         </button>
                     </a>
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'landing' %}">
+                        <button class="px-6 py-3 text-lg rounded-md border-2 border-primary text-primary font-medium hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2">
+                            <i data-lucide="log-in" class="h-5 w-5"></i>
+                            Sign In to Report Items
+                        </button>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </section>

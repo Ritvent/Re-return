@@ -27,9 +27,8 @@ def landing_view(request):
     
     return render(request, 'lfapp/landing.html')
 
-@login_required
 def home_view(request):
-    """Home page showing recent lost and found items"""
+    """Home page showing recent lost and found items - Public and authenticated users can view"""
     # Get recent lost items (limit to 3)
     recent_lost = Item.objects.filter(
         item_type='lost',
@@ -55,9 +54,8 @@ def home_view(request):
     
     return render(request, 'lfapp/home.html', context)
 
-@login_required
 def lost_items_view(request):
-    """View all lost items with search and filter"""
+    """View all lost items with search and filter - Public access allowed"""
     items = Item.objects.filter(
         item_type='lost',
         status='approved'
@@ -88,9 +86,8 @@ def lost_items_view(request):
     
     return render(request, 'lfapp/lost_items.html', context)
 
-@login_required
 def found_items_view(request):
-    """View all found items with search and filter"""
+    """View all found items with search and filter - Public access allowed"""
     items = Item.objects.filter(
         item_type='found',
         status='approved'
@@ -214,9 +211,8 @@ def post_found_item_view(request):
     }
     return render(request, 'lfapp/post_item.html', context)
 
-@login_required
 def claimed_items_view(request):
-    """View all claimed items"""
+    """View all claimed items - Public access allowed"""
     items = Item.objects.filter(
         status='claimed'
     ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')
