@@ -42,9 +42,15 @@ def home_view(request):
         status='approved'
     ).select_related('posted_by').order_by('-created_at')[:3]
     
+    # Get recent claimed items (limit to 5)
+    recent_claimed = Item.objects.filter(
+        status='claimed'
+    ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')[:5]
+    
     context = {
         'recent_lost': recent_lost,
         'recent_found': recent_found,
+        'recent_claimed': recent_claimed,
     }
     
     return render(request, 'lfapp/home.html', context)
@@ -207,3 +213,34 @@ def post_found_item_view(request):
         'item_type': 'found',
     }
     return render(request, 'lfapp/post_item.html', context)
+
+@login_required
+def claimed_items_view(request):
+    """View all claimed items"""
+    items = Item.objects.filter(
+        status='claimed'
+    ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(claimed_by__email__icontains=search_query)
+        )
+    
+    # Category filter
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        items = items.filter(category=category_filter)
+    
+    # Get all categories for filter dropdown
+    categories = Item.CATEGORY_CHOICES
+    
+    context = {
+        'items': items,
+        'categories': categories,
+    }
+    
+    return render(request, 'lfapp/claimed_items.html', context)

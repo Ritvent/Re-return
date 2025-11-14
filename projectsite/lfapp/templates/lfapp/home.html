@@ -87,6 +87,95 @@
                 {% endif %}
             </div>
         </section>
+
+        <!-- Recent Activities (Claimed Items) -->
+        <section class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Recent Activities</h2>
+                    <p class="text-muted-foreground">Recently claimed and reunited items</p>
+                </div>
+                <a href="{% url 'claimed_items' %}">
+                    <button class="px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2">
+                        View All
+                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    </button>
+                </a>
+            </div>
+
+            {% if recent_claimed %}
+                <div class="bg-card border border-border rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-muted/50 border-b border-border">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Item</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Type</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Claimed By</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Claimed On</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                {% for item in recent_claimed %}
+                                <tr class="hover:bg-muted/30 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            {% if item.image %}
+                                                <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded object-cover">
+                                            {% else %}
+                                                <div class="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                                                    <i data-lucide="package" class="h-6 w-6 text-muted-foreground"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <p class="font-medium text-foreground">{{ item.title }}</p>
+                                                <p class="text-sm text-muted-foreground">{{ item.description|truncatewords:8 }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                            {% if item.item_type == 'lost' %}
+                                                bg-destructive/10 text-destructive
+                                            {% else %}
+                                                bg-primary/10 text-primary
+                                            {% endif %}">
+                                            {{ item.get_item_type_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if item.claimed_by %}
+                                            <p class="text-sm text-foreground">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
+                                        {% else %}
+                                            <p class="text-sm text-muted-foreground italic">Not specified</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if item.claimed_at %}
+                                            <p class="text-sm text-foreground">{{ item.claimed_at|date:"M d, Y" }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
+                                        {% else %}
+                                            <p class="text-sm text-muted-foreground italic">Not specified</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm text-muted-foreground">{{ item.get_category_display }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-card border border-border rounded-lg p-12 text-center">
+                    <i data-lucide="inbox" class="h-12 w-12 mx-auto mb-4 text-muted-foreground"></i>
+                    <p class="text-muted-foreground">No recent claim activities</p>
+                </div>
+            {% endif %}
+        </section>
     </main>
 </div>
 

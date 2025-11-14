@@ -142,6 +142,15 @@ class Item(TimeStampedModel):
         related_name='approved_items'
     )
     approved_at = models.DateTimeField(null=True, blank=True)
+    claimed_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='claimed_items',
+        help_text='User who claimed this item'
+    )
+    claimed_at = models.DateTimeField(null=True, blank=True, help_text='When the item was claimed')
 
     class Meta:
         ordering = ['-created_at']
