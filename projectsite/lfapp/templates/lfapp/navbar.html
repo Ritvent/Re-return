@@ -24,6 +24,11 @@
                             Found Items
                         </button>
                     </a>
+                    <a href="{% url 'claimed_items' %}">
+                        <button class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'claimed_items' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                            Claimed Items
+                        </button>
+                    </a>
                     {% if user.is_authenticated and user.is_admin_user %}
                     <a href="{% url 'admin_dashboard' %}">
                         <button class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
@@ -75,6 +80,14 @@
                         </div>
                     </div>
                 </div>
+                {% else %}
+                <!-- Guest User - Sign In Button -->
+                <a href="{% url 'landing' %}">
+                    <button class="px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
+                        <i data-lucide="log-in" class="h-4 w-4"></i>
+                        Sign In
+                    </button>
+                </a>
                 {% endif %}
             </div>
         </div>

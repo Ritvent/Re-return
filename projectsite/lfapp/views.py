@@ -27,9 +27,8 @@ def landing_view(request):
     
     return render(request, 'lfapp/landing.html')
 
-@login_required
 def home_view(request):
-    """Home page showing recent lost and found items"""
+    """Home page showing recent lost and found items - Public and authenticated users can view"""
     # Get recent lost items (limit to 3)
     recent_lost = Item.objects.filter(
         item_type='lost',
@@ -42,16 +41,21 @@ def home_view(request):
         status='approved'
     ).select_related('posted_by').order_by('-created_at')[:3]
     
+    # Get recent claimed items (limit to 5)
+    recent_claimed = Item.objects.filter(
+        status='claimed'
+    ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')[:5]
+    
     context = {
         'recent_lost': recent_lost,
         'recent_found': recent_found,
+        'recent_claimed': recent_claimed,
     }
     
     return render(request, 'lfapp/home.html', context)
 
-@login_required
 def lost_items_view(request):
-    """View all lost items with search and filter"""
+    """View all lost items with search and filter - Public access allowed"""
     items = Item.objects.filter(
         item_type='lost',
         status='approved'
@@ -82,9 +86,8 @@ def lost_items_view(request):
     
     return render(request, 'lfapp/lost_items.html', context)
 
-@login_required
 def found_items_view(request):
-    """View all found items with search and filter"""
+    """View all found items with search and filter - Public access allowed"""
     items = Item.objects.filter(
         item_type='found',
         status='approved'
@@ -207,3 +210,33 @@ def post_found_item_view(request):
         'item_type': 'found',
     }
     return render(request, 'lfapp/post_item.html', context)
+
+def claimed_items_view(request):
+    """View all claimed items - Public access allowed"""
+    items = Item.objects.filter(
+        status='claimed'
+    ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(claimed_by__email__icontains=search_query)
+        )
+    
+    # Category filter
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        items = items.filter(category=category_filter)
+    
+    # Get all categories for filter dropdown
+    categories = Item.CATEGORY_CHOICES
+    
+    context = {
+        'items': items,
+        'categories': categories,
+    }
+    
+    return render(request, 'lfapp/claimed_items.html', context)

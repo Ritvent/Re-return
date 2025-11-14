@@ -17,7 +17,11 @@
                         Report {{ item_type|title }} Item
                     </h2>
                     <p class="text-muted-foreground mt-2">
-                        Fill out the form below to report a {{ item_type }} item. Provide as much detail as possible to help reunite items with their owners.
+                        {% if item_type == 'found' %}
+                            Your report can help someone get their belongings back. Share what you found, you might be helping a fellow PalSUan who's looking for it.
+                        {% else %}
+                            Fill out the form below to report a {{ item_type }} item. The more details you provide, the easier it is for fellow PalSUans to help out.
+                        {% endif %}
                     </p>
                 </div>
 

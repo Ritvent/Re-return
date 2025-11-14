@@ -8,6 +8,7 @@ urlpatterns = [
     path('home/', views.home_view, name='home'),
     path('lost/', views.lost_items_view, name='lost_items'),
     path('found/', views.found_items_view, name='found_items'),
+    path('claimed/', views.claimed_items_view, name='claimed_items'),
     path('post-lost/', views.post_lost_item_view, name='post_lost'),
     path('post-found/', views.post_found_item_view, name='post_found'),
     path('admin/', views.admin_dashboard_view, name='admin_dashboard'),

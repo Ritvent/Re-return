@@ -65,11 +65,11 @@ class ItemAdmin(admin.ModelAdmin):
     """Item Admin with filtering and actions"""
     list_display = [
         'title', 'item_type', 'status', 'category',
-        'posted_by', 'created_at', 'approved_by', 'has_image'
+        'posted_by', 'created_at', 'approved_by', 'claimed_by', 'has_image'
     ]
-    list_filter = ['item_type', 'status', 'category', 'created_at', 'date_found', 'date_lost']
-    search_fields = ['title', 'description', 'location_found', 'location_lost', 'posted_by__email']
-    readonly_fields = ['created_at', 'updated_at', 'approved_at', 'image_preview']
+    list_filter = ['item_type', 'status', 'category', 'created_at', 'date_found', 'date_lost', 'claimed_at']
+    search_fields = ['title', 'description', 'location_found', 'location_lost', 'posted_by__email', 'claimed_by__email']
+    readonly_fields = ['created_at', 'updated_at', 'approved_at', 'claimed_at', 'image_preview']
     ordering = ['-created_at']
     date_hierarchy = 'created_at'
 
@@ -83,6 +83,10 @@ class ItemAdmin(admin.ModelAdmin):
     }),
     ('Status & Approval', {
         'fields': ('status', 'posted_by', 'approved_by', 'approved_at') # approved_at = date and time
+    }),
+    ('Claim Information', {
+        'fields': ('claimed_by', 'claimed_at'),
+        'classes': ('collapse',)
     }),
     ('Timestamps', {
         'fields': ('created_at', 'updated_at'),
@@ -131,7 +135,11 @@ class ItemAdmin(admin.ModelAdmin):
 
     def mark_as_claimed(self, request, queryset):
         """Mark items as claimed"""
-        updated = queryset.filter(status='approved').update(status='claimed')
+        updated = queryset.filter(status='approved').update(
+            status='claimed',
+            claimed_by=request.user,
+            claimed_at=timezone.now()
+        )
         self.message_user(request, f'{updated} item(s) marked as claimed.')
     mark_as_claimed.short_description = 'Mark as claimed'
 

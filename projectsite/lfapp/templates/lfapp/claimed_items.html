@@ -1,0 +1,194 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Claimed Items - HanApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold mb-2">Claimed Items</h1>
+            <p class="text-muted-foreground text-lg">Items that have been successfully claimed and reunited</p>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="bg-card border border-border rounded-lg p-6 mb-8">
+            <form method="GET" action="{% url 'claimed_items' %}" class="flex flex-col md:flex-row gap-4">
+                <!-- Search Input -->
+                <div class="flex-1">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"></i>
+                        <input 
+                            type="text" 
+                            name="search" 
+                            value="{{ request.GET.search }}"
+                            placeholder="Search by title, description, or claimed by..." 
+                            class="w-full pl-10 pr-4 py-2.5 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div class="md:w-64">
+                    <select 
+                        name="category" 
+                        class="w-full px-4 py-2.5 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        onchange="this.form.submit()"
+                    >
+                        <option value="">All Categories</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Search Button -->
+                <button 
+                    type="submit" 
+                    class="px-6 py-2.5 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                >
+                    <i data-lucide="search" class="h-4 w-4"></i>
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <!-- Items Count -->
+        <div class="mb-6">
+            <p class="text-muted-foreground">
+                Found <span class="font-semibold text-foreground">{{ items|length }}</span> claimed item{{ items|length|pluralize }}
+            </p>
+        </div>
+
+        <!-- Claimed Items Table -->
+        {% if items %}
+            <div class="bg-card border border-border rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-muted/50 border-b border-border">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Item</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Type</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Posted By</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Claimed By</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Claimed On</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Category</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Location</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            {% for item in items %}
+                            <tr class="hover:bg-muted/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        {% if item.image %}
+                                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-16 w-16 rounded object-cover">
+                                        {% else %}
+                                            <div class="h-16 w-16 rounded bg-muted flex items-center justify-center">
+                                                <i data-lucide="package" class="h-8 w-8 text-muted-foreground"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <p class="font-medium text-foreground mb-1">{{ item.title }}</p>
+                                            <p class="text-sm text-muted-foreground line-clamp-2">{{ item.description|truncatewords:12 }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                        {% if item.item_type == 'lost' %}
+                                            bg-destructive/10 text-destructive
+                                        {% else %}
+                                            bg-primary/10 text-primary
+                                        {% endif %}">
+                                        <i data-lucide="{% if item.item_type == 'lost' %}alert-circle{% else %}check-circle{% endif %}" class="h-3 w-3 mr-1"></i>
+                                        {{ item.get_item_type_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-foreground font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if item.claimed_by %}
+                                        <div class="flex items-center gap-2">
+                                            <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                                <i data-lucide="user" class="h-4 w-4 text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm text-foreground font-medium">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
+                                                <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-sm text-muted-foreground italic">Not specified</p>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if item.claimed_at %}
+                                        <div class="flex items-center gap-2">
+                                            <i data-lucide="calendar" class="h-4 w-4 text-muted-foreground"></i>
+                                            <div>
+                                                <p class="text-sm text-foreground">{{ item.claimed_at|date:"M d, Y" }}</p>
+                                                <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-sm text-muted-foreground italic">Not specified</p>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-foreground">
+                                        {{ item.get_category_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="map-pin" class="h-4 w-4 text-muted-foreground"></i>
+                                        <p class="text-sm text-muted-foreground">
+                                            {% if item.item_type == 'lost' %}
+                                                {{ item.location_lost|default:"Not specified" }}
+                                            {% else %}
+                                                {{ item.location_found|default:"Not specified" }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-card border border-border rounded-lg p-12 text-center">
+                <i data-lucide="inbox" class="h-16 w-16 mx-auto mb-4 text-muted-foreground"></i>
+                <h3 class="text-xl font-semibold mb-2">No Claimed Items Found</h3>
+                <p class="text-muted-foreground mb-6">
+                    {% if request.GET.search or request.GET.category %}
+                        Try adjusting your search or filter criteria
+                    {% else %}
+                        No items have been claimed yet
+                    {% endif %}
+                </p>
+                {% if request.GET.search or request.GET.category %}
+                    <a href="{% url 'claimed_items' %}">
+                        <button class="px-6 py-2.5 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                            Clear Filters
+                        </button>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

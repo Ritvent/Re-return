@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-bz8n$f=yw$5sr72nio(#-!bhv2-7@*iwr7ia5(b(8$$orjczio
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -37,6 +37,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Django-allauth
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    
+    # Local apps
     'lfapp',
 ]
 
@@ -48,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'projectsite.urls'
@@ -132,3 +142,72 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User Model
 AUTH_USER_MODEL = 'lfapp.CustomUser'
+
+# Django-allauth Configuration
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    # Django admin login
+    'django.contrib.auth.backends.ModelBackend',
+    # Allauth backend
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Allauth settings
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True  # CustomUser requires username
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'  # Use email as username
+ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
+
+# Restrict to PSU email domain
+ACCOUNT_ADAPTER = 'lfapp.adapters.PSUEmailAdapter'
+
+# Social account settings
+SOCIALACCOUNT_ADAPTER = 'lfapp.adapters.PSUSocialAccountAdapter'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Redirect URLs
+LOGIN_REDIRECT_URL = '/home/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_SIGNUP_REDIRECT_URL = '/home/'
+SOCIALACCOUNT_LOGIN_ON_GET = True # Auto login after social signup
+
+# Google OAuth settings (configured via admin panel, not hardcoded here)
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+            'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
+        },
+        'VERIFIED_EMAIL': True,
+    }
+}
+
+# Google OAuth settings (will be configured via admin panel)
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+            'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
+        },
+        'APP': {
+            'client_id': '',  # Will be set via admin
+            'secret': '',     # Will be set via admin
+            'key': ''
+        },
+        'VERIFIED_EMAIL': True,
+    }
+}
