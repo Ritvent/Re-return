@@ -95,4 +95,44 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
             user.role = 'verified'
             user.is_verified = True
         
+        # Ensure unique username by using email as username
+        if user.email:
+            user.username = user.email
+        
         return user
+    
+    def generate_unique_username(self, txts, regex=None):
+        """
+        Generate a unique username from email.
+        Override to use email directly as username.
+        """
+        from allauth.account.models import EmailAddress
+        from django.contrib.auth import get_user_model
+        
+        User = get_user_model()
+        
+        # Try to get email from txts
+        email = None
+        for txt in txts:
+            if '@' in txt:
+                email = txt
+                break
+        
+        if email:
+            # Check if username (email) already exists
+            if not User.objects.filter(username=email).exists():
+                return email
+            
+            # If email exists as username, the user already has an account
+            # This shouldn't happen with proper social account setup
+            # but as fallback, use email prefix with incrementing number
+            base = email.split('@')[0]
+            username = base
+            i = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base}{i}"
+                i += 1
+            return username
+        
+        # Fallback to default implementation
+        return super().generate_unique_username(txts, regex)
