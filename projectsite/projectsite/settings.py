@@ -175,6 +175,7 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 LOGIN_REDIRECT_URL = '/home/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 ACCOUNT_SIGNUP_REDIRECT_URL = '/home/'
+SOCIALACCOUNT_LOGIN_ON_GET = True # Auto login after social signup
 
 # Google OAuth settings (configured via admin panel, not hardcoded here)
 SOCIALACCOUNT_PROVIDERS = {
