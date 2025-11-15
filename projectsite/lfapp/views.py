@@ -313,6 +313,11 @@ def toggle_item_listing_view(request, item_id):
         messages.error(request, 'You can only manage your own items.')
         return redirect('home')
     
+    # Prevent delisting claimed items - they are success stories!
+    if not item.can_be_delisted():
+        messages.error(request, '❌ Cannot delist claimed items. These remain as success stories showing the app works!')
+        return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    
     # Toggle is_active status
     item.is_active = not item.is_active
     item.save()
@@ -323,6 +328,46 @@ def toggle_item_listing_view(request, item_id):
         messages.success(request, f'Your item "{item.title}" has been delisted and is now hidden from public view.')
     
     return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+
+@login_required
+def delete_item_view(request, item_id):
+    """Delete an item permanently - Only owner can delete, claimed items protected"""
+    from django.shortcuts import get_object_or_404
+    import os
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is the owner
+    if item.posted_by != request.user:
+        messages.error(request, 'You can only delete your own items.')
+        return redirect('home')
+    
+    # Prevent deletion of claimed items - they are success stories!
+    if not item.can_be_deleted():
+        messages.error(request, '❌ Cannot delete claimed items. These must remain as success stories and proof that the app works! Contact admin if you have privacy concerns.')
+        return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    
+    if request.method == 'POST':
+        # Delete the image file if it exists
+        if item.image:
+            try:
+                if os.path.isfile(item.image.path):
+                    os.remove(item.image.path)
+            except Exception as e:
+                print(f"Error deleting image: {e}")
+        
+        item_title = item.title
+        item_type = item.item_type
+        item.delete()
+        
+        messages.success(request, f'🗑️ "{item_title}" has been permanently deleted.')
+        return redirect('lost_items' if item_type == 'lost' else 'found_items')
+    
+    # Show confirmation page
+    context = {
+        'item': item,
+    }
+    return render(request, 'lfapp/confirm_delete.html', context)
 
 @login_required
 def send_message_view(request, item_id):

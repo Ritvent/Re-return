@@ -168,6 +168,14 @@ class Item(TimeStampedModel):
     def __str__(self):
         return f"({self.get_item_type_display()}: {self.title})"
     
+    def can_be_deleted(self):
+        """Only non-claimed items can be deleted - claimed items are success stories"""
+        return self.status != 'claimed'
+    
+    def can_be_delisted(self):
+        """Only non-claimed items can be delisted - claimed items must remain visible"""
+        return self.status != 'claimed'
+    
 """Reclaim, Recover"""
 class Claim(TimeStampedModel):
     """ Claims made on items"""

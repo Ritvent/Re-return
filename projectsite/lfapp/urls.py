@@ -13,6 +13,7 @@ urlpatterns = [
     path('post-found/', views.post_found_item_view, name='post_found'),
     path('edit/<int:item_id>/', views.edit_item_view, name='edit_item'),
     path('toggle-listing/<int:item_id>/', views.toggle_item_listing_view, name='toggle_listing'),
+    path('delete/<int:item_id>/', views.delete_item_view, name='delete_item'),
     path('message/<int:item_id>/', views.send_message_view, name='send_message'),
     path('messages/inbox/', views.messages_inbox_view, name='messages_inbox'),
     path('messages/sent/', views.messages_sent_view, name='messages_sent'),
