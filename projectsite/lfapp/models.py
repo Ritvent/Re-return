@@ -134,6 +134,10 @@ class Item(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name='posted_items'
     )
+    display_name = models.BooleanField(
+        default=False,
+        help_text='Display poster name publicly (required for found items)'
+    )
     approved_by = models.ForeignKey(
         CustomUser,
         on_delete=models.SET_NULL,

@@ -39,8 +39,18 @@
 
         {% if item.posted_by %}
         <div class="pt-2 border-t">
-            <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
-            <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+            {% if item.display_name %}
+                {% if item.item_type == 'found' %}
+                    <p class="text-xs text-muted-foreground mb-1">Found by:</p>
+                {% else %}
+                    <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
+                {% endif %}
+                <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+            {% else %}
+                <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
+                <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+            {% endif %}
         </div>
         {% endif %}
     </div>

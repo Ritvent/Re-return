@@ -133,6 +133,27 @@
                             </p>
                         </div>
 
+                        <!-- Display Name Checkbox -->
+                        <div class="space-y-2">
+                            <div class="flex items-start gap-3 p-4 rounded-md border border-border bg-card">
+                                <div class="flex items-center h-5">
+                                    {{ form.display_name }}
+                                </div>
+                                <div class="flex-1">
+                                    <label for="{{ form.display_name.id_for_label }}" class="text-sm font-medium text-foreground cursor-pointer">
+                                        {{ form.display_name.label }}
+                                        {% if item_type == 'found' %}<span class="text-destructive">*</span>{% endif %}
+                                    </label>
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        {{ form.display_name.help_text }}
+                                    </p>
+                                    {% if form.display_name.errors %}
+                                        <p class="text-sm text-destructive mt-1">{{ form.display_name.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- User Info Notice -->
                         <div class="bg-muted/50 rounded-md p-4 border border-border">
                             <div class="flex items-start gap-3">
