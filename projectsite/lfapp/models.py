@@ -155,6 +155,10 @@ class Item(TimeStampedModel):
         help_text='User who claimed this item'
     )
     claimed_at = models.DateTimeField(null=True, blank=True, help_text='When the item was claimed')
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether the item is listed publicly (users can delist their posts)'
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -163,6 +167,14 @@ class Item(TimeStampedModel):
 
     def __str__(self):
         return f"({self.get_item_type_display()}: {self.title})"
+    
+    def can_be_deleted(self):
+        """Only non-claimed items can be deleted - claimed items are success stories"""
+        return self.status != 'claimed'
+    
+    def can_be_delisted(self):
+        """Only non-claimed items can be delisted - claimed items must remain visible"""
+        return self.status != 'claimed'
     
 """Reclaim, Recover"""
 class Claim(TimeStampedModel):

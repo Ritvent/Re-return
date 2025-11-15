@@ -124,6 +124,18 @@
                             <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-foreground">
                                 {{ form.image.label }}
                             </label>
+                            
+                            {% if is_edit and item.image %}
+                            <div class="mb-3 p-3 rounded-md border border-border bg-muted/30">
+                                <p class="text-sm font-medium text-foreground mb-2">Current Image:</p>
+                                <img src="{{ item.image.url }}" alt="Current item image" class="w-full max-w-[300px] sm:max-w-xs rounded-md border border-border">
+                                <p class="text-xs text-muted-foreground mt-2">
+                                    <i data-lucide="info" class="h-3 w-3 inline"></i>
+                                    Keep current image or upload a new one to replace it
+                                </p>
+                            </div>
+                            {% endif %}
+                            
                             <div class="flex gap-2">
                                 {{ form.image }}
                             </div>
@@ -131,7 +143,7 @@
                                 <p class="text-sm text-destructive">{{ form.image.errors.0 }}</p>
                             {% endif %}
                             <p class="text-xs text-muted-foreground">
-                                Upload a photo of the item to help with identification
+                                {% if is_edit %}Upload a new photo to replace the current image{% else %}Upload a photo of the item to help with identification{% endif %}
                             </p>
                         </div>
 

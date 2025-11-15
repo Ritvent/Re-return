@@ -67,6 +67,9 @@ class ItemForm(forms.ModelForm):
         self.item_type = kwargs.pop('item_type', None)
         super().__init__(*args, **kwargs)
         
+        # Image is always optional (not required when editing)
+        self.fields['image'].required = False
+        
         # Make only relevant fields required based on item_type
         if self.item_type == 'lost':
             self.fields['location_lost'].required = True

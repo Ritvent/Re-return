@@ -9,6 +9,11 @@
         <span class="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
             {{ item.get_item_type_display }}
         </span>
+        {% if item.status == 'pending' and request.user == item.posted_by %}
+        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white">
+            Pending Approval
+        </span>
+        {% endif %}
     </div>
 
     <div class="p-4 space-y-3">
@@ -35,6 +40,14 @@
                 </span>
             </div>
             {% endif %}
+            
+            {% load tz %}
+            {% if item.updated_at|date:"Y-m-d H:i" != item.created_at|date:"Y-m-d H:i" %}
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <i data-lucide="refresh-cw" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                <span>Updated on: {{ item.updated_at|date:"M d, Y" }}</span>
+            </div>
+            {% endif %}
         </div>
 
         {% if item.posted_by %}
@@ -58,12 +71,42 @@
         {% endif %}
     </div>
 
-    <div class="px-4 pb-4 pt-0 flex gap-2">
+    <div class="px-4 pb-4 pt-0 flex flex-col gap-2">
         {% if request.user == item.posted_by %}
-            <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm">
-                <i data-lucide="pencil" class="h-4 w-4"></i>
-                Edit
-            </a>
+            {% if item.status == 'claimed' %}
+                <!-- Claimed items are success stories - cannot be edited/deleted -->
+                <div class="p-3 rounded-md bg-green-50 border border-green-200">
+                    <div class="flex items-center gap-2 mb-1">
+                        <i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>
+                        <span class="text-sm font-semibold text-green-800">✓ Successfully Claimed</span>
+                    </div>
+                    <p class="text-xs text-green-700">
+                        This item remains visible as a success story. Thank you for using PalSU HanApp!
+                    </p>
+                    <p class="text-xs text-green-600 mt-1">
+                        Need to remove for privacy? <a href="mailto:admin@psu.palawan.edu.ph?subject=Privacy Request: Item {{ item.id }}" class="underline">Contact Admin</a>
+                    </p>
+                </div>
+            {% else %}
+                <!-- Active/Pending items can be managed -->
+                <div class="flex gap-2">
+                    <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border border-orange-500 text-orange-500 hover:bg-orange-50 transition-all text-sm">
+                        <i data-lucide="pencil" class="h-4 w-4"></i>
+                        Edit
+                    </a>
+                    <a href="{% url 'toggle_listing' item.id %}" 
+                       class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border {% if item.is_active %}border-gray-500 text-gray-600 hover:bg-gray-50{% else %}border-green-500 text-green-600 hover:bg-green-50{% endif %} transition-all text-sm"
+                       onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item? It will be hidden from public view.{% else %}Relist this item to make it publicly visible again?{% endif %}')">
+                        <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}" class="h-4 w-4"></i>
+                        {% if item.is_active %}Delist{% else %}Relist{% endif %}
+                    </a>
+                </div>
+                <a href="{% url 'delete_item' item.id %}" 
+                   class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-red-500 text-red-600 hover:bg-red-50 transition-all text-sm">
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                    Delete Permanently
+                </a>
+            {% endif %}
         {% elif request.user.is_authenticated and request.user.is_psu_user %}
             <a href="{% url 'send_message' item.id %}" 
                class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
@@ -73,7 +116,7 @@
         {% else %}
             <button onclick="alert('Only verified PSU users can contact posters. Please sign in with your @psu.palawan.edu.ph account and get verified.')" 
                     class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-muted bg-muted/50 text-muted-foreground cursor-not-allowed text-sm">
-                <i data-lucide="lock" class="h-4 w-4"></i>
+                <i data-lucide="mail" class="h-4 w-4"></i>
                 {% if request.user.is_authenticated %}Verification Required{% else %}Sign In to Contact{% endif %}
             </button>
         {% endif %}

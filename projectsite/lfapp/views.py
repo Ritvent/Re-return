@@ -32,18 +32,21 @@ def home_view(request):
     # Get recent lost items (limit to 3)
     recent_lost = Item.objects.filter(
         item_type='lost',
-        status='approved'
+        status='approved',
+        is_active=True
     ).select_related('posted_by').order_by('-created_at')[:3]
     
     # Get recent found items (limit to 3)
     recent_found = Item.objects.filter(
         item_type='found',
-        status='approved'
+        status='approved',
+        is_active=True
     ).select_related('posted_by').order_by('-created_at')[:3]
     
     # Get recent claimed items (limit to 5)
     recent_claimed = Item.objects.filter(
-        status='claimed'
+        status='claimed',
+        is_active=True
     ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')[:5]
     
     context = {
@@ -56,10 +59,19 @@ def home_view(request):
 
 def lost_items_view(request):
     """View all lost items with search and filter - Public access allowed"""
-    items = Item.objects.filter(
-        item_type='lost',
-        status='approved'
-    ).select_related('posted_by').order_by('-created_at')
+    # Show approved items to everyone, plus pending items to their owners
+    if request.user.is_authenticated:
+        items = Item.objects.filter(
+            item_type='lost'
+        ).filter(
+            Q(status='approved', is_active=True) | Q(posted_by=request.user)
+        ).select_related('posted_by').order_by('-created_at')
+    else:
+        items = Item.objects.filter(
+            item_type='lost',
+            status='approved',
+            is_active=True
+        ).select_related('posted_by').order_by('-created_at')
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -88,10 +100,19 @@ def lost_items_view(request):
 
 def found_items_view(request):
     """View all found items with search and filter - Public access allowed"""
-    items = Item.objects.filter(
-        item_type='found',
-        status='approved'
-    ).select_related('posted_by').order_by('-created_at')
+    # Show approved items to everyone, plus pending items to their owners
+    if request.user.is_authenticated:
+        items = Item.objects.filter(
+            item_type='found'
+        ).filter(
+            Q(status='approved', is_active=True) | Q(posted_by=request.user)
+        ).select_related('posted_by').order_by('-created_at')
+    else:
+        items = Item.objects.filter(
+            item_type='found',
+            status='approved',
+            is_active=True
+        ).select_related('posted_by').order_by('-created_at')
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -279,6 +300,74 @@ def edit_item_view(request, item_id):
         'is_edit': True,
     }
     return render(request, 'lfapp/post_item.html', context)
+
+@login_required
+def toggle_item_listing_view(request, item_id):
+    """Toggle item active status (delist/relist) - Only owner can toggle"""
+    from django.shortcuts import get_object_or_404
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is the owner
+    if item.posted_by != request.user:
+        messages.error(request, 'You can only manage your own items.')
+        return redirect('home')
+    
+    # Prevent delisting claimed items - they are success stories!
+    if not item.can_be_delisted():
+        messages.error(request, '❌ Cannot delist claimed items. These remain as success stories showing the app works!')
+        return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    
+    # Toggle is_active status
+    item.is_active = not item.is_active
+    item.save()
+    
+    if item.is_active:
+        messages.success(request, f'Your item "{item.title}" is now listed publicly.')
+    else:
+        messages.success(request, f'Your item "{item.title}" has been delisted and is now hidden from public view.')
+    
+    return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+
+@login_required
+def delete_item_view(request, item_id):
+    """Delete an item permanently - Only owner can delete, claimed items protected"""
+    from django.shortcuts import get_object_or_404
+    import os
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is the owner
+    if item.posted_by != request.user:
+        messages.error(request, 'You can only delete your own items.')
+        return redirect('home')
+    
+    # Prevent deletion of claimed items - they are success stories!
+    if not item.can_be_deleted():
+        messages.error(request, '❌ Cannot delete claimed items. These must remain as success stories and proof that the app works! Contact admin if you have privacy concerns.')
+        return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    
+    if request.method == 'POST':
+        # Delete the image file if it exists
+        if item.image:
+            try:
+                if os.path.isfile(item.image.path):
+                    os.remove(item.image.path)
+            except Exception as e:
+                print(f"Error deleting image: {e}")
+        
+        item_title = item.title
+        item_type = item.item_type
+        item.delete()
+        
+        messages.success(request, f'🗑️ "{item_title}" has been permanently deleted.')
+        return redirect('lost_items' if item_type == 'lost' else 'found_items')
+    
+    # Show confirmation page
+    context = {
+        'item': item,
+    }
+    return render(request, 'lfapp/confirm_delete.html', context)
 
 @login_required
 def send_message_view(request, item_id):
