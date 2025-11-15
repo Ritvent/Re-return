@@ -64,13 +64,21 @@
                 <i data-lucide="pencil" class="h-4 w-4"></i>
                 Edit
             </a>
-        {% elif item.posted_by.email %}
-            <a href="mailto:{{ item.posted_by.email }}" 
-               onclick="handleEmailClick(event, '{{ item.posted_by.email }}')" 
-               class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
-                <i data-lucide="mail" class="h-4 w-4"></i>
-                Contact
-            </a>
+        {% elif request.user.is_authenticated and request.user.is_psu_user %}
+            {% if item.posted_by.email %}
+                <a href="mailto:{{ item.posted_by.email }}" 
+                   onclick="handleEmailClick(event, '{{ item.posted_by.email }}')" 
+                   class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
+                    <i data-lucide="mail" class="h-4 w-4"></i>
+                    Contact
+                </a>
+            {% endif %}
+        {% else %}
+            <button onclick="alert('Only verified PSU users can contact posters. Please sign in with your @psu.palawan.edu.ph account and get verified.')" 
+                    class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-muted bg-muted/50 text-muted-foreground cursor-not-allowed text-sm">
+                <i data-lucide="lock" class="h-4 w-4"></i>
+                {% if request.user.is_authenticated %}Verification Required{% else %}Sign In to Contact{% endif %}
+            </button>
         {% endif %}
     </div>
 </div>
