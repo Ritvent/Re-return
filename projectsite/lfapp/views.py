@@ -279,3 +279,77 @@ def edit_item_view(request, item_id):
         'is_edit': True,
     }
     return render(request, 'lfapp/post_item.html', context)
+
+@login_required
+def send_message_view(request, item_id):
+    """Send a message to item poster - Only verified PSU users"""
+    from django.shortcuts import get_object_or_404
+    from .models import ContactMessage
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is PSU verified
+    if not request.user.is_psu_user():
+        messages.error(request, 'Only verified PSU users can contact item posters.')
+        return redirect('home')
+    
+    # Can't message your own post
+    if item.posted_by == request.user:
+        messages.error(request, 'You cannot message your own post.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        subject = request.POST.get('subject', '').strip()
+        message_text = request.POST.get('message', '').strip()
+        sender_phone = request.POST.get('phone', '').strip()
+        
+        if not subject or not message_text:
+            messages.error(request, 'Subject and message are required.')
+            return render(request, 'lfapp/send_message.html', {'item': item})
+        
+        # Create message
+        ContactMessage.objects.create(
+            item=item,
+            sender=request.user,
+            recipient=item.posted_by,
+            subject=subject,
+            message=message_text,
+            sender_phone=sender_phone
+        )
+        
+        messages.success(request, f'Your message has been sent to {item.posted_by.get_full_name() or item.posted_by.email}!')
+        return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    
+    return render(request, 'lfapp/send_message.html', {'item': item})
+
+@login_required
+def messages_inbox_view(request):
+    """View all received messages"""
+    from .models import ContactMessage
+    
+    received_messages = ContactMessage.objects.filter(
+        recipient=request.user
+    ).select_related('sender', 'item').order_by('-created_at')
+    
+    # Mark messages as read when viewing inbox
+    received_messages.filter(is_read=False).update(is_read=True)
+    
+    context = {
+        'messages': received_messages,
+    }
+    return render(request, 'lfapp/messages_inbox.html', context)
+
+@login_required
+def messages_sent_view(request):
+    """View all sent messages"""
+    from .models import ContactMessage
+    
+    sent_messages = ContactMessage.objects.filter(
+        sender=request.user
+    ).select_related('recipient', 'item').order_by('-created_at')
+    
+    context = {
+        'messages': sent_messages,
+    }
+    return render(request, 'lfapp/messages_sent.html', context)
+

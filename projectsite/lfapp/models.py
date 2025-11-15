@@ -251,6 +251,44 @@ class Notification(TimeStampedModel):
     def __str__(self):
         return f"{self.user.email} - {self.get_notification_type_display()}"
 
+class ContactMessage(TimeStampedModel):
+    """In-app messaging for contacting item posters"""
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name='contact_messages',
+        help_text='The item this message is about'
+    )
+    sender = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        help_text='User who sent the message'
+    )
+    recipient = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='received_messages',
+        help_text='User who receives the message'
+    )
+    subject = models.CharField(max_length=200, help_text='Message subject')
+    message = models.TextField(help_text='Message content')
+    sender_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text='Optional contact phone number'
+    )
+    is_read = models.BooleanField(default=False, help_text='Has recipient read this message')
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Contact Message'
+        verbose_name_plural = 'Contact Messages'
+    
+    def __str__(self):
+        return f"Message from {self.sender.email} to {self.recipient.email} about {self.item.title}"
+
 
 
 
