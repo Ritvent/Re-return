@@ -56,10 +56,18 @@ def home_view(request):
 
 def lost_items_view(request):
     """View all lost items with search and filter - Public access allowed"""
-    items = Item.objects.filter(
-        item_type='lost',
-        status='approved'
-    ).select_related('posted_by').order_by('-created_at')
+    # Show approved items to everyone, plus pending items to their owners
+    if request.user.is_authenticated:
+        items = Item.objects.filter(
+            item_type='lost'
+        ).filter(
+            Q(status='approved') | Q(posted_by=request.user)
+        ).select_related('posted_by').order_by('-created_at')
+    else:
+        items = Item.objects.filter(
+            item_type='lost',
+            status='approved'
+        ).select_related('posted_by').order_by('-created_at')
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -88,10 +96,18 @@ def lost_items_view(request):
 
 def found_items_view(request):
     """View all found items with search and filter - Public access allowed"""
-    items = Item.objects.filter(
-        item_type='found',
-        status='approved'
-    ).select_related('posted_by').order_by('-created_at')
+    # Show approved items to everyone, plus pending items to their owners
+    if request.user.is_authenticated:
+        items = Item.objects.filter(
+            item_type='found'
+        ).filter(
+            Q(status='approved') | Q(posted_by=request.user)
+        ).select_related('posted_by').order_by('-created_at')
+    else:
+        items = Item.objects.filter(
+            item_type='found',
+            status='approved'
+        ).select_related('posted_by').order_by('-created_at')
     
     # Search functionality
     search_query = request.GET.get('search', '')

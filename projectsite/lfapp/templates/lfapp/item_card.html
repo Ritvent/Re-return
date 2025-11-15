@@ -9,6 +9,11 @@
         <span class="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
             {{ item.get_item_type_display }}
         </span>
+        {% if item.status == 'pending' and request.user == item.posted_by %}
+        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white">
+            Pending Approval
+        </span>
+        {% endif %}
     </div>
 
     <div class="p-4 space-y-3">
@@ -33,6 +38,14 @@
                 <span>
                     {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
                 </span>
+            </div>
+            {% endif %}
+            
+            {% load tz %}
+            {% if item.updated_at|date:"Y-m-d H:i" != item.created_at|date:"Y-m-d H:i" %}
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <i data-lucide="refresh-cw" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                <span>Updated on: {{ item.updated_at|date:"M d, Y" }}</span>
             </div>
             {% endif %}
         </div>
@@ -60,7 +73,7 @@
 
     <div class="px-4 pb-4 pt-0 flex gap-2">
         {% if request.user == item.posted_by %}
-            <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm">
+            <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border border-orange-500 text-orange-500 hover:bg-orange-50 transition-all text-sm">
                 <i data-lucide="pencil" class="h-4 w-4"></i>
                 Edit
             </a>
@@ -73,7 +86,7 @@
         {% else %}
             <button onclick="alert('Only verified PSU users can contact posters. Please sign in with your @psu.palawan.edu.ph account and get verified.')" 
                     class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-muted bg-muted/50 text-muted-foreground cursor-not-allowed text-sm">
-                <i data-lucide="lock" class="h-4 w-4"></i>
+                <i data-lucide="mail" class="h-4 w-4"></i>
                 {% if request.user.is_authenticated %}Verification Required{% else %}Sign In to Contact{% endif %}
             </button>
         {% endif %}
