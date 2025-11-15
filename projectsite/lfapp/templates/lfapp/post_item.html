@@ -14,10 +14,12 @@
                 <!-- Card Header -->
                 <div class="p-6 border-b border-border">
                     <h2 class="text-2xl font-bold text-card-foreground">
-                        Report {{ item_type|title }} Item
+                        {% if is_edit %}Edit{% else %}Report{% endif %} {{ item_type|title }} Item
                     </h2>
                     <p class="text-muted-foreground mt-2">
-                        {% if item_type == 'found' %}
+                        {% if is_edit %}
+                            Update the details of your {{ item_type }} item report below.
+                        {% elif item_type == 'found' %}
                             Your report can help someone get their belongings back. Share what you found, you might be helping a fellow PalSUan who's looking for it.
                         {% else %}
                             Fill out the form below to report a {{ item_type }} item. The more details you provide, the easier it is for fellow PalSUans to help out.
@@ -171,7 +173,7 @@
                         <!-- Submit Buttons -->
                         <div class="flex gap-4">
                             <button type="submit" class="flex-1 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
-                                Report {{ item_type|title }} Item
+                                {% if is_edit %}Update{% else %}Report{% endif %} {{ item_type|title }} Item
                             </button>
                             <a href="{% if item_type == 'lost' %}{% url 'lost_items' %}{% else %}{% url 'found_items' %}{% endif %}">
                                 <button type="button" class="px-6 py-3 rounded-md border border-input bg-background text-foreground font-medium hover:bg-accent hover:text-accent-foreground transition-all">

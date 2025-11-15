@@ -240,3 +240,42 @@ def claimed_items_view(request):
     }
     
     return render(request, 'lfapp/claimed_items.html', context)
+
+@login_required
+def edit_item_view(request, item_id):
+    """Edit an existing item - Only owner can edit"""
+    from django.shortcuts import get_object_or_404
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is the owner
+    if item.posted_by != request.user:
+        messages.error(request, 'You can only edit your own items.')
+        return redirect('home')
+    
+    # Check if user can still post items
+    if not request.user.can_post_items():
+        messages.error(request, 'You must be a verified user to edit items.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item, item_type=item.item_type)
+        if form.is_valid():
+            updated_item = form.save(commit=False)
+            # Keep original posted_by and reset to pending if not admin
+            updated_item.posted_by = item.posted_by
+            if not request.user.is_admin_user():
+                updated_item.status = 'pending'  # Needs re-approval after edit
+            updated_item.save()
+            messages.success(request, 'Your item has been updated and is pending approval.')
+            return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    else:
+        form = ItemForm(instance=item, item_type=item.item_type)
+    
+    context = {
+        'form': form,
+        'item_type': item.item_type,
+        'item': item,
+        'is_edit': True,
+    }
+    return render(request, 'lfapp/post_item.html', context)
