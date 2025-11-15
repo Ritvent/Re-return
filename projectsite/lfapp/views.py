@@ -308,7 +308,7 @@ def send_message_view(request, item_id):
             return render(request, 'lfapp/send_message.html', {'item': item})
         
         # Create message
-        ContactMessage.objects.create(
+        contact_message = ContactMessage.objects.create(
             item=item,
             sender=request.user,
             recipient=item.posted_by,
@@ -316,6 +316,44 @@ def send_message_view(request, item_id):
             message=message_text,
             sender_phone=sender_phone
         )
+        
+        # Send email notification via SendGrid
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        email_subject = f'[HanApp] New message about your {item.item_type} item: {item.title}'
+        email_body = f"""
+Hello {item.posted_by.get_full_name() or item.posted_by.email},
+
+You have received a new message about your {item.item_type} item "{item.title}".
+
+From: {request.user.get_full_name() or request.user.email}
+Email: {request.user.email}
+{f'Phone: {sender_phone}' if sender_phone else ''}
+
+Subject: {subject}
+
+Message:
+{message_text}
+
+---
+View all your messages at: {request.build_absolute_uri('/messages/inbox/')}
+Reply to: {request.user.email}
+
+This is an automated message from HanApp - PSU Lost and Found
+"""
+        
+        try:
+            send_mail(
+                subject=email_subject,
+                message=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[item.posted_by.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Log error but don't fail the message creation
+            print(f"Email sending failed: {e}")
         
         messages.success(request, f'Your message has been sent to {item.posted_by.get_full_name() or item.posted_by.email}!')
         return redirect('lost_items' if item.item_type == 'lost' else 'found_items')

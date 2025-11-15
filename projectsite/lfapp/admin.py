@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.utils import timezone
-from .models import CustomUser, Item, Claim, Notification, ContactMessage
+from .models import CustomUser, Item, Claim, Notification
 
 
 """PSU or PalSu?"""
@@ -240,57 +240,6 @@ class NotificationAdmin(admin.ModelAdmin):
         updated = queryset.update(is_read=False)
         self.message_user(request, f'{updated} notification(s) marked as unread.')
     mark_as_unread.short_description = 'Mark as unread'
-
-@admin.register(ContactMessage)
-class ContactMessageAdmin(admin.ModelAdmin):
-    """Contact Message Admin"""
-    list_display = [
-        'sender_email', 'recipient_email', 'item_link',
-        'subject', 'is_read', 'created_at'
-    ]
-    list_filter = ['is_read', 'created_at']
-    search_fields = ['sender__email', 'recipient__email', 'subject', 'message']
-    readonly_fields = ['created_at', 'updated_at']
-    ordering = ['-created_at']
-    date_hierarchy = 'created_at'
-
-    fieldsets = (
-        ('Message Details', {
-            'fields': ('sender', 'recipient', 'item', 'subject', 'message', 'sender_phone')
-        }),
-        ('Status', {
-            'fields': ('is_read',)
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def sender_email(self, obj):
-        """Display sender email"""
-        return obj.sender.email
-    sender_email.short_description = 'From'
-
-    def recipient_email(self, obj):
-        """Display recipient email"""
-        return obj.recipient.email
-    recipient_email.short_description = 'To'
-
-    def item_link(self, obj):
-        """Display item title as link"""
-        return format_html(
-            '<a href="/admin/lfapp/item/{}/change/">{}</a>',
-            obj.item.id,
-            obj.item.title
-        )
-    item_link.short_description = 'Item'
-
-
-
-
-
-
 
 
 
