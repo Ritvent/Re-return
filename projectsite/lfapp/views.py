@@ -240,3 +240,154 @@ def claimed_items_view(request):
     }
     
     return render(request, 'lfapp/claimed_items.html', context)
+
+@login_required
+def edit_item_view(request, item_id):
+    """Edit an existing item - Only owner can edit"""
+    from django.shortcuts import get_object_or_404
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is the owner
+    if item.posted_by != request.user:
+        messages.error(request, 'You can only edit your own items.')
+        return redirect('home')
+    
+    # Check if user can still post items
+    if not request.user.can_post_items():
+        messages.error(request, 'You must be a verified user to edit items.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item, item_type=item.item_type)
+        if form.is_valid():
+            updated_item = form.save(commit=False)
+            # Keep original posted_by and reset to pending if not admin
+            updated_item.posted_by = item.posted_by
+            if not request.user.is_admin_user():
+                updated_item.status = 'pending'  # Needs re-approval after edit
+            updated_item.save()
+            messages.success(request, 'Your item has been updated and is pending approval.')
+            return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    else:
+        form = ItemForm(instance=item, item_type=item.item_type)
+    
+    context = {
+        'form': form,
+        'item_type': item.item_type,
+        'item': item,
+        'is_edit': True,
+    }
+    return render(request, 'lfapp/post_item.html', context)
+
+@login_required
+def send_message_view(request, item_id):
+    """Send a message to item poster - Only verified PSU users"""
+    from django.shortcuts import get_object_or_404
+    from .models import ContactMessage
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is PSU verified
+    if not request.user.is_psu_user():
+        messages.error(request, 'Only verified PSU users can contact item posters.')
+        return redirect('home')
+    
+    # Can't message your own post
+    if item.posted_by == request.user:
+        messages.error(request, 'You cannot message your own post.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        subject = request.POST.get('subject', '').strip()
+        message_text = request.POST.get('message', '').strip()
+        sender_phone = request.POST.get('phone', '').strip()
+        
+        if not subject or not message_text:
+            messages.error(request, 'Subject and message are required.')
+            return render(request, 'lfapp/send_message.html', {'item': item})
+        
+        # Create message
+        contact_message = ContactMessage.objects.create(
+            item=item,
+            sender=request.user,
+            recipient=item.posted_by,
+            subject=subject,
+            message=message_text,
+            sender_phone=sender_phone
+        )
+        
+        # Send email notification via SendGrid
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        email_subject = f'[HanApp] New message about your {item.item_type} item: {item.title}'
+        email_body = f"""
+Hello {item.posted_by.get_full_name() or item.posted_by.email},
+
+You have received a new message about your {item.item_type} item "{item.title}".
+
+From: {request.user.get_full_name() or request.user.email}
+Email: {request.user.email}
+{f'Phone: {sender_phone}' if sender_phone else ''}
+
+Subject: {subject}
+
+Message:
+{message_text}
+
+---
+View all your messages at: {request.build_absolute_uri('/messages/inbox/')}
+Reply to: {request.user.email}
+
+This is an automated message from HanApp - PSU Lost and Found
+"""
+        
+        try:
+            send_mail(
+                subject=email_subject,
+                message=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[item.posted_by.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Log error but don't fail the message creation
+            print(f"Email sending failed: {e}")
+        
+        messages.success(request, f'Your message has been sent to {item.posted_by.get_full_name() or item.posted_by.email}!')
+        return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
+    
+    return render(request, 'lfapp/send_message.html', {'item': item})
+
+@login_required
+def messages_inbox_view(request):
+    """View all received messages"""
+    from .models import ContactMessage
+    
+    received_messages = ContactMessage.objects.filter(
+        recipient=request.user
+    ).select_related('sender', 'item').order_by('-created_at')
+    
+    # Mark messages as read when viewing inbox
+    received_messages.filter(is_read=False).update(is_read=True)
+    
+    context = {
+        'messages': received_messages,
+    }
+    return render(request, 'lfapp/messages_inbox.html', context)
+
+@login_required
+def messages_sent_view(request):
+    """View all sent messages"""
+    from .models import ContactMessage
+    
+    sent_messages = ContactMessage.objects.filter(
+        sender=request.user
+    ).select_related('recipient', 'item').order_by('-created_at')
+    
+    context = {
+        'messages': sent_messages,
+    }
+    return render(request, 'lfapp/messages_sent.html', context)
+

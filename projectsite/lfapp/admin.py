@@ -82,7 +82,7 @@ class ItemAdmin(admin.ModelAdmin):
         'fields': ('location_found', 'location_lost', 'date_found', 'date_lost')
     }),
     ('Status & Approval', {
-        'fields': ('status', 'posted_by', 'approved_by', 'approved_at') # approved_at = date and time
+        'fields': ('status', 'posted_by', 'display_name', 'approved_by', 'approved_at') # approved_at = date and time
     }),
     ('Claim Information', {
         'fields': ('claimed_by', 'claimed_at'),
