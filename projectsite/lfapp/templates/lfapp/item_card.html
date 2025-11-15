@@ -71,12 +71,20 @@
         {% endif %}
     </div>
 
-    <div class="px-4 pb-4 pt-0 flex gap-2">
+    <div class="px-4 pb-4 pt-0 flex flex-col gap-2">
         {% if request.user == item.posted_by %}
-            <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border border-orange-500 text-orange-500 hover:bg-orange-50 transition-all text-sm">
-                <i data-lucide="pencil" class="h-4 w-4"></i>
-                Edit
-            </a>
+            <div class="flex gap-2">
+                <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border border-orange-500 text-orange-500 hover:bg-orange-50 transition-all text-sm">
+                    <i data-lucide="pencil" class="h-4 w-4"></i>
+                    Edit
+                </a>
+                <a href="{% url 'toggle_listing' item.id %}" 
+                   class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border {% if item.is_active %}border-gray-500 text-gray-600 hover:bg-gray-50{% else %}border-green-500 text-green-600 hover:bg-green-50{% endif %} transition-all text-sm"
+                   onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item? It will be hidden from public view.{% else %}Relist this item to make it publicly visible again?{% endif %}')">
+                    <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}" class="h-4 w-4"></i>
+                    {% if item.is_active %}Delist{% else %}Relist{% endif %}
+                </a>
+            </div>
         {% elif request.user.is_authenticated and request.user.is_psu_user %}
             <a href="{% url 'send_message' item.id %}" 
                class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">

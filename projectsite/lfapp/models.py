@@ -155,6 +155,10 @@ class Item(TimeStampedModel):
         help_text='User who claimed this item'
     )
     claimed_at = models.DateTimeField(null=True, blank=True, help_text='When the item was claimed')
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether the item is listed publicly (users can delist their posts)'
+    )
 
     class Meta:
         ordering = ['-created_at']
