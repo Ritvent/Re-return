@@ -65,10 +65,25 @@
                 Edit
             </a>
         {% elif item.posted_by.email %}
-            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={{ item.posted_by.email }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
+            <a href="mailto:{{ item.posted_by.email }}" 
+               onclick="handleEmailClick(event, '{{ item.posted_by.email }}')" 
+               class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
                 <i data-lucide="mail" class="h-4 w-4"></i>
                 Contact
             </a>
         {% endif %}
     </div>
 </div>
+
+<script>
+function handleEmailClick(event, email) {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+        // Desktop: Open Gmail web in new tab
+        event.preventDefault();
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`, '_blank');
+    }
+    // Mobile: Let default mailto: handle it (opens Gmail app or email chooser)
+}
+</script>
