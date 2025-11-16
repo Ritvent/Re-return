@@ -1,0 +1,197 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Moderation Queue - HanApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <section class="mb-8">
+            <div class="bg-gradient-to-br from-orange-500/10 via-background to-yellow-500/20 rounded-xl p-8 md:p-12">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="rounded-full bg-orange-500/10 p-2">
+                        <i data-lucide="shield-check" class="h-6 w-6 text-orange-600"></i>
+                    </div>
+                    <h1 class="text-4xl font-bold">Moderation Queue</h1>
+                    {% if pending_count > 0 %}
+                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-orange-500 text-white">
+                        {{ pending_count }}
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-xl text-muted-foreground text-pretty">
+                    Review and approve pending items before they go live
+                </p>
+            </div>
+        </section>
+
+        <!-- Stats Grid -->
+        <section class="mb-8">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Pending Review</h3>
+                        <i data-lucide="clock" class="h-4 w-4 text-orange-500"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold text-orange-600">{{ pending_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Awaiting approval</p>
+                    </div>
+                </div>
+
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Approved</h3>
+                        <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold text-green-600">{{ approved_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Live items</p>
+                    </div>
+                </div>
+
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Rejected</h3>
+                        <i data-lucide="x-circle" class="h-4 w-4 text-red-600"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold text-red-600">{{ rejected_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Declined items</p>
+                    </div>
+                </div>
+
+                <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
+                    <div class="px-6 pb-2 flex items-center justify-between">
+                        <h3 class="text-sm font-medium">Claimed</h3>
+                        <i data-lucide="package-check" class="h-4 w-4 text-blue-600"></i>
+                    </div>
+                    <div class="px-6">
+                        <div class="text-3xl font-bold text-blue-600">{{ claimed_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Success stories</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pending Items Grid -->
+        <section>
+            <div class="bg-card text-card-foreground rounded-xl border shadow-sm">
+                <div class="px-6 py-6 border-b">
+                    <h2 class="font-semibold text-lg">Items Pending Review</h2>
+                    <p class="text-sm text-muted-foreground">Review item details and approve or reject each submission</p>
+                </div>
+                <div class="p-6">
+                    {% if pending_items %}
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for item in pending_items %}
+                        <div class="bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all">
+                            <!-- Item Image -->
+                            <div class="relative h-56 bg-muted">
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+                                {% else %}
+                                    <img src="{% static 'lfapp/images/placeholder.svg' %}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+                                {% endif %}
+                                <span class="absolute top-3 right-3 px-3 py-1 rounded-md text-sm font-semibold {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                                <span class="absolute top-3 left-3 px-3 py-1 rounded-md text-sm font-semibold bg-orange-500 text-white">
+                                    Pending Review
+                                </span>
+                            </div>
+
+                            <!-- Item Details -->
+                            <div class="p-5 space-y-4">
+                                <div>
+                                    <h3 class="font-semibold text-xl mb-2">{{ item.title }}</h3>
+                                    <p class="text-sm text-muted-foreground line-clamp-3">{{ item.description }}</p>
+                                </div>
+
+                                <div class="space-y-2 pt-2 border-t">
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i data-lucide="tag" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                                        <span class="font-medium">{{ item.get_category_display }}</span>
+                                    </div>
+
+                                    {% if item.location_found or item.location_lost %}
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i data-lucide="map-pin" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                                        <span class="line-clamp-1">
+                                            {% if item.item_type == 'found' %}{{ item.location_found|default:"Not specified" }}{% else %}{{ item.location_lost|default:"Not specified" }}{% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if item.date_found or item.date_lost %}
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                                        <span>
+                                            {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i data-lucide="clock" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                                        <span>Posted {{ item.created_at|timesince }} ago</span>
+                                    </div>
+                                </div>
+
+                                <!-- Posted By -->
+                                <div class="pt-3 border-t space-y-1">
+                                    <p class="text-xs text-muted-foreground">Posted by:</p>
+                                    <p class="text-sm font-semibold">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex gap-2 pt-2">
+                                    <form method="post" action="{% url 'admin_quick_approve' item.id %}" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium transition-all"
+                                                onclick="return confirm('Approve this item? It will become publicly visible.')">
+                                            <i data-lucide="check" class="h-4 w-4"></i>
+                                            Approve
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'admin_quick_reject' item.id %}" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-all"
+                                                onclick="return confirm('Reject this item? It will not be shown publicly.')">
+                                            <i data-lucide="x" class="h-4 w-4"></i>
+                                            Reject
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-16">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+                            <i data-lucide="check-circle-2" class="h-8 w-8 text-green-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">All Caught Up!</h3>
+                        <p class="text-muted-foreground max-w-md mx-auto">
+                            There are no items pending review at the moment. New submissions will appear here.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

@@ -17,6 +17,9 @@ urlpatterns = [
     path('message/<int:item_id>/', views.send_message_view, name='send_message'),
     path('messages/inbox/', views.messages_inbox_view, name='messages_inbox'),
     path('messages/sent/', views.messages_sent_view, name='messages_sent'),
-    path('admin/', views.admin_dashboard_view, name='admin_dashboard'),
+    path('dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
+    path('moderation/', views.admin_moderation_queue_view, name='admin_moderation'),
+    path('moderation/approve/<int:item_id>/', views.admin_quick_approve_view, name='admin_quick_approve'),
+    path('moderation/reject/<int:item_id>/', views.admin_quick_reject_view, name='admin_quick_reject'),
 ]
 

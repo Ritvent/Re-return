@@ -11,15 +11,30 @@
         <!-- Header -->
         <section class="mb-8">
             <div class="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-xl p-8 md:p-12">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="rounded-full bg-primary/10 p-2">
-                        <i data-lucide="users" class="h-6 w-6 text-primary"></i>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="rounded-full bg-primary/10 p-2">
+                                <i data-lucide="users" class="h-6 w-6 text-primary"></i>
+                            </div>
+                            <h1 class="text-4xl font-bold">Admin Dashboard</h1>
+                        </div>
+                        <p class="text-xl text-muted-foreground text-pretty">
+                            Manage and monitor all lost and found items in the system
+                        </p>
                     </div>
-                    <h1 class="text-4xl font-bold">Admin Dashboard</h1>
+                    <div>
+                        <a href="{% url 'admin_moderation' %}" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg {% if pending_count > 0 %}bg-orange-600 hover:bg-orange-700 text-white animate-pulse{% else %}bg-primary hover:bg-primary/90 text-primary-foreground{% endif %} font-semibold transition-all shadow-md">
+                            <i data-lucide="shield-check" class="h-5 w-5"></i>
+                            <span>Moderation Queue</span>
+                            {% if pending_count > 0 %}
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-white text-orange-600">
+                                {{ pending_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </div>
                 </div>
-                <p class="text-xl text-muted-foreground text-pretty">
-                    Manage and monitor all lost and found items in the system
-                </p>
             </div>
         </section>
 
