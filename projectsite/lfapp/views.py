@@ -533,8 +533,10 @@ def messages_inbox_view(request):
     """View all received messages"""
     from .models import ContactMessage
     
+    # Get only root messages (not replies) received by user
     received_messages = ContactMessage.objects.filter(
-        recipient=request.user
+        recipient=request.user,
+        parent_message__isnull=True
     ).select_related('sender', 'item').order_by('-created_at')
     
     # Mark messages as read when viewing inbox
@@ -550,12 +552,102 @@ def messages_sent_view(request):
     """View all sent messages"""
     from .models import ContactMessage
     
+    # Get only root messages (not replies) sent by user
     sent_messages = ContactMessage.objects.filter(
-        sender=request.user
+        sender=request.user,
+        parent_message__isnull=True
     ).select_related('recipient', 'item').order_by('-created_at')
     
     context = {
         'messages': sent_messages,
     }
     return render(request, 'lfapp/messages_sent.html', context)
+
+@login_required
+def message_thread_view(request, message_id):
+    """View a message conversation thread and reply"""
+    from django.shortcuts import get_object_or_404
+    from .models import ContactMessage
+    
+    # Get the root message
+    root_message = get_object_or_404(ContactMessage, id=message_id)
+    
+    # Check if user is part of this conversation
+    if root_message.sender != request.user and root_message.recipient != request.user:
+        messages.error(request, 'You do not have permission to view this conversation.')
+        return redirect('messages_inbox')
+    
+    # Get all messages in thread
+    thread_messages = root_message.get_thread_messages()
+    
+    # Mark unread messages as read for current user
+    thread_messages.filter(recipient=request.user, is_read=False).update(is_read=True)
+    
+    # Handle reply submission
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+        image = request.FILES.get('image')
+        
+        if not message_text and not image:
+            messages.error(request, 'Please provide a message or image.')
+            return redirect('message_thread', message_id=message_id)
+        
+        # Determine recipient (the other person in conversation)
+        recipient = root_message.sender if root_message.recipient == request.user else root_message.recipient
+        
+        # Create reply message
+        reply = ContactMessage.objects.create(
+            item=root_message.item,
+            sender=request.user,
+            recipient=recipient,
+            subject=f"Re: {root_message.subject}",
+            message=message_text,
+            image=image,
+            parent_message=root_message if root_message.parent_message is None else root_message.parent_message
+        )
+        
+        # Send email notification via SendGrid
+        from django.core.mail import EmailMessage
+        from django.conf import settings
+        
+        email_subject = f'[HanApp] New reply about: {root_message.item.title}'
+        email_body = f"""
+Hello {recipient.get_full_name() or recipient.email},
+
+You have received a new reply from {request.user.get_full_name() or request.user.email} about the {root_message.item.item_type} item "{root_message.item.title}".
+
+Message:
+{message_text}
+
+---
+View the full conversation at: {request.build_absolute_uri(f'/messages/thread/{root_message.id}/')}
+
+This is an automated message from HanApp - PSU Lost and Found
+"""
+        
+        try:
+            email = EmailMessage(
+                subject=email_subject,
+                body=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[recipient.email],
+            )
+            
+            # Attach image if provided
+            if image:
+                email.attach(image.name, image.read(), image.content_type)
+            
+            email.send(fail_silently=False)
+        except Exception as e:
+            print(f"Email sending failed: {e}")
+        
+        messages.success(request, 'Your reply has been sent!')
+        return redirect('message_thread', message_id=message_id)
+    
+    context = {
+        'root_message': root_message,
+        'thread_messages': thread_messages,
+        'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
+    }
+    return render(request, 'lfapp/message_thread.html', context)
 

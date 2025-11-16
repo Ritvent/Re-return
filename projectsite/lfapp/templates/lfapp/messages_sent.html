@@ -87,11 +87,19 @@
 
                             <!-- Your Contact Info -->
                             {% if msg.sender_phone %}
-                            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                                 <i data-lucide="phone" class="h-4 w-4"></i>
                                 <span>Your contact: {{ msg.sender_phone }}</span>
                             </div>
                             {% endif %}
+
+                            <!-- View Thread Button -->
+                            <div class="pt-4 border-t border-border">
+                                <a href="{% url 'message_thread' msg.id %}" class="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm inline-flex">
+                                    <i data-lucide="message-circle" class="h-4 w-4"></i>
+                                    View Conversation
+                                </a>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}

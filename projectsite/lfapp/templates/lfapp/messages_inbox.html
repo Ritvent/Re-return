@@ -99,9 +99,13 @@
 
                             <!-- Reply Button -->
                             <div class="pt-4 border-t border-border flex gap-3">
-                                <a href="mailto:{{ msg.sender.email }}" class="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm">
+                                <a href="{% url 'message_thread' msg.id %}" class="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm">
                                     <i data-lucide="reply" class="h-4 w-4"></i>
-                                    Reply via Email
+                                    Reply in App
+                                </a>
+                                <a href="mailto:{{ msg.sender.email }}" class="flex items-center gap-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent transition-all text-sm">
+                                    <i data-lucide="mail" class="h-4 w-4"></i>
+                                    Email
                                 </a>
                                 {% if msg.sender_phone %}
                                 <a href="tel:{{ msg.sender_phone }}" class="flex items-center gap-2 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent transition-all text-sm">
