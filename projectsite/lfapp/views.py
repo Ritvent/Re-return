@@ -161,6 +161,9 @@ def admin_dashboard_view(request):
     # Get unique category count
     category_count = all_items.values('category').distinct().count()
     
+    # Get pending items count for moderation queue badge
+    pending_count = all_items.filter(status='pending').count()
+    
     context = {
         'all_items': all_items,
         'total_items': total_items,
@@ -169,9 +172,85 @@ def admin_dashboard_view(request):
         'lost_percentage': int(lost_percentage),
         'found_percentage': int(found_percentage),
         'category_count': category_count,
+        'pending_count': pending_count,
     }
     
     return render(request, 'lfapp/admin_dashboard.html', context)
+
+@login_required
+def admin_moderation_queue_view(request):
+    """Admin moderation queue - Visual preview and quick approve/reject"""
+    from django.utils import timezone
+    
+    # Check if user is admin
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('home')
+    
+    # Get pending items for moderation
+    pending_items = Item.objects.filter(
+        status='pending'
+    ).select_related('posted_by').order_by('-created_at')
+    
+    # Get all items for statistics
+    all_items = Item.objects.all()
+    pending_count = pending_items.count()
+    approved_count = all_items.filter(status='approved').count()
+    rejected_count = all_items.filter(status='rejected').count()
+    claimed_count = all_items.filter(status='claimed').count()
+    
+    context = {
+        'pending_items': pending_items,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+        'claimed_count': claimed_count,
+    }
+    
+    return render(request, 'lfapp/admin_moderation.html', context)
+
+@login_required
+def admin_quick_approve_view(request, item_id):
+    """Admin: Quick approve from moderation queue"""
+    from django.shortcuts import get_object_or_404
+    from django.utils import timezone
+    
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    if request.method == 'POST':
+        item.status = 'approved'
+        item.approved_by = request.user
+        item.approved_at = timezone.now()
+        item.save()
+        
+        messages.success(request, f'✅ Approved: "{item.title}" is now visible to everyone!')
+        return redirect('admin_moderation')
+    
+    return redirect('admin_moderation')
+
+@login_required
+def admin_quick_reject_view(request, item_id):
+    """Admin: Quick reject from moderation queue"""
+    from django.shortcuts import get_object_or_404
+    
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    if request.method == 'POST':
+        item.status = 'rejected'
+        item.save()
+        
+        messages.warning(request, f'❌ Rejected: "{item.title}" will not be published.')
+        return redirect('admin_moderation')
+    
+    return redirect('admin_moderation')
 
 def logout_view(request):
     """Logout user"""
