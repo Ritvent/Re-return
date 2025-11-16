@@ -10,16 +10,24 @@
     <main class="container mx-auto px-4 py-8">
         <!-- Header -->
         <section class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-4xl font-bold mb-2">Sent Messages</h1>
-                    <p class="text-xl text-muted-foreground">
-                        Messages you've sent to item posters
-                    </p>
-                </div>
-                <a href="{% url 'messages_inbox' %}" class="px-4 py-2 rounded-md border border-input bg-background hover:bg-accent transition-all">
-                    <i data-lucide="inbox" class="inline h-4 w-4 mr-2"></i>
+            <div class="mb-6">
+                <h1 class="text-4xl font-bold mb-2">Messages</h1>
+                <p class="text-xl text-muted-foreground">
+                    Your conversations and inquiries
+                </p>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="flex gap-2 border-b border-border">
+                <a href="{% url 'messages_inbox' %}" 
+                   class="flex items-center gap-2 px-4 py-3 font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors">
+                    <i data-lucide="inbox" class="h-4 w-4"></i>
                     Inbox
+                </a>
+                <a href="{% url 'messages_sent' %}" 
+                   class="flex items-center gap-2 px-4 py-3 font-medium border-b-2 border-primary text-primary transition-colors">
+                    <i data-lucide="send" class="h-4 w-4"></i>
+                    Sent Messages
                 </a>
             </div>
         </section>
@@ -48,7 +56,8 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm text-muted-foreground">{{ msg.created_at|timesince }} ago</p>
+                                    <p class="text-sm font-medium text-foreground">{{ msg.created_at|date:"M d, Y" }}</p>
+                                    <p class="text-xs text-muted-foreground mb-1">{{ msg.created_at|time:"g:i A" }}</p>
                                     {% if msg.is_read %}
                                         <span class="inline-flex items-center gap-1 text-xs text-primary">
                                             <i data-lucide="check-check" class="h-3 w-3"></i>
