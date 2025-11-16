@@ -1,23 +1,40 @@
 {% load static %}
-<div class="bg-card text-card-foreground rounded-xl border overflow-hidden hover:shadow-lg transition-shadow">
+<div class="bg-card text-card-foreground rounded-xl border overflow-hidden hover:shadow-lg transition-shadow relative group" 
+     {% if request.user == item.posted_by and item.status != 'claimed' %}
+     data-item-menu="{{ item.id }}"
+     data-long-press="{{ item.id }}"
+     style="-webkit-touch-callout: none; -webkit-user-select: none;"
+     {% endif %}>
+    
     <div class="relative h-48 bg-muted">
         {% if item.image %}
             <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
         {% else %}
             <img src="{% static 'lfapp/images/placeholder.svg' %}" alt="{{ item.title }}" class="w-full h-full object-cover" />
         {% endif %}
-        <span class="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
-            {{ item.get_item_type_display }}
-        </span>
+        
         {% if item.status == 'pending' and request.user == item.posted_by %}
         <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white">
             Pending Approval
         </span>
         {% endif %}
+
+        <!-- Three-dot menu button (desktop only, visible on hover, owner only) -->
+        {% if request.user == item.posted_by and item.status != 'claimed' %}
+        <button type="button" 
+                onclick="event.stopPropagation(); toggleItemMenu({{ item.id }});" 
+                class="hidden md:flex absolute top-3 right-3 w-8 h-8 items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+            <i data-lucide="more-vertical" class="h-4 w-4 text-slate-700"></i>
+        </button>
+        {% endif %}
     </div>
 
     <div class="p-4 space-y-3">
         <div>
+            <!-- Item type badge above title -->
+            <span class="inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ item.get_item_type_display }}
+            </span>
             <h3 class="font-semibold text-lg mb-1 line-clamp-1">{{ item.title }}</h3>
             <p class="text-sm text-muted-foreground line-clamp-2">{{ item.description }}</p>
         </div>
@@ -88,17 +105,10 @@
                     </p>
                 </div>
             {% else %}
-                <!-- Owner actions - Three dot menu -->
-                <div class="relative" data-item-menu="{{ item.id }}">
-                    <button type="button" 
-                            onclick="toggleItemMenu({{ item.id }})" 
-                            class="flex items-center justify-center w-full px-4 py-2 rounded-md border border-slate-300 hover:bg-slate-50 transition-all text-sm font-medium text-slate-700">
-                        <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                        <span class="ml-2">Manage</span>
-                    </button>
-
+                <!-- Owner actions - Hidden dropdown/sheet (triggered by 3-dot or long-press) -->
+                <div>
                     <!-- Desktop Dropdown Menu -->
-                    <div id="menu-{{ item.id }}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div id="menu-{{ item.id }}" class="hidden fixed w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                         <a href="{% url 'edit_item' item.id %}" 
                            class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
                             <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
@@ -189,7 +199,46 @@
 </div>
 
 <script>
-function toggleItemMenu(itemId) {
+// Long press timer and state
+let longPressTimers = {};
+let longPressActive = {};
+
+// Initialize long-press listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-long-press]').forEach(card => {
+        const itemId = card.getAttribute('data-long-press');
+        
+        // Prevent default context menu
+        card.addEventListener('contextmenu', function(e) {
+            if (window.innerWidth < 768) {
+                e.preventDefault();
+            }
+        });
+        
+        card.addEventListener('touchstart', function(e) {
+            longPressActive[itemId] = false;
+            longPressTimers[itemId] = setTimeout(() => {
+                longPressActive[itemId] = true;
+                toggleItemMenu(itemId);
+                // Add haptic feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }, 500);
+        }, { passive: true });
+        
+        card.addEventListener('touchend', function(e) {
+            clearTimeout(longPressTimers[itemId]);
+        });
+        
+        card.addEventListener('touchmove', function(e) {
+            clearTimeout(longPressTimers[itemId]);
+            longPressActive[itemId] = false;
+        });
+    });
+});
+
+function toggleItemMenu(itemId, buttonElement) {
     const menu = document.getElementById('menu-' + itemId);
     const sheet = document.getElementById('sheet-' + itemId);
     
@@ -206,8 +255,28 @@ function toggleItemMenu(itemId) {
             document.body.style.overflow = '';
         }
     } else {
+        // Close all other menus first
+        document.querySelectorAll('[id^="menu-"]').forEach(m => {
+            if (m.id !== 'menu-' + itemId) {
+                m.classList.add('hidden');
+            }
+        });
+        
         // Toggle desktop dropdown
-        menu.classList.toggle('hidden');
+        const isHidden = menu.classList.contains('hidden');
+        
+        if (isHidden) {
+            // Position the menu relative to the three-dot button
+            const button = event.target.closest('button');
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                menu.style.top = (rect.bottom + 5) + 'px';
+                menu.style.right = (window.innerWidth - rect.right) + 'px';
+            }
+            menu.classList.remove('hidden');
+        } else {
+            menu.classList.add('hidden');
+        }
     }
 }
 
