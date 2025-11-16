@@ -71,7 +71,7 @@
         {% endif %}
     </div>
 
-    <div class="px-4 pb-4 pt-0 flex flex-col gap-2">
+    <div class="px-4 pb-4 pt-0">
         {% if request.user == item.posted_by %}
             {% if item.status == 'claimed' %}
                 <!-- Claimed items are success stories - cannot be edited/deleted -->
@@ -88,24 +88,89 @@
                     </p>
                 </div>
             {% else %}
-                <!-- Active/Pending items can be managed -->
-                <div class="flex gap-2">
-                    <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border border-orange-500 text-orange-500 hover:bg-orange-50 transition-all text-sm">
-                        <i data-lucide="pencil" class="h-4 w-4"></i>
-                        Edit
-                    </a>
-                    <a href="{% url 'toggle_listing' item.id %}" 
-                       class="flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md border {% if item.is_active %}border-gray-500 text-gray-600 hover:bg-gray-50{% else %}border-green-500 text-green-600 hover:bg-green-50{% endif %} transition-all text-sm"
-                       onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item? It will be hidden from public view.{% else %}Relist this item to make it publicly visible again?{% endif %}')">
-                        <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}" class="h-4 w-4"></i>
-                        {% if item.is_active %}Delist{% else %}Relist{% endif %}
-                    </a>
+                <!-- Owner actions - Three dot menu -->
+                <div class="relative" data-item-menu="{{ item.id }}">
+                    <button type="button" 
+                            onclick="toggleItemMenu({{ item.id }})" 
+                            class="flex items-center justify-center w-full px-4 py-2 rounded-md border border-slate-300 hover:bg-slate-50 transition-all text-sm font-medium text-slate-700">
+                        <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+                        <span class="ml-2">Manage</span>
+                    </button>
+
+                    <!-- Desktop Dropdown Menu -->
+                    <div id="menu-{{ item.id }}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <a href="{% url 'edit_item' item.id %}" 
+                           class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                            <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
+                            <span>Edit Item</span>
+                        </a>
+                        <a href="{% url 'toggle_listing' item.id %}" 
+                           onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item? It will be hidden from public view.{% else %}Relist this item to make it publicly visible again?{% endif %}')"
+                           class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                            <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}" class="h-4 w-4 {% if item.is_active %}text-gray-600{% else %}text-green-600{% endif %}"></i>
+                            <span>{% if item.is_active %}Delist Item{% else %}Relist Item{% endif %}</span>
+                        </a>
+                        <div class="border-t border-slate-200 my-1"></div>
+                        <a href="{% url 'delete_item' item.id %}" 
+                           class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
+                            <i data-lucide="trash-2" class="h-4 w-4"></i>
+                            <span>Delete Permanently</span>
+                        </a>
+                    </div>
+
+                    <!-- Mobile Bottom Sheet -->
+                    <div id="sheet-{{ item.id }}" class="hidden fixed inset-0 z-50 md:hidden">
+                        <!-- Backdrop -->
+                        <div class="absolute inset-0 bg-black/50 animate-in fade-in duration-200" onclick="toggleItemMenu({{ item.id }})"></div>
+                        
+                        <!-- Bottom Sheet -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300">
+                            <div class="p-4 border-b border-slate-200">
+                                <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
+                                <h3 class="font-semibold text-lg">Manage Item</h3>
+                            </div>
+                            <div class="p-2">
+                                <a href="{% url 'edit_item' item.id %}" 
+                                   class="flex items-center gap-4 px-4 py-4 hover:bg-slate-50 rounded-lg transition-colors">
+                                    <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                        <i data-lucide="pencil" class="h-5 w-5 text-orange-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-slate-900">Edit Item</div>
+                                        <div class="text-xs text-slate-500">Update details and information</div>
+                                    </div>
+                                </a>
+                                <a href="{% url 'toggle_listing' item.id %}" 
+                                   onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item?{% else %}Relist this item?{% endif %}')"
+                                   class="flex items-center gap-4 px-4 py-4 hover:bg-slate-50 rounded-lg transition-colors">
+                                    <div class="w-10 h-10 rounded-full {% if item.is_active %}bg-gray-100{% else %}bg-green-100{% endif %} flex items-center justify-center">
+                                        <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}" class="h-5 w-5 {% if item.is_active %}text-gray-600{% else %}text-green-600{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-slate-900">{% if item.is_active %}Delist Item{% else %}Relist Item{% endif %}</div>
+                                        <div class="text-xs text-slate-500">{% if item.is_active %}Hide from public view{% else %}Make publicly visible{% endif %}</div>
+                                    </div>
+                                </a>
+                                <a href="{% url 'delete_item' item.id %}" 
+                                   class="flex items-center gap-4 px-4 py-4 hover:bg-red-50 rounded-lg transition-colors">
+                                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                        <i data-lucide="trash-2" class="h-5 w-5 text-red-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-red-600">Delete Permanently</div>
+                                        <div class="text-xs text-red-400">This action cannot be undone</div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="p-4">
+                                <button onclick="toggleItemMenu({{ item.id }})" 
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium text-slate-700 transition-colors">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <a href="{% url 'delete_item' item.id %}" 
-                   class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-red-500 text-red-600 hover:bg-red-50 transition-all text-sm">
-                    <i data-lucide="trash-2" class="h-4 w-4"></i>
-                    Delete Permanently
-                </a>
             {% endif %}
         {% elif request.user.is_authenticated and request.user.is_psu_user %}
             <a href="{% url 'send_message' item.id %}" 
@@ -122,3 +187,60 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+function toggleItemMenu(itemId) {
+    const menu = document.getElementById('menu-' + itemId);
+    const sheet = document.getElementById('sheet-' + itemId);
+    
+    // Check if mobile (window width < 768px)
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+        // Toggle mobile bottom sheet
+        if (sheet.classList.contains('hidden')) {
+            sheet.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        } else {
+            sheet.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    } else {
+        // Toggle desktop dropdown
+        menu.classList.toggle('hidden');
+    }
+}
+
+// Close menu when clicking outside (desktop)
+document.addEventListener('click', function(event) {
+    const menus = document.querySelectorAll('[id^="menu-"]');
+    menus.forEach(menu => {
+        const button = menu.parentElement.querySelector('button');
+        if (!menu.contains(event.target) && !button.contains(event.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+});
+
+// Close with ESC key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        // Close all dropdowns
+        document.querySelectorAll('[id^="menu-"]').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+        // Close all bottom sheets
+        document.querySelectorAll('[id^="sheet-"]').forEach(sheet => {
+            sheet.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+    }
+});
+
+// Reinitialize Lucide icons after DOM updates
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
