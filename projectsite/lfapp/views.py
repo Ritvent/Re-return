@@ -6,6 +6,7 @@ from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from .models import Item, CustomUser
 from .forms import ItemForm
+from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email
 
 def landing_view(request):
     """Landing page with login form"""
@@ -227,6 +228,9 @@ def admin_quick_approve_view(request, item_id):
         item.approved_at = timezone.now()
         item.save()
         
+        # Send approval email to item poster
+        send_item_approved_email(item, request)
+        
         messages.success(request, f'✅ Approved: "{item.title}" is now visible to everyone!')
         return redirect('admin_moderation')
     
@@ -246,6 +250,9 @@ def admin_quick_reject_view(request, item_id):
     if request.method == 'POST':
         item.status = 'rejected'
         item.save()
+        
+        # Send rejection email to item poster
+        send_item_rejected_email(item, request)
         
         messages.warning(request, f'❌ Rejected: "{item.title}" will not be published.')
         return redirect('admin_moderation')
@@ -273,6 +280,10 @@ def post_lost_item_view(request):
             item.posted_by = request.user
             item.status = 'pending'  # Items need admin approval
             item.save()
+            
+            # Send pending approval email
+            send_item_pending_email(item, request)
+            
             messages.success(request, 'Your lost item has been submitted and is pending approval.')
             return redirect('lost_items')
     else:
@@ -300,6 +311,10 @@ def post_found_item_view(request):
             item.posted_by = request.user
             item.status = 'pending'  # Items need admin approval
             item.save()
+            
+            # Send pending approval email
+            send_item_pending_email(item, request)
+            
             messages.success(request, 'Your found item has been submitted and is pending approval.')
             return redirect('found_items')
     else:
@@ -364,9 +379,17 @@ def edit_item_view(request, item_id):
             updated_item = form.save(commit=False)
             # Keep original posted_by and reset to pending if not admin
             updated_item.posted_by = item.posted_by
+            status_changed_to_pending = False
             if not request.user.is_admin_user():
+                if updated_item.status != 'pending':
+                    status_changed_to_pending = True
                 updated_item.status = 'pending'  # Needs re-approval after edit
             updated_item.save()
+            
+            # Send pending email if status changed to pending
+            if status_changed_to_pending:
+                send_item_pending_email(updated_item, request)
+            
             messages.success(request, 'Your item has been updated and is pending approval.')
             return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     else:
@@ -533,8 +556,10 @@ def messages_inbox_view(request):
     """View all received messages"""
     from .models import ContactMessage
     
+    # Get only root messages (not replies) received by user
     received_messages = ContactMessage.objects.filter(
-        recipient=request.user
+        recipient=request.user,
+        parent_message__isnull=True
     ).select_related('sender', 'item').order_by('-created_at')
     
     # Mark messages as read when viewing inbox
@@ -550,12 +575,102 @@ def messages_sent_view(request):
     """View all sent messages"""
     from .models import ContactMessage
     
+    # Get only root messages (not replies) sent by user
     sent_messages = ContactMessage.objects.filter(
-        sender=request.user
+        sender=request.user,
+        parent_message__isnull=True
     ).select_related('recipient', 'item').order_by('-created_at')
     
     context = {
         'messages': sent_messages,
     }
     return render(request, 'lfapp/messages_sent.html', context)
+
+@login_required
+def message_thread_view(request, message_id):
+    """View a message conversation thread and reply"""
+    from django.shortcuts import get_object_or_404
+    from .models import ContactMessage
+    
+    # Get the root message
+    root_message = get_object_or_404(ContactMessage, id=message_id)
+    
+    # Check if user is part of this conversation
+    if root_message.sender != request.user and root_message.recipient != request.user:
+        messages.error(request, 'You do not have permission to view this conversation.')
+        return redirect('messages_inbox')
+    
+    # Get all messages in thread
+    thread_messages = root_message.get_thread_messages()
+    
+    # Mark unread messages as read for current user
+    thread_messages.filter(recipient=request.user, is_read=False).update(is_read=True)
+    
+    # Handle reply submission
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+        image = request.FILES.get('image')
+        
+        if not message_text and not image:
+            messages.error(request, 'Please provide a message or image.')
+            return redirect('message_thread', message_id=message_id)
+        
+        # Determine recipient (the other person in conversation)
+        recipient = root_message.sender if root_message.recipient == request.user else root_message.recipient
+        
+        # Create reply message
+        reply = ContactMessage.objects.create(
+            item=root_message.item,
+            sender=request.user,
+            recipient=recipient,
+            subject=f"Re: {root_message.subject}",
+            message=message_text,
+            image=image,
+            parent_message=root_message if root_message.parent_message is None else root_message.parent_message
+        )
+        
+        # Send email notification via SendGrid
+        from django.core.mail import EmailMessage
+        from django.conf import settings
+        
+        email_subject = f'[HanApp] New reply about: {root_message.item.title}'
+        email_body = f"""
+Hello {recipient.get_full_name() or recipient.email},
+
+You have received a new reply from {request.user.get_full_name() or request.user.email} about the {root_message.item.item_type} item "{root_message.item.title}".
+
+Message:
+{message_text}
+
+---
+View the full conversation at: {request.build_absolute_uri(f'/messages/thread/{root_message.id}/')}
+
+This is an automated message from HanApp - PSU Lost and Found
+"""
+        
+        try:
+            email = EmailMessage(
+                subject=email_subject,
+                body=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[recipient.email],
+            )
+            
+            # Attach image if provided
+            if image:
+                email.attach(image.name, image.read(), image.content_type)
+            
+            email.send(fail_silently=False)
+        except Exception as e:
+            print(f"Email sending failed: {e}")
+        
+        messages.success(request, 'Your reply has been sent!')
+        return redirect('message_thread', message_id=message_id)
+    
+    context = {
+        'root_message': root_message,
+        'thread_messages': thread_messages,
+        'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
+    }
+    return render(request, 'lfapp/message_thread.html', context)
 

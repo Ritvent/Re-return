@@ -128,6 +128,12 @@ class Item(TimeStampedModel):
     date_found = models.DateField(blank=True, null=True)
     date_lost = models.DateField(blank=True, null=True)
     image = models.ImageField(upload_to='item_images/', blank=True, null=True)
+    contact_number = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text='Optional contact number for this item'
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     posted_by = models.ForeignKey(
         CustomUser,
@@ -291,6 +297,20 @@ class ContactMessage(TimeStampedModel):
         default='',
         help_text='Optional contact phone number'
     )
+    image = models.ImageField(
+        upload_to='message_images/',
+        blank=True,
+        null=True,
+        help_text='Optional image attachment'
+    )
+    parent_message = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        help_text='Parent message if this is a reply'
+    )
     is_read = models.BooleanField(default=False, help_text='Has recipient read this message')
     
     class Meta:
@@ -300,6 +320,18 @@ class ContactMessage(TimeStampedModel):
     
     def __str__(self):
         return f"Message from {self.sender.email} to {self.recipient.email} about {self.item.title}"
+    
+    def get_thread_messages(self):
+        """Get all messages in this conversation thread"""
+        if self.parent_message:
+            root = self.parent_message
+        else:
+            root = self
+        
+        # Get root message and all its replies
+        return ContactMessage.objects.filter(
+            models.Q(id=root.id) | models.Q(parent_message=root)
+        ).order_by('created_at')
 
 
 

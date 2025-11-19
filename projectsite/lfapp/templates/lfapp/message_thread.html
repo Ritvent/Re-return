@@ -1,0 +1,182 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Conversation - Han<span class="text-primary">App</span>{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="{% url 'messages_inbox' %}" class="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Back to Messages
+            </a>
+        </div>
+
+        <!-- Conversation Header -->
+        <div class="bg-card border border-border rounded-lg p-6 mb-6">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold mb-2">{{ root_message.subject }}</h1>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <i data-lucide="user" class="h-5 w-5 text-primary"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-foreground">
+                                Conversation with {{ other_user.get_full_name|default:other_user.username }}
+                            </p>
+                            <p class="text-sm text-muted-foreground">{{ other_user.email }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item Reference -->
+            <div class="bg-muted/30 rounded-lg p-3 border border-border">
+                <p class="text-xs text-muted-foreground mb-1">About:</p>
+                <a href="{% if root_message.item.item_type == 'lost' %}{% url 'lost_items' %}{% else %}{% url 'found_items' %}{% endif %}" 
+                   class="text-sm font-medium text-primary hover:underline">
+                    {{ root_message.item.title }} ({{ root_message.item.get_item_type_display }})
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages Thread -->
+        <div class="space-y-4 mb-6">
+            {% for message in thread_messages %}
+            <div class="{% if message.sender == request.user %}ml-8{% else %}mr-8{% endif %}">
+                <div class="bg-card border border-border rounded-lg p-4 {% if message.sender == request.user %}border-l-4 border-l-primary{% endif %}">
+                    <!-- Message Header -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <i data-lucide="user" class="h-4 w-4 text-primary"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-foreground">
+                                    {% if message.sender == request.user %}
+                                        You
+                                    {% else %}
+                                        {{ message.sender.get_full_name|default:message.sender.username }}
+                                    {% endif %}
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ message.created_at|date:"M d, Y" }} at {{ message.created_at|time:"g:i A" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message Content -->
+                    {% if message.message %}
+                    <div class="prose prose-sm max-w-none text-foreground mb-3">
+                        <p class="whitespace-pre-wrap">{{ message.message }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Message Image -->
+                    {% if message.image %}
+                    <div class="mt-3">
+                        <a href="{{ message.image.url }}" target="_blank" class="block">
+                            <img src="{{ message.image.url }}" 
+                                 alt="Attachment" 
+                                 class="max-w-md rounded-lg border border-border hover:opacity-90 transition-opacity">
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Reply Form -->
+        <div class="bg-card border border-border rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="reply" class="h-5 w-5"></i>
+                Send a Reply
+            </h2>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="space-y-4">
+                    <!-- Message Text -->
+                    <div>
+                        <label for="message" class="block text-sm font-medium mb-2">Message</label>
+                        <textarea 
+                            id="message" 
+                            name="message" 
+                            rows="5"
+                            placeholder="Type your reply..."
+                            class="w-full px-4 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"></textarea>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div>
+                        <label for="image" class="block text-sm font-medium mb-2 flex items-center gap-2">
+                            <i data-lucide="image" class="h-4 w-4"></i>
+                            Attach Image (Optional)
+                        </label>
+                        <input 
+                            type="file" 
+                            id="image" 
+                            name="image" 
+                            accept="image/*"
+                            class="w-full px-4 py-2 rounded-md border border-input bg-background file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90">
+                        <p class="text-xs text-muted-foreground mt-1">Max file size: 10MB</p>
+                    </div>
+
+                    <!-- Image Preview -->
+                    <div id="imagePreview" class="hidden">
+                        <p class="text-sm font-medium mb-2">Preview:</p>
+                        <img id="previewImg" src="" alt="Preview" class="max-w-xs rounded-lg border border-border">
+                        <button type="button" onclick="clearImage()" class="mt-2 text-sm text-destructive hover:underline">
+                            Remove image
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex gap-3">
+                        <button 
+                            type="submit" 
+                            class="flex items-center gap-2 px-6 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-medium">
+                            <i data-lucide="send" class="h-4 w-4"></i>
+                            Send Reply
+                        </button>
+                        <a href="{% url 'messages_inbox' %}" 
+                           class="flex items-center gap-2 px-6 py-2 rounded-md border border-input bg-background hover:bg-accent transition-all">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+    
+    // Image preview
+    document.getElementById('image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('previewImg').src = event.target.result;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    function clearImage() {
+        document.getElementById('image').value = '';
+        document.getElementById('imagePreview').classList.add('hidden');
+    }
+</script>
+{% endblock %}
