@@ -6,6 +6,7 @@ from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from .models import Item, CustomUser
 from .forms import ItemForm
+from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email
 
 def landing_view(request):
     """Landing page with login form"""
@@ -227,6 +228,9 @@ def admin_quick_approve_view(request, item_id):
         item.approved_at = timezone.now()
         item.save()
         
+        # Send approval email to item poster
+        send_item_approved_email(item, request)
+        
         messages.success(request, f'✅ Approved: "{item.title}" is now visible to everyone!')
         return redirect('admin_moderation')
     
@@ -246,6 +250,9 @@ def admin_quick_reject_view(request, item_id):
     if request.method == 'POST':
         item.status = 'rejected'
         item.save()
+        
+        # Send rejection email to item poster
+        send_item_rejected_email(item, request)
         
         messages.warning(request, f'❌ Rejected: "{item.title}" will not be published.')
         return redirect('admin_moderation')
@@ -273,6 +280,10 @@ def post_lost_item_view(request):
             item.posted_by = request.user
             item.status = 'pending'  # Items need admin approval
             item.save()
+            
+            # Send pending approval email
+            send_item_pending_email(item, request)
+            
             messages.success(request, 'Your lost item has been submitted and is pending approval.')
             return redirect('lost_items')
     else:
@@ -300,6 +311,10 @@ def post_found_item_view(request):
             item.posted_by = request.user
             item.status = 'pending'  # Items need admin approval
             item.save()
+            
+            # Send pending approval email
+            send_item_pending_email(item, request)
+            
             messages.success(request, 'Your found item has been submitted and is pending approval.')
             return redirect('found_items')
     else:
@@ -364,9 +379,17 @@ def edit_item_view(request, item_id):
             updated_item = form.save(commit=False)
             # Keep original posted_by and reset to pending if not admin
             updated_item.posted_by = item.posted_by
+            status_changed_to_pending = False
             if not request.user.is_admin_user():
+                if updated_item.status != 'pending':
+                    status_changed_to_pending = True
                 updated_item.status = 'pending'  # Needs re-approval after edit
             updated_item.save()
+            
+            # Send pending email if status changed to pending
+            if status_changed_to_pending:
+                send_item_pending_email(updated_item, request)
+            
             messages.success(request, 'Your item has been updated and is pending approval.')
             return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     else:
