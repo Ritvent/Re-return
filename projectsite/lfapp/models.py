@@ -128,6 +128,12 @@ class Item(TimeStampedModel):
     date_found = models.DateField(blank=True, null=True)
     date_lost = models.DateField(blank=True, null=True)
     image = models.ImageField(upload_to='item_images/', blank=True, null=True)
+    contact_number = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text='Optional contact number for this item'
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     posted_by = models.ForeignKey(
         CustomUser,

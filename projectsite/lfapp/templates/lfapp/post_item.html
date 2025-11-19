@@ -119,6 +119,20 @@
                             {% endif %}
                         </div>
 
+                        <!-- Contact Number -->
+                        <div class="space-y-2">
+                            <label for="{{ form.contact_number.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.contact_number.label }}
+                            </label>
+                            {{ form.contact_number }}
+                            {% if form.contact_number.errors %}
+                                <p class="text-sm text-destructive">{{ form.contact_number.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground">
+                                Optional: Provide a contact number for this item. Only numbers, +, -, spaces, and parentheses are allowed.
+                            </p>
+                        </div>
+
                         <!-- Image Upload -->
                         <div class="space-y-2">
                             <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-foreground">
