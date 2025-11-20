@@ -18,9 +18,9 @@
                 {% if user.is_authenticated %}
                     {% now "H" as current_hour %}
                     <h1 class="text-4xl md:text-5xl font-bold leading-snug mb-4">
-                        {% if current_hour < 12 %}
+                        {% if current_hour|add:"0" < 12 %}
                             Good morning,
-                        {% elif current_hour < 18 %}
+                        {% elif current_hour|add:"0" < 18 %}
                             Good afternoon,
                         {% else %}
                             Good evening,
