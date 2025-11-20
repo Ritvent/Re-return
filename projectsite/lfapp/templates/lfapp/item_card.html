@@ -5,10 +5,11 @@
 
     <div class="relative h-48 bg-muted">
         {% if item.image %}
-        <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
         {% else %}
-        <img src="{% static 'lfapp/images/placeholder.svg' %}" alt="{{ item.title }}"
-            class="w-full h-full object-cover" />
+            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted/70 to-muted/50">
+                <i data-lucide="image-off" class="h-14 w-14 text-muted-foreground/60"></i>
+            </div>
         {% endif %}
 
         {% if item.status == 'pending' and request.user == item.posted_by %}
