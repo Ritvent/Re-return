@@ -102,6 +102,7 @@ class Item(TimeStampedModel):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('claimed', 'Claimed'),
+        ('found', 'Found/Recovered'),
     ]
 
     title = models.CharField(max_length=200)
@@ -161,6 +162,22 @@ class Item(TimeStampedModel):
         help_text='User who claimed this item'
     )
     claimed_at = models.DateTimeField(null=True, blank=True, help_text='When the item was claimed')
+    completion_name = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Name of person who claimed (for found items) or returned (for lost items) the item'
+    )
+    completion_email = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Email of person who claimed or returned the item'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the item was marked as found/claimed by the poster'
+    )
     is_active = models.BooleanField(
         default=True,
         help_text='Whether the item is listed publicly (users can delist their posts)'
@@ -175,12 +192,12 @@ class Item(TimeStampedModel):
         return f"({self.get_item_type_display()}: {self.title})"
     
     def can_be_deleted(self):
-        """Only non-claimed items can be deleted - claimed items are success stories"""
-        return self.status != 'claimed'
+        """Only non-completed items can be deleted - completed items are success stories"""
+        return self.status not in ['claimed', 'found']
     
     def can_be_delisted(self):
-        """Only non-claimed items can be delisted - claimed items must remain visible"""
-        return self.status != 'claimed'
+        """Only non-completed items can be delisted - completed items must remain visible"""
+        return self.status not in ['claimed', 'found']
     
 """Reclaim, Recover"""
 class Claim(TimeStampedModel):
