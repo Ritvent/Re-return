@@ -1,6 +1,6 @@
 {% load static %}
 <div class="bg-card text-card-foreground rounded-xl border overflow-hidden hover:shadow-lg transition-shadow relative group"
-    {% if request.user == item.posted_by and item.status != 'claimed' %} data-item-menu="{{ item.id }}"
+    {% if request.user == item.posted_by and item.status not in 'claimed,found' %} data-item-menu="{{ item.id }}"
     data-long-press="{{ item.id }}" style="-webkit-touch-callout: none; -webkit-user-select: none;" {% endif %}>
 
     <div class="relative h-48 bg-muted">
@@ -19,7 +19,7 @@
         {% endif %}
 
         <!-- Three-dot menu button (desktop only, visible on hover, owner only) -->
-        {% if request.user == item.posted_by and item.status != 'claimed' %}
+        {% if request.user == item.posted_by and item.status not in 'claimed,found' %}
         <button type="button" onclick="event.stopPropagation(); window.toggleItemMenu({{ item.id }});"
             class="hidden md:flex absolute top-3 right-3 w-8 h-8 items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
             <i data-lucide="more-vertical" class="h-4 w-4 text-slate-700"></i>
@@ -134,6 +134,22 @@
                     class="underline">Contact Admin</a>
             </p>
         </div>
+        {% elif item.status == 'found' %}
+        <!-- Found items are success stories - cannot be edited/deleted -->
+        <div class="p-3 rounded-md bg-green-50 border border-green-200">
+            <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>
+                <span class="text-sm font-semibold text-green-800">✓ Successfully Found/Recovered</span>
+            </div>
+            <p class="text-xs text-green-700">
+                This item remains visible as a success story. Thank you for using PalSU HanApp!
+            </p>
+            <p class="text-xs text-green-600 mt-1">
+                Need to remove for privacy? <a
+                    href="mailto:admin@psu.palawan.edu.ph?subject=Privacy Request: Item {{ item.id }}"
+                    class="underline">Contact Admin</a>
+            </p>
+        </div>
         {% else %}
         <!-- Owner actions - Hidden dropdown/sheet (triggered by 3-dot or long-press) -->
         <div>
@@ -152,6 +168,13 @@
                         class="h-4 w-4 {% if item.is_active %}text-gray-600{% else %}text-green-600{% endif %}"></i>
                     <span>{% if item.is_active %}Delist Item{% else %}Relist Item{% endif %}</span>
                 </a>
+                {% if item.status == 'approved' %}
+                <a href="{% url 'mark_complete' item.id %}"
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition-colors text-sm text-green-700">
+                    <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+                    <span>{% if item.item_type == 'lost' %}Mark as Found{% else %}Mark as Claimed{% endif %}</span>
+                </a>
+                {% endif %}
                 <div class="border-t border-slate-200 my-1"></div>
                 <a href="{% url 'delete_item' item.id %}"
                     class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
@@ -197,6 +220,18 @@
                                 <div class="text-xs text-slate-500">{% if item.is_active %}Hide from public view{% else %}Make publicly visible{% endif %}</div>
                             </div>
                         </a>
+                        {% if item.status == 'approved' %}
+                        <a href="{% url 'mark_complete' item.id %}"
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-green-50 rounded-lg transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-green-700">{% if item.item_type == 'lost' %}Mark as Found{% else %}Mark as Claimed{% endif %}</div>
+                                <div class="text-xs text-green-600">{% if item.item_type == 'lost' %}Item has been recovered{% else %}Item has been returned to owner{% endif %}</div>
+                            </div>
+                        </a>
+                        {% endif %}
                         <a href="{% url 'delete_item' item.id %}"
                             class="flex items-center gap-4 px-4 py-4 hover:bg-red-50 rounded-lg transition-colors">
                             <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
