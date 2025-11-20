@@ -59,7 +59,7 @@ python manage.py runserver
 ### 6. Set Up Git for Your Workflow
 
 ```bash
-# After cloning, you don't automatically have dev locally
+# After cloning, you won't have dev-branch locally yet
 # Check current branch (should be main)
 git branch
 
@@ -101,10 +101,14 @@ git push -u origin <yourname-branch> # To first time push your local dedicated b
 venv\Scripts\activate
 
 # 2. Pull latest changes from remote dev everytime
-# Stay on your branch and pull dev directly and resolve conflicts if there are
+# Stay on your branch and to always commit first your current work if you modified your code 
 git checkout <yourname-branch>
 git pull origin dev
+# Resolve any conflicts if there are
+git add .
+git commit -m "merge: resolve conflicts with dev"
 
+# If there are no conflicts, you dont need to add and commit
 
 # 4. If requirements.txt was updated, reinstall
 pip install -r requirements.txt
