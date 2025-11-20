@@ -145,7 +145,7 @@ class ItemCompletionForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
-            'placeholder': 'Full name of the person'
+            
         }),
         label='Full Name'
     )
@@ -153,7 +153,7 @@ class ItemCompletionForm(forms.Form):
         required=True,
         widget=forms.EmailInput(attrs={
             'class': 'w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
-            'placeholder': 'email@example.com'
+            'placeholder': 'email@psu.palawan.edu.ph'
         }),
         label='Email Address'
     )
