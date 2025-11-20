@@ -30,6 +30,9 @@ def landing_view(request):
 
 def home_view(request):
     """Home page showing recent lost and found items - Public and authenticated users can view"""
+    from itertools import chain
+    from operator import attrgetter
+    
     # Get recent lost items (limit to 3)
     recent_lost = Item.objects.filter(
         item_type='lost',
@@ -44,19 +47,45 @@ def home_view(request):
         is_active=True
     ).select_related('posted_by').order_by('-created_at')[:3]
     
-    # Get recent claimed/completed items (limit to 5)
-    recent_claimed = Item.objects.filter(
+    # Get recent activities: recent posts + recent completions
+    # Recent posts (both lost and found, approved and active)
+    recent_posts = Item.objects.filter(
+        status='approved',
+        is_active=True
+    ).select_related('posted_by').order_by('-created_at')[:10]
+    
+    # Recent completed items (claimed and found)
+    recent_completed = Item.objects.filter(
         status__in=['claimed', 'found'],
         is_active=True
-    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')[:5]
+    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')[:10]
+    
+    # Combine and sort by most recent activity (either created_at or completed_at)
+    all_activities = list(chain(recent_posts, recent_completed))
+    # Remove duplicates (items that are both posted and completed)
+    seen_ids = set()
+    unique_activities = []
+    for item in all_activities:
+        if item.id not in seen_ids:
+            seen_ids.add(item.id)
+            unique_activities.append(item)
+    
+    # Sort by most recent activity (completed_at for completed items, created_at for posts)
+    def get_activity_time(item):
+        if item.status in ['claimed', 'found'] and item.completed_at:
+            return item.completed_at
+        return item.created_at
+    
+    recent_activities = sorted(unique_activities, key=get_activity_time, reverse=True)[:10]
     
     context = {
         'recent_lost': recent_lost,
         'recent_found': recent_found,
-        'recent_claimed': recent_claimed,
+        'recent_activities': recent_activities,
     }
     
     return render(request, 'lfapp/home.html', context)
+
 
 def lost_items_view(request):
     """View all lost items with search and filter - Public access allowed"""

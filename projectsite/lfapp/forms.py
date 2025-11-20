@@ -105,7 +105,7 @@ class ItemForm(forms.ModelForm):
             # Display name is mandatory for found items
             self.fields['display_name'].required = True
             self.fields['display_name'].initial = True
-            self.fields['display_name'].help_text = 'Required: Your name will be displayed as "Found by [Your Name]"'
+            self.fields['display_name'].help_text = 'Required: Your name will be displayed for transparency'
 
     def clean_contact_number(self):
         """Validate contact number contains only allowed characters"""

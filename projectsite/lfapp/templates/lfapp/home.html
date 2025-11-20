@@ -107,7 +107,7 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-3xl font-bold">Recently Found</h2>
-                    <p class="text-muted-foreground">Check if your item has been found</p>
+                    <p class="text-muted-foreground">Check for items that have been found</p>
                 </div>
                 <a href="{% url 'found_items' %}">
                     <button class="px-4 py-2 rounded-md flex items-center gap-2
@@ -135,7 +135,7 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-3xl font-bold">Recent Activities</h2>
-                    <p class="text-muted-foreground">Recently claimed and reunited items</p>
+                    <p class="text-muted-foreground">Recently completed items</p>
                 </div>
                 <a href="{% url 'claimed_items' %}">
                     <button class="px-4 py-2 rounded-md flex items-center gap-2
@@ -145,7 +145,8 @@
                 </a>
             </div>
 
-            {% if recent_claimed %}
+
+            {% if recent_activities %}
                 <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
@@ -153,14 +154,15 @@
                                 <tr>
                                     <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Item</th>
                                     <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Type</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Claimed By</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Claimed On</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Status</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Activity Details</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Date</th>
                                     <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Category</th>
                                 </tr>
                             </thead>
 
                             <tbody class="divide-y divide-border">
-                                {% for item in recent_claimed %}
+                                {% for item in recent_activities %}
                                 <tr class="hover:bg-muted/30 transition-colors">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
@@ -192,18 +194,75 @@
                                     </td>
 
                                     <td class="px-6 py-4">
-                                        {% if item.claimed_by %}
-                                            <p class="font-medium">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
-                                        {% else %}
-                                            <p class="italic text-muted-foreground">Not specified</p>
+                                        {% if item.status == 'claimed' %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                                <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                                Claimed
+                                            </span>
+                                        {% elif item.status == 'found' %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                                <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                                Returned
+                                            </span>
+                                        {% elif item.status == 'approved' %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                                                <i data-lucide="file-text" class="h-3 w-3"></i>
+                                                Posted
+                                            </span>
                                         {% endif %}
                                     </td>
 
                                     <td class="px-6 py-4">
-                                        {% if item.claimed_at %}
-                                            <p>{{ item.claimed_at|date:"M d, Y" }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
+                                        {% if item.status == 'claimed' or item.status == 'found' %}
+                                            {% if item.completion_name and item.completion_email %}
+                                                <div class="flex items-start gap-2">
+                                                    <i data-lucide="user-check" class="h-4 w-4 text-green-600 mt-0.5"></i>
+                                                    <div>
+                                                        <p class="font-medium">{{ item.completion_name }}</p>
+                                                        <p class="text-xs text-muted-foreground">{{ item.completion_email }}</p>
+                                                        <p class="text-xs text-green-600 mt-0.5">
+                                                            {% if item.item_type == 'found' and item.status == 'claimed' %}
+                                                                Claimed this item
+                                                            {% elif item.item_type == 'lost' and item.status == 'found' %}
+                                                                Returned this item
+                                                            {% endif %}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            {% elif item.claimed_by %}
+                                                <p class="font-medium">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
+                                                <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
+                                            {% else %}
+                                                <p class="italic text-muted-foreground">Not specified</p>
+                                            {% endif %}
+                                        {% else %}
+                                            <div class="flex items-start gap-2">
+                                                <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
+                                                <div>
+                                                    <p class="text-sm text-muted-foreground">Posted by</p>
+                                                    {% if item.display_name %}
+                                                        <p class="font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                                                        <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                                    {% else %}
+                                                        <p class="font-medium">{{ item.posted_by.email }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="px-6 py-4">
+                                        {% if item.status == 'claimed' or item.status == 'found' %}
+                                            {% if item.completed_at %}
+                                                <p>{{ item.completed_at|date:"M d, Y" }}</p>
+                                                <p class="text-xs text-muted-foreground">{{ item.completed_at|time:"g:i A" }}</p>
+                                            {% elif item.claimed_at %}
+                                                <p>{{ item.claimed_at|date:"M d, Y" }}</p>
+                                                <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
+                                            {% endif %}
+                                        {% else %}
+                                            <p>{{ item.created_at|date:"M d, Y" }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.created_at|time:"g:i A" }}</p>
                                         {% endif %}
                                     </td>
 
@@ -220,7 +279,7 @@
             {% else %}
                 <div class="text-center bg-card border border-border rounded-xl py-16 shadow-sm">
                     <i data-lucide="inbox" class="h-12 w-12 mx-auto mb-4 text-muted-foreground"></i>
-                    <p class="text-muted-foreground">No recent claim activities</p>
+                    <p class="text-muted-foreground">No recent activities</p>
                 </div>
             {% endif %}
         </section>
