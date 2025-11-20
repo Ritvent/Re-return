@@ -41,6 +41,7 @@
             {% if item.location_found or item.location_lost %}
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <i data-lucide="map-pin" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                <span class="font-medium">{% if item.item_type == 'found' %}Found at:{% else %}Last Location:{% endif %}</span>
                 <span class="line-clamp-1">
                     {% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}
                 </span>
@@ -50,6 +51,7 @@
             {% if item.date_found or item.date_lost %}
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                <span class="font-medium">{% if item.item_type == 'found' %}Date Found:{% else %}Date Lost:{% endif %}</span>
                 <span>
                     {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
                 </span>
@@ -69,7 +71,16 @@
         <div class="pt-2 border-t">
             {% if request.user == item.posted_by %}
             <p class="text-xs text-muted-foreground mb-1">Posted by you</p>
-            <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <i data-lucide="mail" class="h-3 w-3"></i>
+                <span>{{ item.posted_by.email }}</span>
+            </div>
+            {% if item.contact_number %}
+            <div class="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <i data-lucide="phone" class="h-3 w-3"></i>
+                <span>{{ item.contact_number }}</span>
+            </div>
+            {% endif %}
             {% elif item.display_name %}
             {% if item.item_type == 'found' %}
             <p class="text-xs text-muted-foreground mb-1">Found by:</p>
@@ -77,10 +88,28 @@
             <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
             {% endif %}
             <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
-            <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <i data-lucide="mail" class="h-3 w-3"></i>
+                <span>{{ item.posted_by.email }}</span>
+            </div>
+            {% if item.contact_number %}
+            <div class="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <i data-lucide="phone" class="h-3 w-3"></i>
+                <span>{{ item.contact_number }}</span>
+            </div>
+            {% endif %}
             {% else %}
             <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
-            <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <i data-lucide="mail" class="h-3 w-3"></i>
+                <span>{{ item.posted_by.email }}</span>
+            </div>
+            {% if item.contact_number %}
+            <div class="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <i data-lucide="phone" class="h-3 w-3"></i>
+                <span>{{ item.contact_number }}</span>
+            </div>
+            {% endif %}
             {% endif %}
         </div>
         {% endif %}
