@@ -137,3 +137,24 @@ class ItemForm(forms.ModelForm):
             self.add_error('display_name', 'You must agree to display your name for found items')
         
         return cleaned_data
+
+class ItemCompletionForm(forms.Form):
+    """Form for marking items as found/claimed"""
+    completion_name = forms.CharField(
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
+            'placeholder': 'Full name of the person'
+        }),
+        label='Full Name'
+    )
+    completion_email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
+            'placeholder': 'email@example.com'
+        }),
+        label='Email Address'
+    )
+

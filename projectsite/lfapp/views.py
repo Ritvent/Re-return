@@ -44,11 +44,11 @@ def home_view(request):
         is_active=True
     ).select_related('posted_by').order_by('-created_at')[:3]
     
-    # Get recent claimed items (limit to 5)
+    # Get recent claimed/completed items (limit to 5)
     recent_claimed = Item.objects.filter(
-        status='claimed',
+        status__in=['claimed', 'found'],
         is_active=True
-    ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')[:5]
+    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')[:5]
     
     context = {
         'recent_lost': recent_lost,
@@ -70,8 +70,7 @@ def lost_items_view(request):
     else:
         items = Item.objects.filter(
             item_type='lost',
-            status='approved',
-            is_active=True
+            status__in=['approved']
         ).select_related('posted_by').order_by('-created_at')
     
     # Search functionality
@@ -111,8 +110,7 @@ def found_items_view(request):
     else:
         items = Item.objects.filter(
             item_type='found',
-            status='approved',
-            is_active=True
+            status__in=['approved']
         ).select_related('posted_by').order_by('-created_at')
     
     # Search functionality
@@ -327,10 +325,10 @@ def post_found_item_view(request):
     return render(request, 'lfapp/post_item.html', context)
 
 def claimed_items_view(request):
-    """View all claimed items - Public access allowed"""
+    """View all completed items (both claimed and found) - Public access allowed"""
     items = Item.objects.filter(
-        status='claimed'
-    ).select_related('posted_by', 'claimed_by').order_by('-claimed_at')
+        status__in=['claimed', 'found']
+    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -673,4 +671,61 @@ This is an automated message from HanApp - PSU Lost and Found
         'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
     }
     return render(request, 'lfapp/message_thread.html', context)
+
+@login_required
+def mark_item_complete_view(request, item_id):
+    """Mark an item as found (for lost items) or claimed (for found items)"""
+    from django.shortcuts import get_object_or_404
+    from django.utils import timezone
+    from .forms import ItemCompletionForm
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Check if user is the owner
+    if item.posted_by != request.user:
+        messages.error(request, 'You can only mark your own items as complete.')
+        return redirect('home')
+    
+    # Check if item is approved
+    if item.status != 'approved':
+        messages.error(request, 'Only approved items can be marked as complete.')
+        return redirect('home')
+    
+    # Determine the completion type based on item_type
+    completion_type = 'found' if item.item_type == 'lost' else 'claimed'
+    action_label = 'Mark as Found' if item.item_type == 'lost' else 'Mark as Claimed'
+    person_label = 'Returner' if item.item_type == 'lost' else 'Claimer'
+    
+    if request.method == 'POST':
+        form = ItemCompletionForm(request.POST)
+        if form.is_valid():
+            # Update item with completion details
+            item.completion_name = form.cleaned_data['completion_name']
+            item.completion_email = form.cleaned_data['completion_email']
+            item.completed_at = timezone.now()
+            
+            # Set status based on item type
+            if item.item_type == 'lost':
+                item.status = 'found'
+            else:  # found item
+                item.status = 'claimed'
+            
+            item.save()
+            
+            success_message = f'✅ Your {item.item_type} item "{item.title}" has been marked as {completion_type}!'
+            messages.success(request, success_message)
+            
+            # Redirect to appropriate items list
+            return redirect('claimed_items')
+    else:
+        form = ItemCompletionForm()
+    
+    context = {
+        'form': form,
+        'item': item,
+        'action_label': action_label,
+        'person_label': person_label,
+        'completion_type': completion_type,
+    }
+    return render(request, 'lfapp/mark_complete.html', context)
 

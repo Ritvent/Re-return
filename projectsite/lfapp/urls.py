@@ -22,5 +22,6 @@ urlpatterns = [
     path('moderation/', views.admin_moderation_queue_view, name='admin_moderation'),
     path('moderation/approve/<int:item_id>/', views.admin_quick_approve_view, name='admin_quick_approve'),
     path('moderation/reject/<int:item_id>/', views.admin_quick_reject_view, name='admin_quick_reject'),
+    path('complete/<int:item_id>/', views.mark_item_complete_view, name='mark_complete'),
 ]
 
