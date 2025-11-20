@@ -7,48 +7,66 @@
 <div class="min-h-screen bg-background">
     {% include 'lfapp/navbar.html' %}
 
-    <main class="container mx-auto px-4 py-8">
-        <!-- Welcome Section -->
-        <section class="mb-12">
-            <div class="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-xl p-8 md:p-12">
+    <main class="container mx-auto px-4 py-12">
+
+        <!-- Welcome Banner -->
+        <section class="mb-16">
+            <div class="rounded-2xl p-10 md:p-14 bg-gradient-to-br 
+                        from-primary/10 via-background to-accent/20
+                        shadow-sm border border-border/50">
+
                 {% if user.is_authenticated %}
-                    <h1 class="text-4xl font-bold mb-4 text-balance">
-                        {% now "H" as current_hour %}
+                    {% now "H" as current_hour %}
+                    <h1 class="text-4xl md:text-5xl font-bold leading-snug mb-4">
                         {% if current_hour < 12 %}
-                            Good morning, {{ user.get_full_name|default:user.username }}!
+                            Good morning,
                         {% elif current_hour < 18 %}
-                            Good afternoon, {{ user.get_full_name|default:user.username }}!
+                            Good afternoon,
                         {% else %}
-                            Good evening, {{ user.get_full_name|default:user.username }}!
+                            Good evening,
                         {% endif %}
+                        <span class="text-primary">{{ user.get_full_name|default:user.username }}</span>!
                     </h1>
-                    <p class="text-xl text-muted-foreground mb-6 text-pretty">
-                        Browse the latest lost and found items in our University
+
+                    <p class="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
+                        Browse the latest lost and found items in our University.
                     </p>
+
                 {% else %}
-                    <h1 class="text-4xl font-bold mb-4 text-balance">
-                        Welcome to Han<span class="text-primary">App </span>!
+                    <h1 class="text-4xl md:text-5xl font-bold leading-snug mb-4">
+                        Welcome to <span class="text-primary">HanApp</span>!
                     </h1>
-                    <p class="text-xl text-muted-foreground mb-6 text-pretty">
-                        Browse lost and found items. Sign in with your PSU email to report items.
+                    <p class="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
+                        Browse lost and found items. Sign in with your PSU email to report new items.
                     </p>
                 {% endif %}
+
                 <div class="flex flex-wrap gap-4">
                     <a href="{% url 'lost_items' %}">
-                        <button class="px-6 py-3 text-lg rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
-                            View All Lost Items
+                        <button class="px-6 py-3 rounded-lg text-lg 
+                                       bg-primary text-primary-foreground font-medium
+                                       hover:bg-primary/90 transition-all shadow-sm">
+                            View Lost Items
                         </button>
                     </a>
+
                     <a href="{% url 'found_items' %}">
-                        <button class="px-6 py-3 text-lg rounded-md border border-input bg-background text-foreground font-medium hover:bg-accent hover:text-accent-foreground transition-all">
-                            View All Found Items
+                        <button class="px-6 py-3 rounded-lg text-lg 
+                                       bg-background border border-border font-medium
+                                       hover:bg-accent hover:text-accent-foreground 
+                                       transition-all">
+                            View Found Items
                         </button>
                     </a>
+
                     {% if not user.is_authenticated %}
                     <a href="{% url 'landing' %}">
-                        <button class="px-6 py-3 text-lg rounded-md border-2 border-primary text-primary font-medium hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2">
+                        <button class="px-6 py-3 rounded-lg text-lg border-2 border-primary 
+                                       text-primary font-medium flex items-center gap-2
+                                       hover:bg-primary hover:text-primary-foreground 
+                                       transition-all">
                             <i data-lucide="log-in" class="h-5 w-5"></i>
-                            Sign In to Report Items
+                            Sign In to Report
                         </button>
                     </a>
                     {% endif %}
@@ -56,17 +74,17 @@
             </div>
         </section>
 
-        <!-- Recent Lost Items -->
-        <section class="mb-12">
+        <!-- Recently Lost Items -->
+        <section class="mb-16">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h2 class="text-3xl font-bold mb-2">Recently Lost</h2>
+                    <h2 class="text-3xl font-bold">Recently Lost</h2>
                     <p class="text-muted-foreground">Help someone find their belongings</p>
                 </div>
                 <a href="{% url 'lost_items' %}">
-                    <button class="px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2">
-                        View All
-                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    <button class="px-4 py-2 rounded-md flex items-center gap-2
+                                   hover:bg-accent hover:text-accent-foreground transition-all">
+                        View All <i data-lucide="arrow-right" class="h-4 w-4"></i>
                     </button>
                 </a>
             </div>
@@ -78,23 +96,23 @@
                     {% endfor %}
                 {% else %}
                     <div class="col-span-full text-center py-12 text-muted-foreground">
-                        No recently lost items
+                        No recently lost items.
                     </div>
                 {% endif %}
             </div>
         </section>
 
-        <!-- Recent Found Items -->
-        <section class="mb-12">
+        <!-- Recently Found Items -->
+        <section class="mb-16">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h2 class="text-3xl font-bold mb-2">Recently Found</h2>
+                    <h2 class="text-3xl font-bold">Recently Found</h2>
                     <p class="text-muted-foreground">Check if your item has been found</p>
                 </div>
                 <a href="{% url 'found_items' %}">
-                    <button class="px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2">
-                        View All
-                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    <button class="px-4 py-2 rounded-md flex items-center gap-2
+                                   hover:bg-accent hover:text-accent-foreground transition-all">
+                        View All <i data-lucide="arrow-right" class="h-4 w-4"></i>
                     </button>
                 </a>
             </div>
@@ -106,40 +124,41 @@
                     {% endfor %}
                 {% else %}
                     <div class="col-span-full text-center py-12 text-muted-foreground">
-                        No recently found items
+                        No recently found items.
                     </div>
                 {% endif %}
             </div>
         </section>
 
-        <!-- Recent Activities (Claimed Items) -->
-        <section class="mb-12">
+        <!-- Recent Claimed Items -->
+        <section>
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h2 class="text-3xl font-bold mb-2">Recent Activities</h2>
+                    <h2 class="text-3xl font-bold">Recent Activities</h2>
                     <p class="text-muted-foreground">Recently claimed and reunited items</p>
                 </div>
                 <a href="{% url 'claimed_items' %}">
-                    <button class="px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2">
-                        View All
-                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    <button class="px-4 py-2 rounded-md flex items-center gap-2
+                                   hover:bg-accent hover:text-accent-foreground transition-all">
+                        View All <i data-lucide="arrow-right" class="h-4 w-4"></i>
                     </button>
                 </a>
             </div>
 
             {% if recent_claimed %}
-                <div class="bg-card border border-border rounded-lg overflow-hidden">
+                <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="w-full">
+                        <table class="w-full text-sm">
                             <thead class="bg-muted/50 border-b border-border">
                                 <tr>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Item</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Type</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Claimed By</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Claimed On</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Category</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Item</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Type</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Claimed By</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Claimed On</th>
+                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Category</th>
                                 </tr>
                             </thead>
+
                             <tbody class="divide-y divide-border">
                                 {% for item in recent_claimed %}
                                 <tr class="hover:bg-muted/30 transition-colors">
@@ -153,13 +172,16 @@
                                                 </div>
                                             {% endif %}
                                             <div>
-                                                <p class="font-medium text-foreground">{{ item.title }}</p>
-                                                <p class="text-sm text-muted-foreground">{{ item.description|truncatewords:8 }}</p>
+                                                <p class="font-medium">{{ item.title }}</p>
+                                                <p class="text-muted-foreground text-xs">
+                                                    {{ item.description|truncatewords:8 }}
+                                                </p>
                                             </div>
                                         </div>
                                     </td>
+
                                     <td class="px-6 py-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full
                                             {% if item.item_type == 'lost' %}
                                                 bg-destructive/10 text-destructive
                                             {% else %}
@@ -168,24 +190,25 @@
                                             {{ item.get_item_type_display }}
                                         </span>
                                     </td>
+
                                     <td class="px-6 py-4">
                                         {% if item.claimed_by %}
-                                            <p class="text-sm text-foreground">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
+                                            <p class="font-medium">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
                                             <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
                                         {% else %}
-                                            <p class="text-sm text-muted-foreground italic">Not specified</p>
+                                            <p class="italic text-muted-foreground">Not specified</p>
                                         {% endif %}
                                     </td>
+
                                     <td class="px-6 py-4">
                                         {% if item.claimed_at %}
-                                            <p class="text-sm text-foreground">{{ item.claimed_at|date:"M d, Y" }}</p>
+                                            <p>{{ item.claimed_at|date:"M d, Y" }}</p>
                                             <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
-                                        {% else %}
-                                            <p class="text-sm text-muted-foreground italic">Not specified</p>
                                         {% endif %}
                                     </td>
+
                                     <td class="px-6 py-4">
-                                        <span class="text-sm text-muted-foreground">{{ item.get_category_display }}</span>
+                                        <span class="text-muted-foreground text-sm">{{ item.get_category_display }}</span>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -193,13 +216,15 @@
                         </table>
                     </div>
                 </div>
+
             {% else %}
-                <div class="bg-card border border-border rounded-lg p-12 text-center">
+                <div class="text-center bg-card border border-border rounded-xl py-16 shadow-sm">
                     <i data-lucide="inbox" class="h-12 w-12 mx-auto mb-4 text-muted-foreground"></i>
                     <p class="text-muted-foreground">No recent claim activities</p>
                 </div>
             {% endif %}
         </section>
+
     </main>
 </div>
 
