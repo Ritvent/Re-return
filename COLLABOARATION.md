@@ -53,19 +53,25 @@ pip install -r requirements.txt
 
 ```bash
 # Run Django development server to test
-# cd to 
 python manage.py runserver
 ```
 
 ### 6. Set Up Git for Your Workflow
 
 ```bash
+# After cloning, you don't automatically have dev locally
 # Check current branch (should be main)
 git branch
 
-# Switch to dev branch
+# Fetch all remote branches
+git fetch origin
+
+# Create local dev branch from remote dev
 git checkout dev
-git pull origin dev # you will pull the latest from dev remote
+# This automatically tracks origin/dev
+
+# Pull latest changes from remote dev
+git pull origin dev
 
 # Create your first <yourname-branch>
 git checkout -b <yourname-branch>
@@ -95,11 +101,10 @@ git push -u origin <yourname-branch> # To first time push your local dedicated b
 venv\Scripts\activate
 
 # 2. Pull latest changes from remote dev everytime
-git checkout dev
-git pull origin dev 
-
-# 3. Work on your feature branch
+# Stay on your branch and pull dev directly and resolve conflicts if there are
 git checkout <yourname-branch>
+git pull origin dev
+
 
 # 4. If requirements.txt was updated, reinstall
 pip install -r requirements.txt
@@ -144,10 +149,8 @@ git push origin yourname-branch
 
 ```bash 
 # Regularly sync with dev to avoid conflicts
-git checkout dev
-git pull origin dev
 git checkout yourname-branch
-git merge dev
+git pull origin dev
 
 # Resolve any conflicts, then push
 git push origin yourname-branch
