@@ -1,11 +1,18 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
-from .models import Item, CustomUser
-from .forms import ItemForm
+from django.core.mail import send_mail, EmailMessage
+from django.conf import settings
+from django.utils import timezone
+from itertools import chain
+from operator import attrgetter
+import os
+
+from .models import Item, CustomUser, ContactMessage
+from .forms import ItemForm, ItemCompletionForm
 from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email
 
 def landing_view(request):
@@ -14,7 +21,6 @@ def landing_view(request):
         return redirect('home')
     
     if request.method == 'POST':
-        from django.contrib.auth import authenticate
         email = request.POST.get('username')  # Using username field for email
         password = request.POST.get('password')
         
@@ -30,9 +36,6 @@ def landing_view(request):
 
 def home_view(request):
     """Home page showing recent lost and found items - Public and authenticated users can view"""
-    from itertools import chain
-    from operator import attrgetter
-    
     # Get recent lost items (limit to 3)
     recent_lost = Item.objects.filter(
         item_type='lost',
@@ -208,8 +211,6 @@ def admin_dashboard_view(request):
 @login_required
 def admin_moderation_queue_view(request):
     """Admin moderation queue - Visual preview and quick approve/reject"""
-    from django.utils import timezone
-    
     # Check if user is admin
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to access this page.')
@@ -240,9 +241,6 @@ def admin_moderation_queue_view(request):
 @login_required
 def admin_quick_approve_view(request, item_id):
     """Admin: Quick approve from moderation queue"""
-    from django.shortcuts import get_object_or_404
-    from django.utils import timezone
-    
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to perform this action.')
         return redirect('home')
@@ -266,8 +264,6 @@ def admin_quick_approve_view(request, item_id):
 @login_required
 def admin_quick_reject_view(request, item_id):
     """Admin: Quick reject from moderation queue"""
-    from django.shortcuts import get_object_or_404
-    
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to perform this action.')
         return redirect('home')
@@ -386,8 +382,6 @@ def claimed_items_view(request):
 @login_required
 def edit_item_view(request, item_id):
     """Edit an existing item - Only owner can edit"""
-    from django.shortcuts import get_object_or_404
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -433,8 +427,6 @@ def edit_item_view(request, item_id):
 @login_required
 def toggle_item_listing_view(request, item_id):
     """Toggle item active status (delist/relist) - Only owner can toggle"""
-    from django.shortcuts import get_object_or_404
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -461,9 +453,6 @@ def toggle_item_listing_view(request, item_id):
 @login_required
 def delete_item_view(request, item_id):
     """Delete an item permanently - Only owner can delete, claimed items protected"""
-    from django.shortcuts import get_object_or_404
-    import os
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -501,9 +490,6 @@ def delete_item_view(request, item_id):
 @login_required
 def send_message_view(request, item_id):
     """Send a message to item poster - Only verified PSU users"""
-    from django.shortcuts import get_object_or_404
-    from .models import ContactMessage
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is PSU verified
@@ -536,9 +522,6 @@ def send_message_view(request, item_id):
         )
         
         # Send email notification via SendGrid
-        from django.core.mail import send_mail
-        from django.conf import settings
-        
         email_subject = f'[HanApp] New message about your {item.item_type} item: {item.title}'
         email_body = f"""
 Hello {item.posted_by.get_full_name() or item.posted_by.email},
@@ -581,8 +564,6 @@ This is an automated message from HanApp - PSU Lost and Found
 @login_required
 def messages_inbox_view(request):
     """View all received messages"""
-    from .models import ContactMessage
-    
     # Get only root messages (not replies) received by user
     received_messages = ContactMessage.objects.filter(
         recipient=request.user,
@@ -600,8 +581,6 @@ def messages_inbox_view(request):
 @login_required
 def messages_sent_view(request):
     """View all sent messages"""
-    from .models import ContactMessage
-    
     # Get only root messages (not replies) sent by user
     sent_messages = ContactMessage.objects.filter(
         sender=request.user,
@@ -616,9 +595,6 @@ def messages_sent_view(request):
 @login_required
 def message_thread_view(request, message_id):
     """View a message conversation thread and reply"""
-    from django.shortcuts import get_object_or_404
-    from .models import ContactMessage
-    
     # Get the root message
     root_message = get_object_or_404(ContactMessage, id=message_id)
     
@@ -657,9 +633,6 @@ def message_thread_view(request, message_id):
         )
         
         # Send email notification via SendGrid
-        from django.core.mail import EmailMessage
-        from django.conf import settings
-        
         email_subject = f'[HanApp] New reply about: {root_message.item.title}'
         email_body = f"""
 Hello {recipient.get_full_name() or recipient.email},
@@ -704,10 +677,6 @@ This is an automated message from HanApp - PSU Lost and Found
 @login_required
 def mark_item_complete_view(request, item_id):
     """Mark an item as found (for lost items) or claimed (for found items)"""
-    from django.shortcuts import get_object_or_404
-    from django.utils import timezone
-    from .forms import ItemCompletionForm
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner

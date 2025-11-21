@@ -1,8 +1,10 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from allauth.account.models import EmailAddress
+from allauth.socialaccount.models import SocialApp
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from allauth.socialaccount.models import SocialApp
+from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 
 
@@ -19,7 +21,7 @@ class PSUEmailAdapter(DefaultAccountAdapter):
         
         if not email.endswith('@psu.palawan.edu.ph'):
             raise ValidationError(
-                'Only PSU Palawan email addresses (@psu.palawan.edu.ph) are allowed to register.'
+                'Only PSU email addresses (@psu.palawan.edu.ph) are allowed to register.'
             )
         
         return email
@@ -78,7 +80,7 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
         if not email.endswith('@psu.palawan.edu.ph'):
             messages.error(
                 request,
-                'Only PSU Palawan email addresses (@psu.palawan.edu.ph) are allowed. '
+                'Only PSU email addresses (@psu.palawan.edu.ph) are allowed. '
                 'Please sign in with your PSU email.'
             )
             # Prevent the login
@@ -106,9 +108,6 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
         Generate a unique username from email.
         Override to use email directly as username.
         """
-        from allauth.account.models import EmailAddress
-        from django.contrib.auth import get_user_model
-        
         User = get_user_model()
         
         # Try to get email from txts
