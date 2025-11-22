@@ -30,7 +30,7 @@
 
         <!-- Three-dot menu button (desktop only, visible on hover, owner only) -->
         {% if request.user == item.posted_by and item.status not in 'claimed,found' and not moderation %}
-        <button type="button" onclick="event.stopPropagation(); window.toggleItemMenu({{ item.id }});"
+        <button type="button" id="btn-menu-{{ item.id }}" onclick="event.stopPropagation(); window.toggleItemMenu({{ item.id }});"
             class="hidden md:flex absolute top-3 right-3 w-8 h-8 items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
             <i data-lucide="more-vertical" class="h-4 w-4 text-slate-700"></i>
         </button>
@@ -46,7 +46,7 @@
                 {{ item.get_item_type_display }}
             </span>
             <h3 class="font-semibold text-lg mb-1 line-clamp-1">{{ item.title }}</h3>
-            <p class="text-sm text-muted-foreground line-clamp-2">{{ item.description }}</p>
+            <p class="text-sm text-muted-foreground line-clamp-2 break-all">{{ item.description }}</p>
         </div>
 
         <div class="space-y-2">
@@ -374,10 +374,13 @@
                 const isHidden = menu.classList.contains('hidden');
 
                 if (isHidden) {
+                    // Move to body to avoid transform stacking context issues
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
+
                     // Position the menu relative to the three-dot button
-                    // Note: event is global in some browsers but better to pass it or use currentTarget if possible.
-                    // The original code used 'event' global.
-                    const button = (typeof event !== 'undefined') ? event.target.closest('button') : null;
+                    const button = document.getElementById('btn-menu-' + itemId);
                     if (button) {
                         const rect = button.getBoundingClientRect();
                         menu.style.top = (rect.bottom + 5) + 'px';
@@ -394,9 +397,19 @@
         document.addEventListener('click', function (event) {
             const menus = document.querySelectorAll('[id^="menu-"]');
             menus.forEach(menu => {
-                const button = menu.parentElement.querySelector('button');
-                if (!menu.contains(event.target) && !button.contains(event.target)) {
-                    menu.classList.add('hidden');
+                if (menu.classList.contains('hidden')) return;
+
+                const itemId = menu.id.replace('menu-', '');
+                const button = document.getElementById('btn-menu-' + itemId);
+                
+                if (button) {
+                    if (!menu.contains(event.target) && !button.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
+                } else {
+                    if (!menu.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
                 }
             });
         });
