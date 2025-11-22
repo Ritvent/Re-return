@@ -1,7 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap');
 
 /* CSS Reset for cross-browser consistency */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -20,19 +22,34 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6, p, ul, ol, li {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+li {
   margin: 0;
   padding: 0;
 }
 
-button, input, textarea, select {
+button,
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: 100%;
   line-height: inherit;
   margin: 0;
 }
 
-img, svg, video, canvas {
+img,
+svg,
+video,
+canvas {
   display: block;
   max-width: 100%;
   height: auto;
@@ -139,7 +156,9 @@ body {
 }
 
 /* Ensure consistent line-height calculation */
-p, span, div {
+p,
+span,
+div {
   line-height: 1.5;
 }
 
@@ -156,45 +175,133 @@ button {
    ============================================ */
 
 /* Custom border radius using CSS variables */
-.rounded-md { border-radius: calc(var(--radius) - 2px) !important; }
-.rounded-lg { border-radius: var(--radius) !important; }
-.rounded-xl { border-radius: calc(var(--radius) + 4px) !important; }
+.rounded-md {
+  border-radius: calc(var(--radius) - 2px) !important;
+}
+
+.rounded-lg {
+  border-radius: var(--radius) !important;
+}
+
+.rounded-xl {
+  border-radius: calc(var(--radius) + 4px) !important;
+}
 
 /* Custom background colors with opacity (Tailwind doesn't support oklch by default) */
-.bg-background { background-color: var(--background) !important; }
-.bg-card { background-color: var(--card) !important; }
-.bg-primary { background-color: var(--primary) !important; }
-.bg-primary\/10 { background-color: oklch(from var(--primary) l c h / 0.1) !important; }
-.bg-primary\/90 { background-color: oklch(from var(--primary) l c h / 0.9) !important; }
-.bg-secondary { background-color: var(--secondary) !important; }
-.bg-secondary\/80 { background-color: oklch(from var(--secondary) l c h / 0.8) !important; }
-.bg-muted { background-color: var(--muted) !important; }
-.bg-accent { background-color: var(--accent) !important; }
-.bg-accent\/20 { background-color: oklch(from var(--accent) l c h / 0.2) !important; }
-.bg-accent\/50 { background-color: oklch(from var(--accent) l c h / 0.5) !important; }
-.bg-destructive { background-color: var(--destructive) !important; }
-.bg-destructive\/10 { background-color: oklch(from var(--destructive) l c h / 0.1) !important; }
-.bg-destructive\/5 { background-color: oklch(from var(--destructive) l c h / 0.05) !important; }
-.bg-destructive\/90 { background-color: oklch(from var(--destructive) l c h / 0.9) !important; }
+.bg-background {
+  background-color: var(--background) !important;
+}
+
+.bg-card {
+  background-color: var(--card) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary) !important;
+}
+
+.bg-primary\/10 {
+  background-color: oklch(from var(--primary) l c h / 0.1) !important;
+}
+
+.bg-primary\/90 {
+  background-color: oklch(from var(--primary) l c h / 0.9) !important;
+}
+
+.bg-secondary {
+  background-color: var(--secondary) !important;
+}
+
+.bg-secondary\/80 {
+  background-color: oklch(from var(--secondary) l c h / 0.8) !important;
+}
+
+.bg-muted {
+  background-color: var(--muted) !important;
+}
+
+.bg-accent {
+  background-color: var(--accent) !important;
+}
+
+.bg-accent\/20 {
+  background-color: oklch(from var(--accent) l c h / 0.2) !important;
+}
+
+.bg-accent\/50 {
+  background-color: oklch(from var(--accent) l c h / 0.5) !important;
+}
+
+.bg-destructive {
+  background-color: var(--destructive) !important;
+}
+
+.bg-destructive\/10 {
+  background-color: oklch(from var(--destructive) l c h / 0.1) !important;
+}
+
+.bg-destructive\/5 {
+  background-color: oklch(from var(--destructive) l c h / 0.05) !important;
+}
+
+.bg-destructive\/90 {
+  background-color: oklch(from var(--destructive) l c h / 0.9) !important;
+}
 
 /* Custom text colors */
-.text-foreground { color: var(--foreground) !important; }
-.text-primary { color: var(--primary) !important; }
-.text-primary-foreground { color: var(--primary-foreground) !important; }
-.text-secondary-foreground { color: var(--secondary-foreground) !important; }
-.text-muted-foreground { color: var(--muted-foreground) !important; }
-.text-accent-foreground { color: var(--accent-foreground) !important; }
-.text-destructive { color: var(--destructive) !important; }
-.text-card-foreground { color: var(--card-foreground) !important; }
+.text-foreground {
+  color: var(--foreground) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-primary-foreground {
+  color: var(--primary-foreground) !important;
+}
+
+.text-secondary-foreground {
+  color: var(--secondary-foreground) !important;
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+
+.text-accent-foreground {
+  color: var(--accent-foreground) !important;
+}
+
+.text-destructive {
+  color: var(--destructive) !important;
+}
+
+.text-card-foreground {
+  color: var(--card-foreground) !important;
+}
 
 /* Custom border colors */
-.border-border { border-color: var(--border) !important; }
+.border-border {
+  border-color: var(--border) !important;
+}
 
 /* Custom hover states with oklch colors */
-.hover\:bg-primary\/90:hover { background-color: oklch(from var(--primary) l c h / 0.9) !important; }
-.hover\:bg-accent:hover { background-color: var(--accent) !important; }
-.hover\:bg-accent\/50:hover { background-color: oklch(from var(--accent) l c h / 0.5) !important; }
-.hover\:text-accent-foreground:hover { color: var(--accent-foreground) !important; }
+.hover\:bg-primary\/90:hover {
+  background-color: oklch(from var(--primary) l c h / 0.9) !important;
+}
+
+.hover\:bg-accent:hover {
+  background-color: var(--accent) !important;
+}
+
+.hover\:bg-accent\/50:hover {
+  background-color: oklch(from var(--accent) l c h / 0.5) !important;
+}
+
+.hover\:text-accent-foreground:hover {
+  color: var(--accent-foreground) !important;
+}
 
 /* Custom focus states */
 .focus-visible\:ring-3:focus-visible {
@@ -204,12 +311,41 @@ button {
 }
 
 /* Gradient utilities using CSS variables */
-.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
-.from-primary\/10 { --tw-gradient-from: oklch(from var(--primary) l c h / 0.1); --tw-gradient-to: oklch(from var(--primary) l c h / 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.via-background { --tw-gradient-to: var(--background); --tw-gradient-stops: var(--tw-gradient-from), var(--background), var(--tw-gradient-to); }
-.to-accent\/20 { --tw-gradient-to: oklch(from var(--accent) l c h / 0.2); }
-.from-destructive\/10 { --tw-gradient-from: oklch(from var(--destructive) l c h / 0.1); --tw-gradient-to: oklch(from var(--destructive) l c h / 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.to-destructive\/5 { --tw-gradient-to: oklch(from var(--destructive) l c h / 0.05); }
-.from-primary\/10 { --tw-gradient-from: oklch(from var(--primary) l c h / 0.1); --tw-gradient-to: oklch(from var(--primary) l c h / 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.to-primary\/5 { --tw-gradient-to: oklch(from var(--primary) l c h / 0.05); }
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
 
+.from-primary\/10 {
+  --tw-gradient-from: oklch(from var(--primary) l c h / 0.1);
+  --tw-gradient-to: oklch(from var(--primary) l c h / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.via-background {
+  --tw-gradient-to: var(--background);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--background), var(--tw-gradient-to);
+}
+
+.to-accent\/20 {
+  --tw-gradient-to: oklch(from var(--accent) l c h / 0.2);
+}
+
+.from-destructive\/10 {
+  --tw-gradient-from: oklch(from var(--destructive) l c h / 0.1);
+  --tw-gradient-to: oklch(from var(--destructive) l c h / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-destructive\/5 {
+  --tw-gradient-to: oklch(from var(--destructive) l c h / 0.05);
+}
+
+.from-primary\/10 {
+  --tw-gradient-from: oklch(from var(--primary) l c h / 0.1);
+  --tw-gradient-to: oklch(from var(--primary) l c h / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-primary\/5 {
+  --tw-gradient-to: oklch(from var(--primary) l c h / 0.05);
+}

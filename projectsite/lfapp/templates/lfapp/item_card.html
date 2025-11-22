@@ -1,19 +1,20 @@
 {% load static %}
-<div class="bg-card text-card-foreground rounded-xl border overflow-hidden hover:shadow-lg transition-shadow relative group"
+<div class="group relative bg-white p-3 pb-4 shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 hover:-translate-y-1 hover:rotate-1 hover:shadow-2xl sm:rounded-sm"
     {% if request.user == item.posted_by and item.status not in 'claimed,found' %} data-item-menu="{{ item.id }}"
     data-long-press="{{ item.id }}" style="-webkit-touch-callout: none; -webkit-user-select: none;" {% endif %}>
 
-    <div class="relative h-48 bg-muted">
+    <!-- Image Container (Square Aspect Ratio) -->
+    <div class="relative aspect-square w-full overflow-hidden bg-gray-100 shadow-inner mb-4">
         {% if item.image %}
-            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
         {% else %}
-            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted/70 to-muted/50">
-                <i data-lucide="image-off" class="h-14 w-14 text-muted-foreground/60"></i>
+            <div class="flex h-full w-full items-center justify-center bg-gray-50">
+                <i data-lucide="image-off" class="h-12 w-12 text-gray-300"></i>
             </div>
         {% endif %}
 
         {% if item.status == 'pending' and request.user == item.posted_by %}
-        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white">
+        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white shadow-sm">
             Pending Approval
         </span>
         {% endif %}
@@ -27,7 +28,8 @@
         {% endif %}
     </div>
 
-    <div class="p-4 space-y-3">
+    <!-- Original Details Section -->
+    <div class="space-y-3 px-1">
         <div>
             <!-- Item type badge above title -->
             <span
@@ -69,7 +71,7 @@
         </div>
 
         {% if item.posted_by %}
-        <div class="pt-2 border-t">
+        <div class="pt-2 border-t border-gray-100">
             {% if request.user == item.posted_by %}
             <p class="text-xs text-muted-foreground mb-1">Posted by you</p>
             <div class="flex items-center gap-2 text-xs text-muted-foreground">
@@ -116,7 +118,7 @@
         {% endif %}
     </div>
 
-    <div class="px-4 pb-4 pt-0">
+    <div class="mt-4 pt-0">
         {% if request.user == item.posted_by %}
         {% if item.status == 'claimed' %}
         <!-- Claimed items are success stories - cannot be edited/deleted -->
