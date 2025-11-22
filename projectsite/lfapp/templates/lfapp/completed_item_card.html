@@ -1,10 +1,15 @@
 {% load static %}
-<div class="group relative bg-white p-3 pb-4 shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 [&.is-toggled]:-translate-y-1 [&.is-toggled]:rotate-1 [&.is-toggled]:shadow-2xl md:hover:-translate-y-1 md:hover:rotate-1 md:hover:shadow-2xl sm:rounded-sm" onclick="if(window.innerWidth < 768) { this.classList.toggle('is-toggled'); }">
+<div class="group relative bg-white p-3 pb-4 shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 md:hover:-translate-y-1 md:hover:rotate-1 md:hover:shadow-2xl sm:rounded-sm">
+
+    <!-- Pin Decoration -->
+    <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-4 rounded-full bg-orange-500 shadow-md border border-orange-600 flex items-center justify-center">
+        <div class="h-1 w-1 rounded-full bg-white/30"></div>
+    </div>
 
     <!-- Image Container (Square Aspect Ratio) -->
     <div class="relative aspect-square w-full overflow-hidden bg-gray-100 shadow-inner mb-4">
         {% if item.image %}
-            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover transition-transform duration-500 md:group-hover:scale-110 group-[.is-toggled]:scale-110" />
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover transition-transform duration-500 md:group-hover:scale-110" />
         {% else %}
             <div class="flex h-full w-full items-center justify-center bg-gray-50">
                 <i data-lucide="image-off" class="h-12 w-12 text-gray-300"></i>
