@@ -89,7 +89,7 @@
                 </a>
             </div>
 
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% if recent_lost %}
                     {% for item in recent_lost %}
                         {% include 'lfapp/item_card.html' with item=item %}
@@ -117,7 +117,7 @@
                 </a>
             </div>
 
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% if recent_found %}
                     {% for item in recent_found %}
                         {% include 'lfapp/item_card.html' with item=item %}

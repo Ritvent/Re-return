@@ -58,7 +58,7 @@
         <!-- Items Grid -->
         <section>
             {% if items %}
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                     {% for item in items %}
                         {% include 'lfapp/item_card.html' with item=item %}
                     {% endfor %}
