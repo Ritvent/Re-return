@@ -41,14 +41,14 @@ def home_view(request):
         item_type='lost',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:3]
+    ).select_related('posted_by').order_by('-created_at')[:4]
     
-    # Get recent found items (limit to 3)
+    # Get recent found items (limit to 4)
     recent_found = Item.objects.filter(
         item_type='found',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:3]
+    ).select_related('posted_by').order_by('-created_at')[:4]
     
     # Get recent activities: recent posts + recent completions
     # Recent posts (both lost and found, approved and active)

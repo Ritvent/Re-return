@@ -207,22 +207,3 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# Google OAuth settings (will be configured via admin panel)
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-            'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
-        },
-        'APP': {
-            'client_id': '',  # Will be set via admin
-            'secret': '',     # Will be set via admin
-            'key': ''
-        },
-        'VERIFIED_EMAIL': True,
-    }
-}

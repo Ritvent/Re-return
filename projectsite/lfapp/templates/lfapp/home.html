@@ -247,7 +247,11 @@
                                         {% endif %}
                                     {% else %}
                                         <div class="flex items-start gap-2">
-                                            <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
+                                            {% if item.display_name and item.posted_by.google_profile_picture %}
+                                                <img src="{{ item.posted_by.google_profile_picture }}" class="h-6 w-6 rounded-full object-cover mt-0.5">
+                                            {% else %}
+                                                <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
+                                            {% endif %}
                                             <div>
                                                 <p class="text-sm text-muted-foreground">Posted by</p>
                                                 {% if item.display_name %}
@@ -380,14 +384,21 @@
                                                 {% endif %}
                                             {% else %}
                                                 <p class="text-[10px] text-muted-foreground mb-0.5">Posted by:</p>
-                                                {% if item.display_name %}
-                                                     <div class="flex flex-col">
-                                                        <span class="text-xs font-medium text-foreground">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</span>
-                                                        <span class="text-[10px] text-muted-foreground">{{ item.posted_by.email }}</span>
-                                                     </div>
-                                                {% else %}
-                                                     <span class="text-xs font-medium text-foreground">{{ item.posted_by.email }}</span>
-                                                {% endif %}
+                                                <div class="flex items-start gap-2">
+                                                    {% if item.display_name and item.posted_by.google_profile_picture %}
+                                                        <img src="{{ item.posted_by.google_profile_picture }}" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                                    {% else %}
+                                                        <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
+                                                    {% endif %}
+                                                    {% if item.display_name %}
+                                                         <div class="flex flex-col">
+                                                            <span class="text-xs font-medium text-foreground">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</span>
+                                                            <span class="text-[10px] text-muted-foreground">{{ item.posted_by.email }}</span>
+                                                         </div>
+                                                    {% else %}
+                                                         <span class="text-xs font-medium text-foreground">{{ item.posted_by.email }}</span>
+                                                    {% endif %}
+                                                </div>
                                             {% endif %}
                                         </div>
                                         
