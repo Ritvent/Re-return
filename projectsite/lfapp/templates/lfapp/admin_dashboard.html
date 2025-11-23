@@ -23,15 +23,21 @@
                             Manage and monitor all lost and found items in the system
                         </p>
                     </div>
-                    <div>
-                        <a href="{% url 'admin_moderation' %}" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg {% if pending_count > 0 %}bg-orange-600 hover:bg-orange-700 text-white animate-pulse{% else %}bg-primary hover:bg-primary/90 text-primary-foreground{% endif %} font-semibold transition-all shadow-md">
-                            <i data-lucide="shield-check" class="h-5 w-5"></i>
-                            <span>Moderation Queue</span>
-                            {% if pending_count > 0 %}
-                            <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-white text-orange-600">
-                                {{ pending_count }}
-                            </span>
-                            {% endif %}
+                    <div class="flex gap-4">
+                        <a href="{% url 'admin_users' %}">
+                            <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
+                                <i data-lucide="users" class="h-4 w-4"></i>
+                                Manage Users
+                            </button>
+                        </a>
+                        <a href="{% url 'admin_moderation' %}">
+                            <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
+                                <i data-lucide="check-square" class="h-4 w-4"></i>
+                                Moderation Queue
+                                {% if pending_count > 0 %}
+                                    <span class="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{{ pending_count }}</span>
+                                {% endif %}
+                            </button>
                         </a>
                     </div>
                 </div>
@@ -152,4 +158,3 @@
     lucide.createIcons();
 </script>
 {% endblock %}
-

@@ -1,12 +1,19 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
-from .models import Item, CustomUser
-from .forms import ItemForm
-from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email
+from django.core.mail import send_mail, EmailMessage
+from django.conf import settings
+from django.utils import timezone
+from itertools import chain
+from operator import attrgetter
+import os
+
+from .models import Item, CustomUser, ContactMessage
+from .forms import ItemForm, ItemCompletionForm
+from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email
 
 def landing_view(request):
     """Landing page with login form"""
@@ -14,7 +21,6 @@ def landing_view(request):
         return redirect('home')
     
     if request.method == 'POST':
-        from django.contrib.auth import authenticate
         email = request.POST.get('username')  # Using username field for email
         password = request.POST.get('password')
         
@@ -30,22 +36,19 @@ def landing_view(request):
 
 def home_view(request):
     """Home page showing recent lost and found items - Public and authenticated users can view"""
-    from itertools import chain
-    from operator import attrgetter
-    
     # Get recent lost items (limit to 3)
     recent_lost = Item.objects.filter(
         item_type='lost',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:3]
+    ).select_related('posted_by').order_by('-created_at')[:4]
     
-    # Get recent found items (limit to 3)
+    # Get recent found items (limit to 4)
     recent_found = Item.objects.filter(
         item_type='found',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:3]
+    ).select_related('posted_by').order_by('-created_at')[:4]
     
     # Get recent activities: recent posts + recent completions
     # Recent posts (both lost and found, approved and active)
@@ -95,7 +98,7 @@ def lost_items_view(request):
             item_type='lost'
         ).filter(
             Q(status='approved', is_active=True) | Q(posted_by=request.user)
-        ).select_related('posted_by').order_by('-created_at')
+        ).exclude(status='found').select_related('posted_by').order_by('-created_at')
     else:
         items = Item.objects.filter(
             item_type='lost',
@@ -135,7 +138,7 @@ def found_items_view(request):
             item_type='found'
         ).filter(
             Q(status='approved', is_active=True) | Q(posted_by=request.user)
-        ).select_related('posted_by').order_by('-created_at')
+        ).exclude(status='claimed').select_related('posted_by').order_by('-created_at')
     else:
         items = Item.objects.filter(
             item_type='found',
@@ -208,8 +211,6 @@ def admin_dashboard_view(request):
 @login_required
 def admin_moderation_queue_view(request):
     """Admin moderation queue - Visual preview and quick approve/reject"""
-    from django.utils import timezone
-    
     # Check if user is admin
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to access this page.')
@@ -240,9 +241,6 @@ def admin_moderation_queue_view(request):
 @login_required
 def admin_quick_approve_view(request, item_id):
     """Admin: Quick approve from moderation queue"""
-    from django.shortcuts import get_object_or_404
-    from django.utils import timezone
-    
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to perform this action.')
         return redirect('home')
@@ -266,8 +264,6 @@ def admin_quick_approve_view(request, item_id):
 @login_required
 def admin_quick_reject_view(request, item_id):
     """Admin: Quick reject from moderation queue"""
-    from django.shortcuts import get_object_or_404
-    
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to perform this action.')
         return redirect('home')
@@ -285,6 +281,120 @@ def admin_quick_reject_view(request, item_id):
         return redirect('admin_moderation')
     
     return redirect('admin_moderation')
+
+@login_required
+def admin_user_management_view(request):
+    """Admin: Manage users and roles"""
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('home')
+    
+    # Get all users
+    users = CustomUser.objects.all().order_by('-date_joined')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        users = users.filter(
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+    
+    # Role filter
+    role_filter = request.GET.get('role', '')
+    if role_filter:
+        users = users.filter(role=role_filter)
+    
+    context = {
+        'users': users,
+        'role_choices': CustomUser.ROLE_CHOICES,
+    }
+    
+    return render(request, 'lfapp/admin_users.html', context)
+
+@login_required
+def admin_promote_user_view(request, user_id):
+    """Admin: Promote/Demote user role"""
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    user_to_edit = get_object_or_404(CustomUser, id=user_id)
+    
+    # Prevent modifying own role
+    # Prevent modifying own role
+    # Logic handled inside POST for step down, but for GET we can just show the page (or redirect if needed)
+    
+    if request.method == 'POST':
+        new_role = request.POST.get('role')
+        is_self_action = request.user == user_to_edit
+        
+        # 1. Self-Action (Step Down)
+        if is_self_action:
+            if new_role == 'verified' and request.user.role == 'admin':
+                # Allow admin to step down
+                user_to_edit.role = 'verified'
+                user_to_edit.save()
+                
+                # Send email for step down
+                send_role_change_email(user_to_edit, 'verified', actor=request.user)
+                
+                messages.success(request, 'You have successfully stepped down from Admin role.')
+                return redirect('home') # Redirect to home as they lost access
+            else:
+                messages.error(request, 'Invalid action on yourself.')
+                return redirect('admin_users')
+
+        # 2. Superadmin Actions (Can do anything)
+        if request.user.is_superuser:
+            if new_role in dict(CustomUser.ROLE_CHOICES):
+                user_to_edit.role = new_role
+                if new_role in ['verified', 'admin']:
+                    user_to_edit.is_verified = True
+                user_to_edit.save()
+                
+                # Send email notification
+                send_role_change_email(user_to_edit, new_role, actor=request.user)
+                
+                messages.success(request, f'User {user_to_edit.email} role updated to {user_to_edit.get_role_display()}.')
+            return redirect('admin_users')
+
+        # 3. Admin Actions (Restricted)
+        if request.user.role == 'admin':
+            # Cannot modify Superusers
+            if user_to_edit.is_superuser:
+                messages.error(request, 'You cannot modify a Super Administrator.')
+                return redirect('admin_users')
+            
+            # Cannot demote others (only promote)
+            # Logic: If current role is 'admin', cannot change to 'verified' or 'public'
+            if user_to_edit.role == 'admin' and new_role != 'admin':
+                 messages.error(request, 'Admins cannot demote other Admins.')
+                 return redirect('admin_users')
+
+            # Prevent demoting corporate users to public (existing rule)
+            if new_role == 'public' and user_to_edit.has_psu_email:
+                messages.error(request, 'Corporate users (PSU email) cannot be demoted to Public User.')
+                return redirect('admin_users')
+            
+            # Allow promotion
+            if new_role in dict(CustomUser.ROLE_CHOICES):
+                user_to_edit.role = new_role
+                if new_role in ['verified', 'admin']:
+                    user_to_edit.is_verified = True
+                user_to_edit.save()
+                
+                # Send email notification
+                send_role_change_email(user_to_edit, new_role, actor=request.user)
+                
+                messages.success(request, f'User {user_to_edit.email} role updated to {user_to_edit.get_role_display()}.')
+            return redirect('admin_users')
+            
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('admin_users')
+            
+    return redirect('admin_users')
 
 def logout_view(request):
     """Logout user"""
@@ -386,8 +496,6 @@ def claimed_items_view(request):
 @login_required
 def edit_item_view(request, item_id):
     """Edit an existing item - Only owner can edit"""
-    from django.shortcuts import get_object_or_404
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -433,8 +541,6 @@ def edit_item_view(request, item_id):
 @login_required
 def toggle_item_listing_view(request, item_id):
     """Toggle item active status (delist/relist) - Only owner can toggle"""
-    from django.shortcuts import get_object_or_404
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -461,9 +567,6 @@ def toggle_item_listing_view(request, item_id):
 @login_required
 def delete_item_view(request, item_id):
     """Delete an item permanently - Only owner can delete, claimed items protected"""
-    from django.shortcuts import get_object_or_404
-    import os
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -501,9 +604,6 @@ def delete_item_view(request, item_id):
 @login_required
 def send_message_view(request, item_id):
     """Send a message to item poster - Only verified PSU users"""
-    from django.shortcuts import get_object_or_404
-    from .models import ContactMessage
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is PSU verified
@@ -536,9 +636,6 @@ def send_message_view(request, item_id):
         )
         
         # Send email notification via SendGrid
-        from django.core.mail import send_mail
-        from django.conf import settings
-        
         email_subject = f'[HanApp] New message about your {item.item_type} item: {item.title}'
         email_body = f"""
 Hello {item.posted_by.get_full_name() or item.posted_by.email},
@@ -581,8 +678,6 @@ This is an automated message from HanApp - PSU Lost and Found
 @login_required
 def messages_inbox_view(request):
     """View all received messages"""
-    from .models import ContactMessage
-    
     # Get only root messages (not replies) received by user
     received_messages = ContactMessage.objects.filter(
         recipient=request.user,
@@ -600,8 +695,6 @@ def messages_inbox_view(request):
 @login_required
 def messages_sent_view(request):
     """View all sent messages"""
-    from .models import ContactMessage
-    
     # Get only root messages (not replies) sent by user
     sent_messages = ContactMessage.objects.filter(
         sender=request.user,
@@ -616,9 +709,6 @@ def messages_sent_view(request):
 @login_required
 def message_thread_view(request, message_id):
     """View a message conversation thread and reply"""
-    from django.shortcuts import get_object_or_404
-    from .models import ContactMessage
-    
     # Get the root message
     root_message = get_object_or_404(ContactMessage, id=message_id)
     
@@ -657,9 +747,6 @@ def message_thread_view(request, message_id):
         )
         
         # Send email notification via SendGrid
-        from django.core.mail import EmailMessage
-        from django.conf import settings
-        
         email_subject = f'[HanApp] New reply about: {root_message.item.title}'
         email_body = f"""
 Hello {recipient.get_full_name() or recipient.email},
@@ -704,10 +791,6 @@ This is an automated message from HanApp - PSU Lost and Found
 @login_required
 def mark_item_complete_view(request, item_id):
     """Mark an item as found (for lost items) or claimed (for found items)"""
-    from django.shortcuts import get_object_or_404
-    from django.utils import timezone
-    from .forms import ItemCompletionForm
-    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner

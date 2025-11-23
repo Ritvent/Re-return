@@ -1,8 +1,10 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from allauth.account.models import EmailAddress
+from allauth.socialaccount.models import SocialApp
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from allauth.socialaccount.models import SocialApp
+from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 
 
@@ -19,7 +21,7 @@ class PSUEmailAdapter(DefaultAccountAdapter):
         
         if not email.endswith('@psu.palawan.edu.ph'):
             raise ValidationError(
-                'Only PSU Palawan email addresses (@psu.palawan.edu.ph) are allowed to register.'
+                'Only PSU email addresses (@psu.palawan.edu.ph) are allowed to register.'
             )
         
         return email
@@ -78,11 +80,19 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
         if not email.endswith('@psu.palawan.edu.ph'):
             messages.error(
                 request,
-                'Only PSU Palawan email addresses (@psu.palawan.edu.ph) are allowed. '
+                'Only PSU email addresses (@psu.palawan.edu.ph) are allowed. '
                 'Please sign in with your PSU email.'
             )
             # Prevent the login
             raise ValidationError('Invalid email domain')
+        
+        # Update profile picture for existing users
+        if sociallogin.is_existing and sociallogin.account.provider == 'google':
+            picture_url = sociallogin.account.extra_data.get('picture')
+            print(f"DEBUG: Pre-login for {sociallogin.user.email}, Picture URL: {picture_url}")
+            if picture_url:
+                sociallogin.user.google_profile_picture = picture_url
+                sociallogin.user.save()
     
     def populate_user(self, request, sociallogin, data):
         """
@@ -98,6 +108,12 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
         # Ensure unique username by using email as username
         if user.email:
             user.username = user.email
+
+        # Get profile picture from Google
+        if sociallogin.account.provider == 'google':
+            picture_url = sociallogin.account.extra_data.get('picture')
+            if picture_url:
+                user.google_profile_picture = picture_url
         
         return user
     
@@ -106,9 +122,6 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
         Generate a unique username from email.
         Override to use email directly as username.
         """
-        from allauth.account.models import EmailAddress
-        from django.contrib.auth import get_user_model
-        
         User = get_user_model()
         
         # Try to get email from txts

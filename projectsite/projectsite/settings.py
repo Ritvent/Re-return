@@ -30,7 +30,10 @@ SECRET_KEY = 'django-insecure-bz8n$f=yw$5sr72nio(#-!bhv2-7@*iwr7ia5(b(8$$orjczio
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'hypaesthesic-dagmar-mordaciously.ngrok-free.dev']
+CSRF_TRUSTED_ORIGINS = [
+    'https://hypaesthesic-dagmar-mordaciously.ngrok-free.dev',
+]
 
 
 # Application definition
@@ -159,7 +162,7 @@ EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
 # Django-allauth Configuration
-SITE_ID = 1
+SITE_ID = 5
 
 AUTHENTICATION_BACKENDS = [
     # Django admin login
@@ -201,28 +204,10 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
         'AUTH_PARAMS': {
             'access_type': 'online',
+            'prompt': 'select_account',
             'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
         },
         'VERIFIED_EMAIL': True,
     }
 }
 
-# Google OAuth settings (will be configured via admin panel)
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-            'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
-        },
-        'APP': {
-            'client_id': '',  # Will be set via admin
-            'secret': '',     # Will be set via admin
-            'key': ''
-        },
-        'VERIFIED_EMAIL': True,
-    }
-}

@@ -70,10 +70,17 @@
 
                 <!-- User Menu -->
                 <div class="relative">
-                    <button id="user-menu-btn" class="p-2 rounded-md hover:bg-accent relative">
-                        <i data-lucide="user" class="h-5 w-5"></i>
+                    <button id="user-menu-btn" class="rounded-full hover:opacity-80 transition-opacity relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                        {% if user.google_profile_picture %}
+                            <img src="{{ user.google_profile_picture }}" alt="Profile" class="h-9 w-9 rounded-full object-cover border border-border">
+                        {% else %}
+                            <div class="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-border">
+                                {{ user.email|make_list|first|upper }}
+                            </div>
+                        {% endif %}
+
                         {% if unread_messages_count > 0 %}
-                        <span class="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full"></span>
+                        <span class="absolute top-0 right-0 h-2.5 w-2.5 bg-destructive rounded-full border-2 border-card"></span>
                         {% endif %}
                     </button>
                     <div id="user-menu" class="hidden absolute right-0 mt-2 w-56 bg-card border rounded-md shadow-xl z-50">
