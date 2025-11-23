@@ -163,3 +163,65 @@ This is an automated message from PalSU HanApp Lost and Found System
         print(f"✅ Rejection email sent to {user.email} for item: {item.title}")
     except Exception as e:
         print(f"❌ Failed to send rejection email to {user.email}: {e}")
+
+
+def send_role_change_email(user, new_role, actor=None):
+    """
+    Send email notification when a user's role is changed.
+    
+    Args:
+        user: User instance whose role was changed
+        new_role: The new role assigned (string)
+        actor: User instance who performed the action (optional)
+    """
+    user_name = user.get_full_name() or user.email
+    actor_name = "an Admin"
+    if actor:
+        actor_name = actor.get_full_name() or actor.email
+        
+    subject = "Role Update Notification - PalSU HanApp"
+    
+    # Determine message based on role change
+    if new_role == 'admin':
+        action_msg = f"Congratulations! You have been promoted to **Admin** by {actor_name}."
+        details = """As an Admin, you now have access to:
+- User Management Dashboard
+- Item Moderation Queue
+- Ability to approve/reject items
+- Ability to promote other users"""
+    elif new_role == 'verified':
+        if user == actor:
+            action_msg = "You have successfully stepped down from your Admin role."
+            details = "You are now a Verified User. You can still post items but no longer have admin privileges."
+        else:
+            action_msg = f"Your role has been updated to **Verified User** by {actor_name}."
+            details = "You can still post items, but admin privileges have been revoked."
+    else: # public
+        action_msg = f"Your role has been updated to **Public User** by {actor_name}."
+        details = "You can browse items but can no longer post new items until you are verified again."
+
+    message = f"""Hello {user_name},
+
+{action_msg}
+
+{details}
+
+If you believe this change was made in error, please contact the system administrator.
+
+Thank you for using PalSU HanApp.
+
+---
+This is an automated message from PalSU HanApp Lost and Found System
+"""
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        print(f"✅ Role change email sent to {user.email} (New Role: {new_role})")
+    except Exception as e:
+        print(f"❌ Failed to send role change email to {user.email}: {e}")

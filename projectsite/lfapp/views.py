@@ -13,7 +13,7 @@ import os
 
 from .models import Item, CustomUser, ContactMessage
 from .forms import ItemForm, ItemCompletionForm
-from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email
+from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email
 
 def landing_view(request):
     """Landing page with login form"""
@@ -336,6 +336,10 @@ def admin_promote_user_view(request, user_id):
                 # Allow admin to step down
                 user_to_edit.role = 'verified'
                 user_to_edit.save()
+                
+                # Send email for step down
+                send_role_change_email(user_to_edit, 'verified', actor=request.user)
+                
                 messages.success(request, 'You have successfully stepped down from Admin role.')
                 return redirect('home') # Redirect to home as they lost access
             else:
@@ -349,6 +353,10 @@ def admin_promote_user_view(request, user_id):
                 if new_role in ['verified', 'admin']:
                     user_to_edit.is_verified = True
                 user_to_edit.save()
+                
+                # Send email notification
+                send_role_change_email(user_to_edit, new_role, actor=request.user)
+                
                 messages.success(request, f'User {user_to_edit.email} role updated to {user_to_edit.get_role_display()}.')
             return redirect('admin_users')
 
@@ -376,6 +384,10 @@ def admin_promote_user_view(request, user_id):
                 if new_role in ['verified', 'admin']:
                     user_to_edit.is_verified = True
                 user_to_edit.save()
+                
+                # Send email notification
+                send_role_change_email(user_to_edit, new_role, actor=request.user)
+                
                 messages.success(request, f'User {user_to_edit.email} role updated to {user_to_edit.get_role_display()}.')
             return redirect('admin_users')
             
