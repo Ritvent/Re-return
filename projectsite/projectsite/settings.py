@@ -161,6 +161,12 @@ EMAIL_HOST_USER = 'apikey'
 EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
+# Need adjust din SengGrid site, prevents long urls
+SENDGRID_TRACK_CLICKS_HTML = False
+SENDGRID_TRACK_CLICKS_PLAIN = False
+SENDGRID_TRACK_EMAIL_OPENS = False
+SENDGRID_TRACK_EMAIL_CLICKS = False
+
 # Django-allauth Configuration
 SITE_ID = 5
 

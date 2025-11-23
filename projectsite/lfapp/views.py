@@ -13,7 +13,7 @@ import os
 
 from .models import Item, CustomUser, ContactMessage
 from .forms import ItemForm, ItemCompletionForm
-from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email
+from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email, send_admin_new_item_notification
 
 def landing_view(request):
     """Landing page with login form"""
@@ -415,13 +415,20 @@ def post_lost_item_view(request):
             item = form.save(commit=False)
             item.item_type = 'lost'
             item.posted_by = request.user
-            item.status = 'pending'  # Items need admin approval
-            item.save()
             
-            # Send pending approval email
-            send_item_pending_email(item, request)
+            # Auto-approve for admins, otherwise pending
+            if request.user.is_admin_user():
+                item.status = 'approved'
+                item.save()
+                messages.success(request, 'Your lost item has been posted successfully.')
+            else:
+                item.status = 'pending'
+                item.save()
+                # Send emails for pending items
+                send_item_pending_email(item, request)
+                send_admin_new_item_notification(item)
+                messages.success(request, 'Your lost item has been submitted and is pending approval.')
             
-            messages.success(request, 'Your lost item has been submitted and is pending approval.')
             return redirect('lost_items')
     else:
         form = ItemForm(item_type='lost')
@@ -446,13 +453,20 @@ def post_found_item_view(request):
             item = form.save(commit=False)
             item.item_type = 'found'
             item.posted_by = request.user
-            item.status = 'pending'  # Items need admin approval
-            item.save()
             
-            # Send pending approval email
-            send_item_pending_email(item, request)
+            # Auto-approve for admins, otherwise pending
+            if request.user.is_admin_user():
+                item.status = 'approved'
+                item.save()
+                messages.success(request, 'Your found item has been posted successfully.')
+            else:
+                item.status = 'pending'
+                item.save()
+                # Send emails for pending items
+                send_item_pending_email(item, request)
+                send_admin_new_item_notification(item)
+                messages.success(request, 'Your found item has been submitted and is pending approval.')
             
-            messages.success(request, 'Your found item has been submitted and is pending approval.')
             return redirect('found_items')
     else:
         form = ItemForm(item_type='found')

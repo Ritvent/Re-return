@@ -46,7 +46,7 @@
 
         <!-- Stats Grid -->
         <section class="mb-8">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
                     <div class="px-6 pb-2 flex items-center justify-between">
                         <h3 class="text-sm font-medium">Total Items</h3>
@@ -105,7 +105,8 @@
                     <p class="text-sm text-muted-foreground">Complete list of all lost and found items</p>
                 </div>
                 <div class="px-6 py-6">
-                    <div class="rounded-md border overflow-x-auto">
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block rounded-md border overflow-x-auto">
                         <table class="w-full">
                             <thead>
                                 <tr class="border-b">
@@ -147,6 +148,49 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="md:hidden space-y-4">
+                        {% for item in all_items %}
+                        <div class="bg-card border rounded-lg p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 class="font-semibold text-base">{{ item.title }}</h4>
+                                    <p class="text-xs text-muted-foreground">{{ item.get_category_display }}</p>
+                                </div>
+                                <span class="px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                            </div>
+                            
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="map-pin" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
+                                    <span class="text-muted-foreground">
+                                        {% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="calendar" class="h-4 w-4 text-muted-foreground"></i>
+                                    <span class="text-muted-foreground">
+                                        {% if item.item_type == 'found' and item.date_found %}{{ item.date_found|date:"M d, Y" }}{% elif item.item_type == 'lost' and item.date_lost %}{{ item.date_lost|date:"M d, Y" }}{% else %}Date not specified{% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 pt-2 border-t mt-2">
+                                    <i data-lucide="user" class="h-4 w-4 text-muted-foreground"></i>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-xs">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</span>
+                                        <span class="text-[10px] text-muted-foreground">{{ item.posted_by.email }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-8 text-muted-foreground">
+                            No items found
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
