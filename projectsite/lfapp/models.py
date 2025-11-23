@@ -43,6 +43,13 @@ class CustomUser(AbstractUser):
         blank=True, 
         null=True
     )
+    google_profile_picture = models.URLField(
+        max_length=500, 
+        blank=True, 
+        default='',
+        help_text='Profile picture URL from Google'
+    )
+    
 
     USERNAME_FIELD = 'email' # unique id 
     REQUIRED_FIELDS = ['username']  # username is still required
@@ -198,6 +205,26 @@ class Item(TimeStampedModel):
     def can_be_delisted(self):
         """Only non-completed items can be delisted - completed items must remain visible"""
         return self.status not in ['claimed', 'found']
+
+    def get_claimant_picture(self):
+        """
+        Get the profile picture of the person who claimed/returned the item.
+        Prioritizes claimed_by relationship, then falls back to looking up user by completion_email.
+        """
+        # 1. Check claimed_by relationship
+        if self.claimed_by and self.claimed_by.google_profile_picture:
+            return self.claimed_by.google_profile_picture
+        
+        # 2. Check completion_email
+        if self.completion_email:
+            try:
+                user = CustomUser.objects.get(email=self.completion_email)
+                if user.google_profile_picture:
+                    return user.google_profile_picture
+            except CustomUser.DoesNotExist:
+                pass
+        
+        return None
     
 """Reclaim, Recover"""
 class Claim(TimeStampedModel):

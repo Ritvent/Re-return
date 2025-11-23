@@ -98,7 +98,7 @@ def lost_items_view(request):
             item_type='lost'
         ).filter(
             Q(status='approved', is_active=True) | Q(posted_by=request.user)
-        ).select_related('posted_by').order_by('-created_at')
+        ).exclude(status='found').select_related('posted_by').order_by('-created_at')
     else:
         items = Item.objects.filter(
             item_type='lost',
@@ -138,7 +138,7 @@ def found_items_view(request):
             item_type='found'
         ).filter(
             Q(status='approved', is_active=True) | Q(posted_by=request.user)
-        ).select_related('posted_by').order_by('-created_at')
+        ).exclude(status='claimed').select_related('posted_by').order_by('-created_at')
     else:
         items = Item.objects.filter(
             item_type='found',

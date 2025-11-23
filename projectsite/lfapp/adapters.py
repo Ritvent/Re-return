@@ -85,6 +85,14 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
             )
             # Prevent the login
             raise ValidationError('Invalid email domain')
+        
+        # Update profile picture for existing users
+        if sociallogin.is_existing and sociallogin.account.provider == 'google':
+            picture_url = sociallogin.account.extra_data.get('picture')
+            print(f"DEBUG: Pre-login for {sociallogin.user.email}, Picture URL: {picture_url}")
+            if picture_url:
+                sociallogin.user.google_profile_picture = picture_url
+                sociallogin.user.save()
     
     def populate_user(self, request, sociallogin, data):
         """
@@ -100,6 +108,12 @@ class PSUSocialAccountAdapter(DefaultSocialAccountAdapter):
         # Ensure unique username by using email as username
         if user.email:
             user.username = user.email
+
+        # Get profile picture from Google
+        if sociallogin.account.provider == 'google':
+            picture_url = sociallogin.account.extra_data.get('picture')
+            if picture_url:
+                user.google_profile_picture = picture_url
         
         return user
     

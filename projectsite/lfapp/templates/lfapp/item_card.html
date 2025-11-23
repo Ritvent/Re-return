@@ -161,20 +161,6 @@
             <p class="text-xs text-green-700">
                 This item remains visible as a success story. Thank you for using PalSU HanApp!
             </p>
-            <p class="text-xs text-green-600 mt-1">
-                Need to remove for privacy? <a
-                    href="mailto:admin@psu.palawan.edu.ph?subject=Privacy Request: Item {{ item.id }}"
-                    class="underline">Contact Admin</a>
-            </p>
-        </div>
-        {% elif item.status == 'found' %}
-        <!-- Found items are success stories - cannot be edited/deleted -->
-        <div class="p-3 rounded-md bg-green-50 border border-green-200">
-            <div class="flex items-center gap-2 mb-1">
-                <i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>
-                <span class="text-sm font-semibold text-green-800">✓ Successfully Found/Recovered</span>
-            </div>
-            <p class="text-xs text-green-700">
                 This item remains visible as a success story. Thank you for using PalSU HanApp!
             </p>
             <p class="text-xs text-green-600 mt-1">

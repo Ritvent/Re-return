@@ -217,7 +217,16 @@
                                     {% if item.status == 'claimed' or item.status == 'found' %}
                                         {% if item.completion_name and item.completion_email %}
                                             <div class="flex items-start gap-2">
-                                                <i data-lucide="user-check" class="h-4 w-4 text-green-600 mt-0.5"></i>
+                                            <div class="flex items-start gap-2">
+                                                {% with profile_pic=item.get_claimant_picture %}
+                                                    {% if profile_pic %}
+                                                        <img src="{{ profile_pic }}" class="h-6 w-6 rounded-full object-cover mt-0.5">
+                                                    {% else %}
+                                                        <div class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700 mt-0.5">
+                                                            {{ item.completion_name|make_list|first|upper }}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
                                                 <div>
                                                     <p class="font-medium">{{ item.completion_name }}</p>
                                                     <p class="text-xs text-muted-foreground">{{ item.completion_email }}</p>
@@ -346,9 +355,20 @@
                                                     {% if item.item_type == 'found' %}Claimed by:{% else %}Returned by:{% endif %}
                                                 </p>
                                                 {% if item.completion_name and item.completion_email %}
-                                                     <div class="flex flex-col">
-                                                        <span class="text-xs font-medium text-foreground">{{ item.completion_name }}</span>
-                                                        <span class="text-[10px] text-muted-foreground">{{ item.completion_email }}</span>
+                                                     <div class="flex items-start gap-2">
+                                                        {% with profile_pic=item.get_claimant_picture %}
+                                                            {% if profile_pic %}
+                                                                <img src="{{ profile_pic }}" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                                            {% else %}
+                                                                <div class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700 flex-shrink-0">
+                                                                    {{ item.completion_name|make_list|first|upper }}
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                        <div class="flex flex-col">
+                                                            <span class="text-xs font-medium text-foreground">{{ item.completion_name }}</span>
+                                                            <span class="text-[10px] text-muted-foreground">{{ item.completion_email }}</span>
+                                                        </div>
                                                      </div>
                                                 {% elif item.claimed_by %}
                                                      <div class="flex flex-col">
