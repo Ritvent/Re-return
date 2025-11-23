@@ -3,6 +3,9 @@
     {% if request.user == item.posted_by and item.status not in 'claimed,found' %} data-item-menu="{{ item.id }}"
     data-long-press="{{ item.id }}" style="-webkit-touch-callout: none; -webkit-user-select: none;" {% endif %}>
 
+    <!-- Stretched Link for Card Clickability -->
+    <a href="{% url 'item_detail' item.id %}" class="absolute inset-0 z-10 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label="View details for {{ item.title }}"></a>
+
     <!-- Pin Decoration -->
     <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-4 rounded-full bg-orange-500 shadow-md border border-orange-600 flex items-center justify-center">
         <div class="h-1 w-1 rounded-full bg-white/30"></div>
@@ -31,7 +34,7 @@
         <!-- Three-dot menu button (desktop only, visible on hover, owner only) -->
         {% if request.user == item.posted_by and item.status not in 'claimed,found' and not moderation %}
         <button type="button" id="btn-menu-{{ item.id }}" onclick="event.stopPropagation(); window.toggleItemMenu({{ item.id }});"
-            class="hidden md:flex absolute top-3 right-3 w-8 h-8 items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+            class="hidden md:flex absolute top-3 right-3 w-8 h-8 items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
             <i data-lucide="more-vertical" class="h-4 w-4 text-slate-700"></i>
         </button>
         {% endif %}
@@ -134,7 +137,7 @@
             <form method="post" action="{% url 'admin_quick_approve' item.id %}" class="flex-1">
                 {% csrf_token %}
                 <button type="submit" 
-                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium transition-all"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium transition-all relative z-20"
                         onclick="return confirm('Approve this item? It will become publicly visible.')">
                     <i data-lucide="check" class="h-4 w-4"></i>
                     Approve
@@ -143,7 +146,7 @@
             <form method="post" action="{% url 'admin_quick_reject' item.id %}" class="flex-1">
                 {% csrf_token %}
                 <button type="submit" 
-                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-all"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-all relative z-20"
                         onclick="return confirm('Reject this item? It will not be shown publicly.')">
                     <i data-lucide="x" class="h-4 w-4"></i>
                     Reject
@@ -161,12 +164,10 @@
             <p class="text-xs text-green-700">
                 This item remains visible as a success story. Thank you for using PalSU HanApp!
             </p>
-                This item remains visible as a success story. Thank you for using PalSU HanApp!
-            </p>
             <p class="text-xs text-green-600 mt-1">
                 Need to remove for privacy? <a
                     href="mailto:admin@psu.palawan.edu.ph?subject=Privacy Request: Item {{ item.id }}"
-                    class="underline">Contact Admin</a>
+                    class="underline relative z-20">Contact Admin</a>
             </p>
         </div>
         {% else %}
@@ -274,14 +275,14 @@
         {% endif %}
         {% elif request.user.is_authenticated and request.user.is_psu_user %}
         <a href="{% url 'send_message' item.id %}"
-            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm relative z-20">
             <i data-lucide="mail" class="h-4 w-4"></i>
             Contact
         </a>
         {% else %}
         <button
             onclick="alert('Only verified PSU users can contact posters. Please sign in with your @psu.palawan.edu.ph account and get verified.')"
-            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-muted bg-muted/50 text-muted-foreground cursor-not-allowed text-sm">
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-muted bg-muted/50 text-muted-foreground cursor-not-allowed text-sm relative z-20">
             <i data-lucide="mail" class="h-4 w-4"></i>
             {% if request.user.is_authenticated %}Verification Required{% else %}Sign In to Contact{% endif %}
         </button>
@@ -422,4 +423,4 @@
             }
         });
     }
-</script>
+ </script>

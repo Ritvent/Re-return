@@ -169,6 +169,33 @@ def found_items_view(request):
     
     return render(request, 'lfapp/found_items.html', context)
 
+def item_detail_view(request, item_id):
+    """View full details of a specific item"""
+    # Get item or 404
+    # Allow viewing if approved OR if user is the poster OR if user is admin
+    item = get_object_or_404(Item, id=item_id)
+    
+    # Permission check:
+    # 1. If item is approved and active -> Publicly visible
+    # 2. If user is the poster -> Visible (even if pending/rejected)
+    # 3. If user is admin -> Visible
+    
+    is_visible = False
+    if item.status == 'approved' and item.is_active:
+        is_visible = True
+    elif request.user.is_authenticated:
+        if request.user == item.posted_by or request.user.is_admin_user():
+            is_visible = True
+            
+    if not is_visible:
+        messages.error(request, 'This item is not available.')
+        return redirect('home')
+        
+    context = {
+        'item': item,
+    }
+    return render(request, 'lfapp/item_detail.html', context)
+
 @login_required
 def admin_dashboard_view(request):
     """Admin dashboard with statistics"""

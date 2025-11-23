@@ -1,0 +1,167 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - HanApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Back
+            </a>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+            <!-- Image Section -->
+            <div class="space-y-4">
+                <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-100 shadow-sm border border-border">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover" />
+                    {% else %}
+                        <div class="flex h-full w-full items-center justify-center bg-gray-50">
+                            <i data-lucide="image-off" class="h-24 w-24 text-gray-300"></i>
+                        </div>
+                    {% endif %}
+
+                    <!-- Status Badge Overlay -->
+                    <div class="absolute top-4 left-4">
+                        {% if item.status == 'claimed' %}
+                            <span class="px-3 py-1.5 rounded-full text-sm font-semibold bg-green-500 text-white shadow-md">
+                                Claimed
+                            </span>
+                        {% elif item.status == 'found' %}
+                            <span class="px-3 py-1.5 rounded-full text-sm font-semibold bg-green-500 text-white shadow-md">
+                                Returned
+                            </span>
+                        {% elif item.status == 'pending' %}
+                            <span class="px-3 py-1.5 rounded-full text-sm font-semibold bg-yellow-500 text-white shadow-md">
+                                Pending Approval
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Section -->
+            <div class="space-y-6">
+                <div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="px-2.5 py-1 rounded-md text-sm font-medium 
+                            {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ item.get_item_type_display }}
+                        </span>
+                        <span class="text-sm text-muted-foreground">{{ item.created_at|date:"F d, Y" }}</span>
+                    </div>
+                    
+                    <h1 class="text-3xl md:text-4xl font-bold mb-4 break-words">{{ item.title }}</h1>
+                    
+                    <div class="prose prose-slate max-w-none">
+                        <p class="text-lg text-muted-foreground whitespace-pre-wrap break-words">{{ item.description }}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6 border-y border-border">
+                    <div class="flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                            <i data-lucide="map-pin" class="h-5 w-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">
+                                {% if item.item_type == 'found' %}Found at{% else %}Last Location{% endif %}
+                            </p>
+                            <p class="font-medium">
+                                {% if item.item_type == 'found' %}
+                                    {{ item.location_found|default:"Location not specified" }}
+                                {% else %}
+                                    {{ item.location_lost|default:"Location not specified" }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                            <i data-lucide="calendar" class="h-5 w-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">
+                                {% if item.item_type == 'found' %}Date Found{% else %}Date Lost{% endif %}
+                            </p>
+                            <p class="font-medium">
+                                {% if item.item_type == 'found' %}
+                                    {{ item.date_found|date:"F d, Y" }}
+                                {% else %}
+                                    {{ item.date_lost|date:"F d, Y" }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                            <i data-lucide="tag" class="h-5 w-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Category</p>
+                            <p class="font-medium">{{ item.get_category_display }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Info & Actions -->
+                <div class="bg-card border border-border rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            {% if item.posted_by.google_profile_picture %}
+                                <img src="{{ item.posted_by.google_profile_picture }}" alt="Profile" class="h-12 w-12 rounded-full object-cover">
+                            {% else %}
+                                <div class="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                                    <i data-lucide="user" class="h-6 w-6 text-muted-foreground"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <p class="text-sm text-muted-foreground">Posted by</p>
+                                <p class="font-semibold">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        {% if request.user == item.posted_by %}
+                            <div class="grid grid-cols-2 gap-3">
+                                <a href="{% url 'edit_item' item.id %}" class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors">
+                                    <i data-lucide="pencil" class="h-4 w-4"></i>
+                                    Edit Item
+                                </a>
+                                <a href="{% url 'delete_item' item.id %}" class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive font-medium transition-colors">
+                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    Delete
+                                </a>
+                            </div>
+                        {% elif request.user.is_authenticated %}
+                            <a href="{% url 'send_message' item.id %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm transition-all">
+                                <i data-lucide="mail" class="h-5 w-5"></i>
+                                Contact Poster
+                            </a>
+                        {% else %}
+                            <a href="{% url 'landing' %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground font-medium transition-colors">
+                                <i data-lucide="log-in" class="h-5 w-5"></i>
+                                Sign in to Contact
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
