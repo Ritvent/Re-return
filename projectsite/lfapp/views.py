@@ -282,6 +282,108 @@ def admin_quick_reject_view(request, item_id):
     
     return redirect('admin_moderation')
 
+@login_required
+def admin_user_management_view(request):
+    """Admin: Manage users and roles"""
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('home')
+    
+    # Get all users
+    users = CustomUser.objects.all().order_by('-date_joined')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        users = users.filter(
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+    
+    # Role filter
+    role_filter = request.GET.get('role', '')
+    if role_filter:
+        users = users.filter(role=role_filter)
+    
+    context = {
+        'users': users,
+        'role_choices': CustomUser.ROLE_CHOICES,
+    }
+    
+    return render(request, 'lfapp/admin_users.html', context)
+
+@login_required
+def admin_promote_user_view(request, user_id):
+    """Admin: Promote/Demote user role"""
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    user_to_edit = get_object_or_404(CustomUser, id=user_id)
+    
+    # Prevent modifying own role
+    # Prevent modifying own role
+    # Logic handled inside POST for step down, but for GET we can just show the page (or redirect if needed)
+    
+    if request.method == 'POST':
+        new_role = request.POST.get('role')
+        is_self_action = request.user == user_to_edit
+        
+        # 1. Self-Action (Step Down)
+        if is_self_action:
+            if new_role == 'verified' and request.user.role == 'admin':
+                # Allow admin to step down
+                user_to_edit.role = 'verified'
+                user_to_edit.save()
+                messages.success(request, 'You have successfully stepped down from Admin role.')
+                return redirect('home') # Redirect to home as they lost access
+            else:
+                messages.error(request, 'Invalid action on yourself.')
+                return redirect('admin_users')
+
+        # 2. Superadmin Actions (Can do anything)
+        if request.user.is_superuser:
+            if new_role in dict(CustomUser.ROLE_CHOICES):
+                user_to_edit.role = new_role
+                if new_role in ['verified', 'admin']:
+                    user_to_edit.is_verified = True
+                user_to_edit.save()
+                messages.success(request, f'User {user_to_edit.email} role updated to {user_to_edit.get_role_display()}.')
+            return redirect('admin_users')
+
+        # 3. Admin Actions (Restricted)
+        if request.user.role == 'admin':
+            # Cannot modify Superusers
+            if user_to_edit.is_superuser:
+                messages.error(request, 'You cannot modify a Super Administrator.')
+                return redirect('admin_users')
+            
+            # Cannot demote others (only promote)
+            # Logic: If current role is 'admin', cannot change to 'verified' or 'public'
+            if user_to_edit.role == 'admin' and new_role != 'admin':
+                 messages.error(request, 'Admins cannot demote other Admins.')
+                 return redirect('admin_users')
+
+            # Prevent demoting corporate users to public (existing rule)
+            if new_role == 'public' and user_to_edit.has_psu_email:
+                messages.error(request, 'Corporate users (PSU email) cannot be demoted to Public User.')
+                return redirect('admin_users')
+            
+            # Allow promotion
+            if new_role in dict(CustomUser.ROLE_CHOICES):
+                user_to_edit.role = new_role
+                if new_role in ['verified', 'admin']:
+                    user_to_edit.is_verified = True
+                user_to_edit.save()
+                messages.success(request, f'User {user_to_edit.email} role updated to {user_to_edit.get_role_display()}.')
+            return redirect('admin_users')
+            
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('admin_users')
+            
+    return redirect('admin_users')
+
 def logout_view(request):
     """Logout user"""
     logout(request)

@@ -68,6 +68,11 @@ class CustomUser(AbstractUser):
             self.email.endswith('@psu.palawan.edu.ph')
         )
     
+    @property
+    def has_psu_email(self):
+        """Check if user has a psu email (regardless of verification)"""
+        return self.email.endswith('@psu.palawan.edu.ph')
+    
     def can_post_items(self):
         """Check if user can post items"""
         return self.is_verified and self.role in ['verified', 'admin']
