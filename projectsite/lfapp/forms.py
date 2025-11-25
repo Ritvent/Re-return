@@ -136,6 +136,12 @@ class ItemForm(forms.ModelForm):
         # Validate display_name is checked for found items
         if self.item_type == 'found' and not cleaned_data.get('display_name'):
             self.add_error('display_name', 'You must agree to display your name for found items')
+
+        # Validate image extension
+        image = cleaned_data.get('image')
+        if image:
+            if image.name.lower().endswith('.gif'):
+                self.add_error('image', 'GIF files are not allowed.')
         
         return cleaned_data
 

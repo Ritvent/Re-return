@@ -746,6 +746,13 @@ def message_thread_view(request, message_id):
             messages.error(request, 'Please provide a message or image.')
             return redirect('message_thread', message_id=message_id)
         
+        # Validate image extension
+        if image:
+            ext = image.name.lower()
+            if ext.endswith('.gif') or ext.endswith('.mp4') or ext.endswith('.mov') or ext.endswith('.avi'):
+                messages.error(request, 'Only static images (JPG, PNG) are allowed. GIFs and videos are not supported.')
+                return redirect('message_thread', message_id=message_id)
+        
         # Determine recipient (the other person in conversation)
         recipient = root_message.sender if root_message.recipient == request.user else root_message.recipient
         

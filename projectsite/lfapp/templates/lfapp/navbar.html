@@ -38,7 +38,7 @@
                     {% if user.is_authenticated and user.is_admin_user %}
                     <a href="{% url 'admin_dashboard' %}">
                         <button class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
-                            <i data-lucide="shield" class="h-4 w-4"></i>
+                            <i data-lucide="shield-user" class="h-4 w-4"></i>
                             Admin
                         </button>
                     </a>
@@ -134,7 +134,7 @@
                 </a>
                 {% if user.is_authenticated and user.is_admin_user %}
                 <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
-                    <i data-lucide="shield" class="h-4 w-4"></i>
+                    <i data-lucide="shield-user" class="h-4 w-4"></i>
                     Admin
                 </a>
                 {% endif %}
