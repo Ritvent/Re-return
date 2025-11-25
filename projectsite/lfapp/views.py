@@ -13,6 +13,8 @@ import os
 
 from .models import Item, CustomUser, ContactMessage
 from .forms import ItemForm, ItemCompletionForm
+from .utils import validate_image_file
+from django.core.exceptions import ValidationError
 from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email, send_admin_new_item_notification
 
 def landing_view(request):
@@ -746,11 +748,12 @@ def message_thread_view(request, message_id):
             messages.error(request, 'Please provide a message or image.')
             return redirect('message_thread', message_id=message_id)
         
-        # Validate image extension
+        # Validate image extension and content
         if image:
-            ext = image.name.lower()
-            if ext.endswith('.gif') or ext.endswith('.mp4') or ext.endswith('.mov') or ext.endswith('.avi'):
-                messages.error(request, 'Only static images (JPG, PNG) are allowed. GIFs and videos are not supported.')
+            try:
+                validate_image_file(image)
+            except ValidationError as e:
+                messages.error(request, e.message)
                 return redirect('message_thread', message_id=message_id)
         
         # Determine recipient (the other person in conversation)
