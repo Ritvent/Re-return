@@ -110,18 +110,29 @@
                         <table class="w-full">
                             <thead>
                                 <tr class="border-b">
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Title</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Item</th>
                                     <th class="text-left px-4 py-3 text-sm font-medium">Status</th>
                                     <th class="text-left px-4 py-3 text-sm font-medium">Category</th>
                                     <th class="text-left px-4 py-3 text-sm font-medium">Location</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Date</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium">Posted on</th>
                                     <th class="text-left px-4 py-3 text-sm font-medium">Contact</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in all_items %}
                                 <tr class="border-b hover:bg-muted/50 cursor-pointer" onclick="openItemModal('admin-{{ item.id }}')">
-                                    <td class="px-4 py-3 font-medium max-w-[200px] truncate" title="{{ item.title }}">{{ item.title }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-3">
+                                            {% if item.image %}
+                                                <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-10 w-10 rounded object-cover aspect-square">
+                                            {% else %}
+                                                <div class="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                                                    <i data-lucide="package" class="h-5 w-5 text-muted-foreground"></i>
+                                                </div>
+                                            {% endif %}
+                                            <span class="font-medium max-w-[200px] truncate" title="{{ item.title }}">{{ item.title }}</span>
+                                        </div>
+                                    </td>
                                     <td class="px-4 py-3">
                                         <span class="px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
                                             {{ item.get_item_type_display }}
@@ -132,7 +143,7 @@
                                         {% if item.item_type == 'found' %}{{ item.location_found|default:"—" }}{% else %}{{ item.location_lost|default:"—" }}{% endif %}
                                     </td>
                                     <td class="px-4 py-3">
-                                        {% if item.item_type == 'found' and item.date_found %}{{ item.date_found|date:"M d, Y" }}{% elif item.item_type == 'lost' and item.date_lost %}{{ item.date_lost|date:"M d, Y" }}{% else %}—{% endif %}
+                                        {{ item.created_at|date:"M d, Y" }}
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="space-y-1">
@@ -156,14 +167,25 @@
                     <div class="md:hidden space-y-4">
                         {% for item in all_items %}
                         <div class="bg-card border rounded-lg p-4 shadow-sm cursor-pointer" onclick="openItemModal('admin-{{ item.id }}')">
-                            <div class="flex justify-between items-start mb-3">
-                                <div class="min-w-0 pr-2">
-                                    <h4 class="font-semibold text-base truncate" title="{{ item.title }}">{{ item.title }}</h4>
-                                    <p class="text-xs text-muted-foreground">{{ item.get_category_display }}</p>
+                            <div class="flex gap-3 mb-3">
+                                <!-- Image -->
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded object-cover aspect-square flex-shrink-0">
+                                {% else %}
+                                    <div class="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="package" class="h-6 w-6 text-muted-foreground"></i>
+                                    </div>
+                                {% endif %}
+
+                                <div class="flex-1 min-w-0 flex justify-between items-start">
+                                    <div class="min-w-0 pr-2">
+                                        <h4 class="font-semibold text-base truncate" title="{{ item.title }}">{{ item.title }}</h4>
+                                        <p class="text-xs text-muted-foreground">{{ item.get_category_display }}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-md text-xs font-medium flex-shrink-0 {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                        {{ item.get_item_type_display }}
+                                    </span>
                                 </div>
-                                <span class="px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
-                                    {{ item.get_item_type_display }}
-                                </span>
                             </div>
                             
                             <div class="space-y-2 text-sm">
