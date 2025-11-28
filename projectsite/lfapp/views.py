@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -624,11 +625,15 @@ def send_message_view(request, item_id):
     
     # Check if user is PSU verified
     if not request.user.is_psu_user():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Only verified PSU users can contact item posters.'}, status=403)
         messages.error(request, 'Only verified PSU users can contact item posters.')
         return redirect('home')
     
     # Can't message your own post
     if item.posted_by == request.user:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'You cannot message your own post.'}, status=400)
         messages.error(request, 'You cannot message your own post.')
         return redirect('home')
     
@@ -638,9 +643,11 @@ def send_message_view(request, item_id):
         sender_phone = request.POST.get('phone', '').strip()
         
         if not subject or not message_text:
-            messages.error(request, 'Subject and message are required.')
-            return render(request, 'lfapp/send_message.html', {'item': item})
-        
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'message': 'Please fill in all fields.'}, status=400)
+            messages.error(request, 'Please fill in all fields.')
+            return redirect('send_message', item_id=item_id)
+            
         # Create message
         contact_message = ContactMessage.objects.create(
             item=item,
@@ -686,6 +693,9 @@ This is an automated message from HanApp - PSU Lost and Found
             # Log error but don't fail the message creation
             print(f"Email sending failed: {e}")
         
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success', 'message': 'Message sent successfully!'})
+
         messages.success(request, f'Your message has been sent to {item.posted_by.get_full_name() or item.posted_by.email}!')
         return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     
