@@ -242,11 +242,19 @@
         </div>
         {% endif %}
         {% elif request.user.is_authenticated and request.user.is_psu_user %}
+        {% if item.existing_thread_id %}
+        <a href="{% url 'message_thread' item.existing_thread_id %}"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm relative z-20">
+            <i data-lucide="message-circle" class="h-4 w-4"></i>
+            View Chat
+        </a>
+        {% else %}
         <button onclick="openContactModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{{ item.get_item_type_display|escapejs }}', '{% if item.image %}{{ item.image.url }}{% endif %}')"
             class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm relative z-20">
             <i data-lucide="mail" class="h-4 w-4"></i>
             Contact
         </button>
+        {% endif %}
         {% else %}
         <button
             onclick="alert('Only verified PSU users can contact posters. Please sign in with your @psu.palawan.edu.ph account and get verified.')"

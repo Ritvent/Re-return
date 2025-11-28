@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Subquery, OuterRef
 from django.core.paginator import Paginator
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
@@ -17,6 +17,22 @@ from .forms import ItemForm, ItemCompletionForm
 from .utils import validate_image_file
 from django.core.exceptions import ValidationError
 from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email, send_admin_new_item_notification
+
+def annotate_user_conversations(queryset, user):
+    """Annotate items with existing thread ID for the current user"""
+    if not user.is_authenticated:
+        return queryset
+    
+    # Find the root message ID sent by this user for this item
+    thread_subquery = ContactMessage.objects.filter(
+        item=OuterRef('pk'),
+        sender=user,
+        parent_message__isnull=True
+    ).values('pk')[:1]
+    
+    return queryset.annotate(
+        existing_thread_id=Subquery(thread_subquery)
+    )
 
 def landing_view(request):
     """Landing page with login form"""
@@ -44,27 +60,31 @@ def home_view(request):
         item_type='lost',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:4]
+    ).select_related('posted_by').order_by('-created_at')
+    recent_lost = annotate_user_conversations(recent_lost, request.user)[:4]
     
     # Get recent found items (limit to 4)
     recent_found = Item.objects.filter(
         item_type='found',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:4]
+    ).select_related('posted_by').order_by('-created_at')
+    recent_found = annotate_user_conversations(recent_found, request.user)[:4]
     
     # Get recent activities: recent posts + recent completions
     # Recent posts (both lost and found, approved and active)
     recent_posts = Item.objects.filter(
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:10]
+    ).select_related('posted_by').order_by('-created_at')
+    recent_posts = annotate_user_conversations(recent_posts, request.user)[:10]
     
     # Recent completed items (claimed and found)
     recent_completed = Item.objects.filter(
         status__in=['claimed', 'found'],
         is_active=True
-    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')[:10]
+    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
+    recent_completed = annotate_user_conversations(recent_completed, request.user)[:10]
     
     # Combine and sort by most recent activity (either created_at or completed_at)
     all_activities = list(chain(recent_posts, recent_completed))
@@ -108,6 +128,8 @@ def lost_items_view(request):
             status__in=['approved']
         ).select_related('posted_by').order_by('-created_at')
     
+    items = annotate_user_conversations(items, request.user)
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -148,6 +170,8 @@ def found_items_view(request):
             status__in=['approved']
         ).select_related('posted_by').order_by('-created_at')
     
+    items = annotate_user_conversations(items, request.user)
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -486,6 +510,8 @@ def claimed_items_view(request):
         status__in=['claimed', 'found']
     ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
     
+    items = annotate_user_conversations(items, request.user)
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -699,7 +725,8 @@ This is an automated message from HanApp - PSU Lost and Found
         messages.success(request, f'Your message has been sent to {item.posted_by.get_full_name() or item.posted_by.email}!')
         return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     
-    return render(request, 'lfapp/send_message.html', {'item': item})
+
+    return redirect('home')
 
 @login_required
 def messages_inbox_view(request):
