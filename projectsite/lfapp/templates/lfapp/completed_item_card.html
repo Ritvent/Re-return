@@ -130,7 +130,7 @@
                     {{ item.posted_by.username|make_list|first|upper }}
                 </div>
                 <span class="text-sm font-medium text-gray-600 truncate">
-                    {{ item.posted_by.get_full_name|default:item.posted_by.username }}
+                    {{ item.posted_by.get_full_name|default:item.posted_by.email_username }}
                 </span>
             </div>
         </div>

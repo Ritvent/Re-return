@@ -87,6 +87,13 @@ class CustomUser(AbstractUser):
         if self.role in ['verified', 'admin']:
             validate_psu_email(self.email)
 
+    @property
+    def email_username(self):
+        """number only before the @"""
+        if self.email:
+            return self.email.split('@')[0]
+        return self.username
+
 """Items"""
 
 class Item(TimeStampedModel):

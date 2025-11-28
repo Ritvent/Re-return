@@ -90,7 +90,7 @@
         <div class="pt-2 border-t border-dashed border-gray-300">
             <div class="flex items-center justify-between">
                 <p class="text-xs text-muted-foreground italic truncate">
-                    {% if request.user == item.posted_by %}~ You{% elif item.display_name %}~ {{ item.posted_by.get_full_name|default:item.posted_by.username }}{% else %}~ {{ item.posted_by.email|truncatechars:25 }}{% endif %}
+                    {% if request.user == item.posted_by %}~ You{% elif item.display_name %}~ {{ item.posted_by.get_full_name|default:item.posted_by.username }}{% else %}~ {{ item.posted_by.email_username }}{% endif %}
                 </p>
                 {% if item.contact_number %}<p class="text-xs text-muted-foreground flex-shrink-0">{{ item.contact_number }}</p>{% endif %}
             </div>
