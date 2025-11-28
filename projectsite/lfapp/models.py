@@ -363,6 +363,16 @@ class ContactMessage(TimeStampedModel):
     is_read = models.BooleanField(default=False, help_text='Has recipient read this message')
     is_deleted = models.BooleanField(default=False, help_text='Has sender deleted this message')
     
+    # Soft delete tracking - per-user deletion
+    deleted_by_sender = models.BooleanField(
+        default=False,
+        help_text='Has sender deleted this thread from their view'
+    )
+    deleted_by_recipient = models.BooleanField(
+        default=False,
+        help_text='Has recipient deleted this thread from their view'
+    )
+    
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Contact Message'
