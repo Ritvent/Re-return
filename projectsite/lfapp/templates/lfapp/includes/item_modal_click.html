@@ -1,0 +1,187 @@
+<script>
+    if (!window.lfAppItemCardInitialized) {
+        window.lfAppItemCardInitialized = true;
+
+        // Open Modal Function
+        window.openItemModal = function(itemId) {
+            const modal = document.getElementById('modal-' + itemId);
+            if (modal) {
+                document.body.appendChild(modal);
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                const closeOnEsc = function(e) {
+                    if (e.key === 'Escape') {
+                        window.closeItemModal(itemId);
+                        document.removeEventListener('keydown', closeOnEsc);
+                    }
+                };
+                document.addEventListener('keydown', closeOnEsc);
+            }
+        };
+
+        // Close Modal Function
+        window.closeItemModal = function(itemId) {
+            const modal = document.getElementById('modal-' + itemId);
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        };
+
+        // Copy to Clipboard Function
+        window.copyToClipboard = function(text, button) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Visual feedback
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<div class="flex items-center justify-between w-full"><div class="flex items-center gap-3"><i data-lucide="check" class="h-5 w-5 text-primary"></i><span class="text-primary font-semibold">Copied!</span></div></div>';
+                
+                // Re-initialize lucide icons for the new check icon
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                // Reset after 2 seconds
+                setTimeout(function() {
+                    button.innerHTML = originalHTML;
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        };
+
+        // Long press timer and state
+        window.longPressTimers = {};
+        window.longPressActive = {};
+
+        // Initialize long-press listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-long-press]').forEach(card => {
+                const itemId = card.getAttribute('data-long-press');
+
+                // Prevent default context menu
+                card.addEventListener('contextmenu', function (e) {
+                    if (window.innerWidth < 768) {
+                        e.preventDefault();
+                    }
+                });
+
+                card.addEventListener('touchstart', function (e) {
+                    window.longPressActive[itemId] = false;
+                    window.longPressTimers[itemId] = setTimeout(() => {
+                        window.longPressActive[itemId] = true;
+                        window.toggleItemMenu(itemId);
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
+                    }, 500);
+                }, { passive: true });
+
+                card.addEventListener('touchend', function (e) {
+                    clearTimeout(window.longPressTimers[itemId]);
+                });
+
+                card.addEventListener('touchmove', function (e) {
+                    clearTimeout(window.longPressTimers[itemId]);
+                    window.longPressActive[itemId] = false;
+                });
+            });
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        window.toggleItemMenu = function (itemId, buttonElement) {
+            const menu = document.getElementById('menu-' + itemId);
+            const sheet = document.getElementById('sheet-' + itemId);
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                if (sheet.classList.contains('hidden')) {
+                    sheet.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    sheet.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            } else {
+                document.querySelectorAll('[id^="menu-"]').forEach(m => {
+                    if (m.id !== 'menu-' + itemId) {
+                        m.classList.add('hidden');
+                    }
+                });
+
+                const isHidden = menu.classList.contains('hidden');
+                if (isHidden) {
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
+                    const button = document.getElementById('btn-menu-' + itemId);
+                    if (button) {
+                        const rect = button.getBoundingClientRect();
+                        menu.style.top = (rect.bottom + 5) + 'px';
+                        menu.style.right = (window.innerWidth - rect.right) + 'px';
+                    }
+                    menu.classList.remove('hidden');
+                } else {
+                    menu.classList.add('hidden');
+                }
+            }
+        };
+
+        document.addEventListener('click', function (event) {
+            const menus = document.querySelectorAll('[id^="menu-"]');
+            menus.forEach(menu => {
+                if (menu.classList.contains('hidden')) return;
+                const itemId = menu.id.replace('menu-', '');
+                const button = document.getElementById('btn-menu-' + itemId);
+                if (button) {
+                    if (!menu.contains(event.target) && !button.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
+                } else {
+                    if (!menu.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('[id^="menu-"]').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+                document.querySelectorAll('[id^="sheet-"]').forEach(sheet => {
+                    sheet.classList.add('hidden');
+                    document.body.style.overflow = '';
+                });
+            }
+        });
+        window.toggleModalMenu = function(itemId) {
+            const menu = document.getElementById('modal-menu-' + itemId);
+            if (menu) {
+                if (menu.classList.contains('hidden')) {
+                    menu.classList.remove('hidden');
+                    // Close on click outside
+                    const closeMenu = function(e) {
+                        if (!menu.contains(e.target) && !e.target.closest('button[onclick^="toggleModalMenu"]')) {
+                            menu.classList.add('hidden');
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    };
+                    setTimeout(() => {
+                        document.addEventListener('click', closeMenu);
+                    }, 0);
+                } else {
+                    menu.classList.add('hidden');
+                }
+            }
+        };
+    }
+</script>

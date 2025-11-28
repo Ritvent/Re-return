@@ -164,7 +164,7 @@
 
                         <tbody class="divide-y divide-border">
                             {% for item in recent_activities %}
-                            <tr class="hover:bg-muted/30 transition-colors">
+                            <tr class="hover:bg-muted/30 transition-colors cursor-pointer" onclick="openItemModal('activity-{{ item.id }}')">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         {% if item.image %}
@@ -282,6 +282,8 @@
 
                                 <td class="px-6 py-4">
                                     <span class="text-muted-foreground text-sm">{{ item.get_category_display }}</span>
+                                    <!-- Include Modal for this item -->
+                                    {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="activity-" %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -322,7 +324,7 @@
                             </div>
             
                             <!-- Card -->
-                            <div class="bg-card border border-border rounded-lg p-3 shadow-sm">
+                            <div class="bg-card border border-border rounded-lg p-3 shadow-sm cursor-pointer" onclick="openItemModal('activity-{{ item.id }}')">
                                 <div class="flex gap-3">
                                     <!-- Image -->
                                     {% if item.image %}
@@ -407,6 +409,30 @@
                         </div>
             
                     {% endwith %}
+                    <!-- Include Modal for this item (Mobile loop) - Note: We need to be careful not to duplicate IDs if the list is the same. 
+                         However, the desktop and mobile views are mutually exclusive in display (hidden md:block vs md:hidden), 
+                         but the DOM elements exist. 
+                         Actually, we are iterating `recent_activities` twice. Once for desktop table, once for mobile timeline.
+                         This will create duplicate IDs like `modal-activity-123` if we include it in both loops.
+                         
+                         Solution: We should only include the modal ONCE per item. 
+                         Or use different prefixes for desktop and mobile? 
+                         If we use different prefixes, we need to call the right one.
+                         
+                         Let's use `activity-desktop-` and `activity-mobile-`?
+                         Or better, just include the modals in one place (e.g. the desktop loop) and reference them?
+                         But if we are on mobile, the desktop loop might still be rendered but hidden? 
+                         Yes, `hidden md:block` just hides it with CSS. The HTML is there.
+                         
+                         So we only need to include the modal ONCE.
+                         I included it in the desktop loop above.
+                         So I DO NOT need to include it in the mobile loop.
+                         I just need to make the mobile card trigger the SAME modal ID.
+                         
+                         Wait, if I use `activity-{{ item.id }}` in the desktop loop, I can target `activity-{{ item.id }}` from the mobile loop.
+                         
+                         So I will NOT include the modal here.
+                    -->
                 {% endfor %}
             </div>
 
@@ -424,4 +450,5 @@
 <script>
     lucide.createIcons();
 </script>
+{% include 'lfapp/includes/item_modal_click.html' %}
 {% endblock %}
