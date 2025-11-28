@@ -4,6 +4,12 @@
 
         // Open Modal Function
         window.openItemModal = function(itemId) {
+            //  check if text iss highlighted to prevent modal opening during trying to highlight
+            const selection = window.getSelection();
+            if (selection.toString().length > 0) {
+                return;
+            }
+
             const modal = document.getElementById('modal-' + itemId);
             if (modal) {
                 document.body.appendChild(modal);
