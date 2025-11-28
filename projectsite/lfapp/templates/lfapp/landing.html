@@ -62,7 +62,7 @@
 
                         <h2 class="text-3xl font-bold mb-2">Welcome Back</h2>
                         <p class="text-sm text-muted-foreground mb-6">
-                            Sign in using your PSU Google account.
+                            Sign in using your PalSU Google account.
                         </p>
 
                         {% load socialaccount %}
@@ -104,7 +104,9 @@
                         <!-- Info Box -->
                         <div class="mt-6 bg-muted/50 border border-border rounded-lg p-4">
                             <div class="flex items-start gap-3">
-                                <i data-lucide="shield-check" class="h-5 w-5 text-primary mt-1"></i>
+                                <img src="{% static 'lfapp/images/palsu-seal.png' %}"
+                                    alt="PalSU Logo"
+                                    class="h-8 w-8 mt-1 object-contain">
                                 <div>
                                     <p class="font-semibold">PalSU accounts only!</p>
                                     <p class="text-xs text-muted-foreground mt-1">
