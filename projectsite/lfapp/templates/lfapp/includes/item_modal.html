@@ -15,19 +15,30 @@
                 {% if item.image %}
                     <img src="{{ item.image.url }}" alt="{{ item.title }}" class="max-h-full max-w-full object-contain" />
                 {% else %}
-                    <div class="flex flex-col items-center justify-center text-gray-500">
+                    <div class="flex flex-col items-center justify-center text-gray-500 relative w-full h-full">
                         <i data-lucide="image-off" class="h-16 w-16 mb-2"></i>
                         <span class="text-sm">No image available</span>
+                        
+                        <!-- Badge for no-image items -->
+                        {% if item.status == 'claimed' or item.status == 'found' %}
+                        <div class="absolute top-4 right-4">
+                            <span class="px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-500 text-white shadow-lg">
+                                {% if item.status == 'claimed' %}Claimed{% else %}Found{% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                 {% endif %}
 
-                <!-- Success Badge (Overlay) - Only for claimed/found items -->
-                {% if item.status == 'claimed' or item.status == 'found' %}
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                    <div class="rotate-12 border-4 border-green-600 px-6 py-3 text-3xl font-black uppercase tracking-widest text-green-600 opacity-100 mix-blend-multiply bg-white/20 backdrop-blur-[1px] shadow-lg">
-                        {% if item.status == 'claimed' %}Claimed{% else %}Found{% endif %}
+                <!-- Success Badge (Overlay) - Only for claimed/found items WITH images -->
+                {% if item.image %}
+                    {% if item.status == 'claimed' or item.status == 'found' %}
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <div class="rotate-12 border-4 border-green-600 px-6 py-3 text-3xl font-black uppercase tracking-widest text-green-600 opacity-100 mix-blend-multiply bg-white/20 backdrop-blur-[1px] shadow-lg">
+                            {% if item.status == 'claimed' %}Claimed{% else %}Found{% endif %}
+                        </div>
                     </div>
-                </div>
+                    {% endif %}
                 {% endif %}
 
             </div>
