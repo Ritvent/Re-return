@@ -191,8 +191,8 @@ def admin_dashboard_view(request):
     lost_percentage = round((lost_count / total_items * 100), 0) if total_items > 0 else 0
     found_percentage = round((found_count / total_items * 100), 0) if total_items > 0 else 0
     
-    # Get unique category count
-    category_count = all_items.values('category').distinct().count()
+    # Get unique user count
+    user_count = CustomUser.objects.filter(is_superuser=False).count()
     
     # Get pending items count for moderation queue badge
     pending_count = all_items.filter(status='pending').count()
@@ -204,7 +204,7 @@ def admin_dashboard_view(request):
         'found_count': found_count,
         'lost_percentage': int(lost_percentage),
         'found_percentage': int(found_percentage),
-        'category_count': category_count,
+        'user_count': user_count,
         'pending_count': pending_count,
     }
     

@@ -86,12 +86,12 @@
 
                 <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
                     <div class="px-6 pb-2 flex items-center justify-between">
-                        <h3 class="text-sm font-medium">Categories</h3>
-                        <i data-lucide="package" class="h-4 w-4 text-muted-foreground"></i>
+                        <h3 class="text-sm font-medium">Total Users</h3>
+                        <i data-lucide="users" class="h-4 w-4 text-muted-foreground"></i>
                     </div>
                     <div class="px-6">
-                        <div class="text-3xl font-bold">{{ category_count }}</div>
-                        <p class="text-xs text-muted-foreground mt-1">Unique categories</p>
+                        <div class="text-3xl font-bold">{{ user_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Registered users</p>
                     </div>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span class="px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                        <span class="px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
                                             {{ item.get_item_type_display }}
                                         </span>
                                     </td>
@@ -142,13 +142,35 @@
                                     <td class="px-4 py-3 max-w-[200px] truncate" title="{% if item.item_type == 'found' %}{{ item.location_found }}{% else %}{{ item.location_lost }}{% endif %}">
                                         {% if item.item_type == 'found' %}{{ item.location_found|default:"—" }}{% else %}{{ item.location_lost|default:"—" }}{% endif %}
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 whitespace-nowrap">
                                         {{ item.created_at|date:"M d, Y" }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <div class="space-y-1">
-                                            <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                        <div class="flex items-center gap-2">
+                                            {% if item.posted_by.google_profile_picture %}
+                                                <img src="{{ item.posted_by.google_profile_picture }}" class="h-8 w-8 rounded-full object-cover">
+                                            {% else %}
+                                                <div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                                    <i data-lucide="user" class="h-4 w-4 text-muted-foreground"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div class="space-y-0.5">
+                                                <div class="flex items-center gap-1.5">
+                                                    <p class="text-sm font-medium whitespace-nowrap">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+                                                    {% if not item.display_name %}
+                                                        <div class="relative group flex items-center flex-shrink-0">
+                                                            <i data-lucide="eye-off" class="h-3.5 w-3.5 text-muted-foreground"></i>
+                                                            <!-- Custom Tooltip -->
+                                                            <div class="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                Name hidden on public site
+                                                                <!-- Arrow -->
+                                                                <div class="absolute top-full right-1 -mt-1 border-4 border-transparent border-t-foreground"></div>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                            </div>
                                         </div>
                                         <!-- Include Modal for this item -->
                                         {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="admin-" %}
@@ -182,7 +204,7 @@
                                         <h4 class="font-semibold text-base truncate" title="{{ item.title }}">{{ item.title }}</h4>
                                         <p class="text-xs text-muted-foreground">{{ item.get_category_display }}</p>
                                     </div>
-                                    <span class="px-2 py-1 rounded-md text-xs font-medium flex-shrink-0 {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                    <span class="px-2 py-1 rounded-md text-xs font-medium flex-shrink-0 whitespace-nowrap {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
                                         {{ item.get_item_type_display }}
                                     </span>
                                 </div>
@@ -202,10 +224,29 @@
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-2 pt-2 border-t mt-2">
-                                    <i data-lucide="user" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                                    <div class="flex flex-col">
-                                        <span class="font-medium text-xs">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</span>
-                                        <span class="text-[10px] text-muted-foreground">{{ item.posted_by.email }}</span>
+                                    {% if item.posted_by.google_profile_picture %}
+                                        <img src="{{ item.posted_by.google_profile_picture }}" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-6 w-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                            <i data-lucide="user" class="h-3 w-3 text-muted-foreground"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex flex-col min-w-0">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-medium text-xs whitespace-nowrap">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</span>
+                                            {% if not item.display_name %}
+                                                <div class="relative group flex items-center flex-shrink-0">
+                                                    <i data-lucide="eye-off" class="h-3 w-3 text-muted-foreground"></i>
+                                                    <!-- Custom Tooltip -->
+                                                    <div class="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                        Name hidden on public site
+                                                        <!-- Arrow -->
+                                                        <div class="absolute top-full right-1 -mt-1 border-4 border-transparent border-t-foreground"></div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <span class="text-[10px] text-muted-foreground truncate">{{ item.posted_by.email }}</span>
                                     </div>
                                 </div>
                                 <!-- No need to include modal here as it's already in the desktop loop which is always rendered -->
