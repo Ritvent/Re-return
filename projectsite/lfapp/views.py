@@ -801,8 +801,8 @@ This is an automated message from HanApp - PSU Lost and Found
             email.send(fail_silently=False)
         except Exception as e:
             print(f"Email sending failed: {e}")
-        
-        messages.success(request, 'Your reply has been sent!')
+            
+        messages.success(request, 'Reply sent successfully!')
         return redirect('message_thread', message_id=message_id)
     
     context = {
@@ -811,6 +811,48 @@ This is an automated message from HanApp - PSU Lost and Found
         'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
     }
     return render(request, 'lfapp/message_thread.html', context)
+
+@login_required
+def delete_message_view(request, message_id):
+    """Delete a message"""
+    message = get_object_or_404(ContactMessage, id=message_id)
+    
+    # Check permission
+    if message.sender != request.user:
+        messages.error(request, 'You can only delete your own messages.')
+        return redirect('messages_inbox')
+    
+    # Determine redirect URL
+    if message.parent_message:
+        # It's a reply, go back to thread
+        redirect_url = f'/messages/thread/{message.parent_message.id}/'
+    else:
+        # It's a root message, go back to inbox (thread is gone)
+        redirect_url = 'messages_inbox'
+        
+    # Soft delete
+    message.is_deleted = True
+    message.save()
+    
+    # Delete image file if exists (optional: keep it if you want to restore, but usually good to save space)
+    # For soft delete, we might want to keep the image record but maybe delete the file?
+    # Let's keep the file for now in case of restoration, or delete it if privacy is key.
+    # User said "message removed by user", implying content is gone.
+    if message.image:
+        try:
+            if os.path.isfile(message.image.path):
+                os.remove(message.image.path)
+            message.image = None # Remove reference
+            message.save()
+        except Exception as e:
+            print(f"Error deleting message image: {e}")
+            
+    messages.success(request, 'Message removed.')
+    
+    if redirect_url == 'messages_inbox':
+        return redirect('messages_inbox')
+    else:
+        return redirect(redirect_url)
 
 @login_required
 def mark_item_complete_view(request, item_id):
