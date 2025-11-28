@@ -3,6 +3,15 @@
 
 {% block title %}Messages - HanApp{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Hide footer on messages page */
+    footer {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="h-screen bg-slate-50/50 flex flex-col overflow-hidden">
     <!-- Navbar -->
@@ -27,8 +36,20 @@
             <!-- Messages List -->
             <div class="flex-1 overflow-y-auto scroll-smooth bg-slate-50/30">
                 {% if messages %}
-                    <div class="divide-y divide-border/50">
-                        {% for msg in messages %}
+                    {% regroup messages by latest_msg_time|date:"F j, Y" as messages_by_date %}
+                    
+                    {% for date_group in messages_by_date %}
+                    <div class="relative">
+                        <div class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm px-4 md:px-6 py-2 border-y border-border/40 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm">
+                            {% now "F j, Y" as today_str %}
+                            {% if date_group.grouper == today_str %}
+                                Today
+                            {% else %}
+                                {{ date_group.grouper }}
+                            {% endif %}
+                        </div>
+                        <div class="divide-y divide-border/50">
+                        {% for msg in date_group.list %}
                         {% comment %}
                         Determine conversation partner:
                         - If user is recipient: partner is sender
@@ -58,30 +79,33 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between mb-1">
                                             <div class="flex items-center gap-2 min-w-0 flex-1">
-                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-green-100 text-green-700 flex-shrink-0">
-                                                    {{ direction }}
-                                                </span>
                                                 <h3 class="text-sm md:text-base truncate pr-2 group-hover:text-primary transition-colors {% if msg.has_unread %}font-bold text-foreground{% else %}font-medium text-foreground/80{% endif %}">
                                                     {{ partner.get_full_name|default:partner.username }}
                                                 </h3>
                                             </div>
                                             <span class="text-[10px] md:text-xs flex-shrink-0 whitespace-nowrap {% if msg.has_unread %}font-semibold text-primary{% else %}text-muted-foreground{% endif %}">
-                                                {{ msg.created_at|date:"M d" }}
+                                                {{ msg.latest_msg_time|date:"g:i A" }}
                                             </span>
                                         </div>
 
-                                        <!-- Item Context Badge -->
+                                        <!-- Item Context Badge (Truncated) -->
                                         <div class="flex items-center gap-2 mb-1.5">
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/50 max-w-full truncate">
-                                                <i data-lucide="package" class="h-3 w-3 mr-1"></i>
-                                                {{ msg.item.title }}
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/50 max-w-[200px] truncate" title="{{ msg.item.title }}">
+                                                <i data-lucide="package" class="h-3 w-3 mr-1 flex-shrink-0"></i>
+                                                <span class="truncate">{{ msg.item.title }}</span>
                                             </span>
                                         </div>
 
                                         <!-- Subject and Message -->
                                         <div class="flex items-center justify-between gap-4">
                                             <p class="text-xs md:text-sm truncate flex-1 {% if msg.has_unread %}text-foreground{% else %}text-muted-foreground{% endif %}">
-                                                <span class="{% if msg.has_unread %}font-semibold{% else %}font-medium text-foreground/80{% endif %}">{{ msg.subject }}</span>
+                                                <span class="{% if msg.has_unread %}font-semibold{% else %}font-medium text-foreground/80{% endif %}">
+                                                    {% if "Inquiry about:" in msg.subject %}
+                                                        Inquiry
+                                                    {% else %}
+                                                        {{ msg.subject }}
+                                                    {% endif %}
+                                                </span>
                                                 <span class="mx-1">&middot;</span>
                                                 {{ msg.latest_message_text }}
                                             </p>
@@ -121,30 +145,33 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between mb-1">
                                             <div class="flex items-center gap-2 min-w-0 flex-1">
-                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-100 text-blue-700 flex-shrink-0">
-                                                    {{ direction }}
-                                                </span>
                                                 <h3 class="font-semibold text-sm md:text-base text-foreground truncate pr-2 group-hover:text-primary transition-colors">
-                                                    {{ partner.get_full_name|default:partner.username }}
+                                                    You to {{ partner.get_full_name|default:partner.username }}
                                                 </h3>
                                             </div>
                                             <span class="text-[10px] md:text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">
-                                                {{ msg.created_at|date:"M d" }}
+                                                {{ msg.latest_msg_time|date:"g:i A" }}
                                             </span>
                                         </div>
 
-                                        <!-- Item Context Badge -->
+                                        <!-- Item Context Badge (Truncated) -->
                                         <div class="flex items-center gap-2 mb-1.5">
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/50 max-w-full truncate">
-                                                <i data-lucide="package" class="h-3 w-3 mr-1"></i>
-                                                {{ msg.item.title }}
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/50 max-w-[200px] truncate" title="{{ msg.item.title }}">
+                                                <i data-lucide="package" class="h-3 w-3 mr-1 flex-shrink-0"></i>
+                                                <span class="truncate">{{ msg.item.title }}</span>
                                             </span>
                                         </div>
 
                                         <!-- Subject, Message, and Read Status -->
                                         <div class="flex items-center justify-between gap-4">
                                             <p class="text-xs md:text-sm text-muted-foreground truncate flex-1">
-                                                <span class="font-medium text-foreground/80">{{ msg.subject }}</span>
+                                                <span class="font-medium text-foreground/80">
+                                                    {% if "Inquiry about:" in msg.subject %}
+                                                        Inquiry
+                                                    {% else %}
+                                                        {{ msg.subject }}
+                                                    {% endif %}
+                                                </span>
                                                 <span class="mx-1">&middot;</span>
                                                 {{ msg.latest_message_text }}
                                             </p>
@@ -153,12 +180,10 @@
                                             {% if msg.is_read %}
                                                 <div class="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full">
                                                     <i data-lucide="check-check" class="h-3 w-3"></i>
-                                                    <span class="hidden md:inline">Read</span>
                                                 </div>
                                             {% else %}
                                                 <div class="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded-full">
                                                     <i data-lucide="check" class="h-3 w-3"></i>
-                                                    <span class="hidden md:inline">Sent</span>
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -175,7 +200,9 @@
                             {% endwith %}
                         {% endif %}
                         {% endfor %}
+                        </div>
                     </div>
+                    {% endfor %}
                 {% else %}
                     <!-- Empty State -->
                     <div class="h-full flex flex-col items-center justify-center p-8 text-center">
