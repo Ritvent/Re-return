@@ -361,6 +361,7 @@ class ContactMessage(TimeStampedModel):
         help_text='Parent message if this is a reply'
     )
     is_read = models.BooleanField(default=False, help_text='Has recipient read this message')
+    is_deleted = models.BooleanField(default=False, help_text='Has sender deleted this message')
     
     class Meta:
         ordering = ['-created_at']

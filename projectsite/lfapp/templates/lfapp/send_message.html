@@ -51,7 +51,13 @@
                             <div class="flex-1">
                                 <h3 class="font-semibold text-foreground">{{ item.title }}</h3>
                                 <p class="text-sm text-muted-foreground mt-1">{{ item.get_item_type_display }}</p>
-                                <p class="text-sm text-muted-foreground">To: {{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+                                <p class="text-sm text-muted-foreground">To: 
+                                    {% if item.display_name %}
+                                        {{ item.posted_by.get_full_name|default:item.posted_by.email }}
+                                    {% else %}
+                                        {{ item.posted_by.email }}
+                                    {% endif %}
+                                </p>
                             </div>
                         </div>
                     </div>
