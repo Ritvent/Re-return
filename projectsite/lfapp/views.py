@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q, Count, Subquery, OuterRef
+from django.db.models import Q, Count, Subquery, OuterRef, Exists, Case, When, Value, CharField, Max
 from django.core.paginator import Paginator
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
@@ -730,34 +730,100 @@ This is an automated message from HanApp - PSU Lost and Found
 
 @login_required
 def messages_inbox_view(request):
-    """View all received messages"""
-    # Get only root messages (not replies) received by user
-    received_messages = ContactMessage.objects.filter(
-        recipient=request.user,
-        parent_message__isnull=True
-    ).select_related('sender', 'item').order_by('-created_at')
+    """View all conversations (unified inbox + sent)"""
     
-    # Mark messages as read when viewing inbox
-    received_messages.filter(is_read=False).update(is_read=True)
+    # Get all root messages where user is either sender or recipient
+    # Exclude threads deleted by the current user
+    all_messages = ContactMessage.objects.filter(
+        Q(sender=request.user) | Q(recipient=request.user),
+        parent_message__isnull=True
+    ).exclude(
+        Q(sender=request.user, deleted_by_sender=True) |
+        Q(recipient=request.user, deleted_by_recipient=True)
+    ).select_related('sender', 'recipient', 'item')
+    
+    # Annotate with the latest message timestamp in the thread
+    latest_message_time = ContactMessage.objects.filter(
+        Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk'))
+    ).values('created_at').order_by('-created_at')[:1]
+    
+    all_messages = all_messages.annotate(
+        latest_msg_time=Subquery(latest_message_time)
+    )
+    
+    # Order by latest message time (most recent conversations first)
+    all_messages = all_messages.order_by('-latest_msg_time')
+    
+    # Annotate with conversation partner and direction
+    all_messages = all_messages.annotate(
+        # The "other user" in the conversation
+        other_user_id=Case(
+            When(sender=request.user, then='recipient__id'),
+            default='sender__id'
+        ),
+        # Direction: True if user received this message
+        is_incoming=Case(
+            When(recipient=request.user, then=Value(True)),
+            default=Value(False),
+            output_field=CharField()
+        )
+    )
+    
+    # Annotate with unread status (check if ANY message in thread is unread for current user)
+    unread_in_thread = ContactMessage.objects.filter(
+        Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk')),
+        recipient=request.user,
+        is_read=False
+    )
+    all_messages = all_messages.annotate(
+        has_unread=Exists(unread_in_thread)
+    )
+    
+    # Annotate with the latest message text in the thread
+    latest_message_subquery = ContactMessage.objects.filter(
+        Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk'))
+    ).order_by('-created_at').values('message')[:1]
+    
+    all_messages = all_messages.annotate(
+        latest_message_text=Subquery(latest_message_subquery)
+    )
     
     context = {
-        'messages': received_messages,
+        'messages': all_messages,
     }
     return render(request, 'lfapp/messages_inbox.html', context)
 
+
 @login_required
 def messages_sent_view(request):
-    """View all sent messages"""
-    # Get only root messages (not replies) sent by user
-    sent_messages = ContactMessage.objects.filter(
-        sender=request.user,
+    """Redirect to unified messages view"""
+    from django.shortcuts import redirect
+    return redirect('messages_inbox')
+
+@login_required
+def delete_thread_view(request, message_id):
+    """Soft delete a message thread for the current user only"""
+    # Get the root message
+    root_message = get_object_or_404(
+        ContactMessage,
+        id=message_id,
         parent_message__isnull=True
-    ).select_related('recipient', 'item').order_by('-created_at')
+    )
     
-    context = {
-        'messages': sent_messages,
-    }
-    return render(request, 'lfapp/messages_sent.html', context)
+    # Verify user is part of this conversation
+    if request.user != root_message.sender and request.user != root_message.recipient:
+        messages.error(request, 'You do not have permission to delete this conversation.')
+        return redirect('messages_inbox')
+    
+    # Set the appropriate deletion flag
+    if request.user == root_message.sender:
+        root_message.deleted_by_sender = True
+    else:
+        root_message.deleted_by_recipient = True
+    
+    root_message.save()
+    messages.success(request, 'Conversation deleted from your view.')
+    return redirect('messages_inbox')
 
 @login_required
 def message_thread_view(request, message_id):
