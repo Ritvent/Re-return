@@ -198,7 +198,11 @@
                         {% if request.user == item.posted_by %}
                             <!-- Owner actions moved to header menu -->
                         {% elif request.user.is_authenticated %}
-                            <button onclick="openContactModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{{ item.get_item_type_display|escapejs }}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="mail" class="h-5 w-5"></i> Contact</button>
+                            {% if item.existing_thread_id %}
+                                <a href="{% url 'message_thread' item.existing_thread_id %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="message-circle" class="h-5 w-5"></i> View Chat</a>
+                            {% else %}
+                                <button onclick="openContactModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{{ item.get_item_type_display|escapejs }}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="mail" class="h-5 w-5"></i> Contact</button>
+                            {% endif %}
                         {% else %}
                             <a href="{% url 'landing' %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium transition-colors"><i data-lucide="log-in" class="h-5 w-5"></i> Sign in to Contact</a>
                         {% endif %}
