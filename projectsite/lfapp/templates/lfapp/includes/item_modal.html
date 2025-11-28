@@ -1,0 +1,200 @@
+<!-- Item Detail Modal -->
+<div id="modal-{{ modal_id_prefix|default:'' }}{{ item.id }}" class="hidden fixed inset-0 z-[100] relative" aria-labelledby="modal-title-{{ modal_id_prefix|default:'' }}{{ item.id }}" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/90 backdrop-blur-sm transition-opacity" onclick="closeItemModal('{{ modal_id_prefix|default:'' }}{{ item.id }}')"></div>
+    
+    <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4 sm:p-6">
+        <div class="relative w-full max-w-6xl h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+            
+            <!-- Left Side: Image (Black Background, Centered) -->
+            <div class="relative w-full md:w-[60%] h-1/2 md:h-full bg-black flex items-center justify-center group">
+                <!-- Close Button (Top Left) -->
+                <button type="button" onclick="closeItemModal('{{ modal_id_prefix|default:'' }}{{ item.id }}')" class="absolute top-4 left-4 z-20 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-sm">
+                    <i data-lucide="x" class="h-6 w-6"></i>
+                </button>
+
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="max-h-full max-w-full object-contain" />
+                {% else %}
+                    <div class="flex flex-col items-center justify-center text-gray-500">
+                        <i data-lucide="image-off" class="h-16 w-16 mb-2"></i>
+                        <span class="text-sm">No image available</span>
+                    </div>
+                {% endif %}
+
+                <!-- Success Badge (Overlay) - Only for claimed/found items -->
+                {% if item.status == 'claimed' or item.status == 'found' %}
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div class="rotate-12 border-4 border-green-600 px-6 py-3 text-3xl font-black uppercase tracking-widest text-green-600 opacity-100 mix-blend-multiply bg-white/20 backdrop-blur-[1px] shadow-lg">
+                        {% if item.status == 'claimed' %}Claimed{% else %}Found{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Right Side: Details (Scrollable Body, Fixed Header/Footer) -->
+            <div class="w-full md:w-[40%] h-1/2 md:h-full flex flex-col bg-white border-l border-gray-100">
+                
+                <!-- Header: User Info & Actions -->
+                <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white z-10">
+                    <div class="flex items-center gap-3">
+                        {% if item.display_name %}
+                            {% if item.posted_by.google_profile_picture %}
+                                <img src="{{ item.posted_by.google_profile_picture }}" alt="Profile" class="h-10 w-10 rounded-full object-cover border border-gray-200">
+                            {% else %}
+                                <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200"><i data-lucide="user" class="h-5 w-5 text-gray-400"></i></div>
+                            {% endif %}
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                                <p class="text-xs text-gray-500">{{ item.posted_by.email }}</p>
+                                <p class="text-xs text-gray-400">{{ item.created_at|date:"F d, Y" }}</p>
+                            </div>
+                        {% else %}
+                            <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200"><i data-lucide="user" class="h-5 w-5 text-gray-400"></i></div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900">{{ item.posted_by.email }}</p>
+                                <p class="text-xs text-gray-500">{{ item.created_at|date:"F d, Y" }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Triple Dot Menu -->
+                    {% if request.user == item.posted_by %}
+                    <div class="relative">
+                        <button type="button" onclick="toggleModalMenu('{{ modal_id_prefix|default:'' }}{{ item.id }}')" class="flex p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                            <i data-lucide="more-vertical" class="h-6 w-6"></i>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="modal-menu-{{ modal_id_prefix|default:'' }}{{ item.id }}" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
+                             <a href="{% url 'edit_item' item.id %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                                <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
+                                <span>Edit Item</span>
+                            </a>
+                            <a href="{% url 'toggle_listing' item.id %}"
+                                onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item? It will be hidden from public view.{% else %}Relist this item to make it publicly visible again?{% endif %}')"
+                                class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                                <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}"
+                                    class="h-4 w-4 {% if item.is_active %}text-gray-600{% else %}text-green-600{% endif %}"></i>
+                                <span>{% if item.is_active %}Delist Item{% else %}Relist Item{% endif %}</span>
+                            </a>
+                            {% if item.status == 'approved' %}
+                            <a href="{% url 'mark_complete' item.id %}"
+                                class="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition-colors text-sm text-green-700">
+                                <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+                                <span>{% if item.item_type == 'lost' %}Mark as Found{% else %}Mark as Claimed{% endif %}</span>
+                            </a>
+                            {% endif %}
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <a href="{% url 'delete_item' item.id %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                <span>Delete Item</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Body: Scrollable Content -->
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                    <!-- Title & Type -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2.5 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ item.get_item_type_display }}
+                            </span>
+                        </div>
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 break-words">{{ item.title }}</h2>
+                    </div>
+
+                    <!-- Description (Caption) -->
+                    <div class="prose prose-sm max-w-none">
+                        <p class="text-gray-700 whitespace-pre-wrap break-words leading-relaxed">{{ item.description }}</p>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-1 gap-4 py-4 border-t border-b border-gray-100">
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="map-pin" class="h-5 w-5 text-primary"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{% if item.item_type == 'found' %}Location Found{% else %}Last Location{% endif %}</p>
+                                <p class="font-medium text-gray-900 break-words">{% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-lg text-orange-600"><i data-lucide="calendar" class="h-5 w-5 text-primary"></i></div>
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{% if item.item_type == 'found' %}Date Found{% else %}Date Lost{% endif %}</p>
+                                <p class="font-medium text-gray-900">{% if item.item_type == 'found' %}{{ item.date_found|date:"F d, Y" }}{% else %}{{ item.date_lost|date:"F d, Y" }}{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Completion Details (Only for completed items) -->
+                    {% if item.completed_at %}
+                    <div class="py-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2 text-sm text-green-700 mb-3 bg-green-50 p-2 rounded-md border border-green-100">
+                            <i data-lucide="check-check" class="h-4 w-4 flex-shrink-0"></i>
+                            <span class="font-semibold">Resolved on {{ item.completed_at|date:"F d, Y" }}</span>
+                        </div>
+
+                        {% if item.completion_name and item.completion_email %}
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                {% if item.item_type == 'found' and item.status == 'claimed' %}
+                                    Claimed by
+                                {% elif item.item_type == 'lost' and item.status == 'found' %}
+                                    Returned by
+                                {% endif %}
+                            </p>
+                            <div class="flex items-center gap-3">
+                                {% with profile_pic=item.get_claimant_picture %}
+                                    {% if profile_pic %}
+                                        <img src="{{ profile_pic }}" alt="{{ item.completion_name }}" class="h-10 w-10 rounded-full object-cover border border-gray-200">
+                                    {% else %}
+                                        <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-sm font-bold text-green-700">
+                                            {{ item.completion_name|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ item.completion_name }}</p>
+                                    <p class="text-xs text-gray-500">{{ item.completion_email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Footer: Fixed Actions -->
+                <div class="p-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+                    <div class="flex flex-col gap-3">
+                        {% if item.contact_number %}
+                        <!-- Contact Number (Tap to Copy) -->
+                        <button onclick="copyToClipboard('{{ item.contact_number }}', this)" class="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors group">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="phone" class="h-5 w-5 text-primary"></i>
+                                <div class="text-left">
+                                    <p class="text-xs text-gray-500">Contact Number</p>
+                                    <p class="font-semibold text-gray-900">{{ item.contact_number }}</p>
+                                </div>
+                            </div>
+                            <i data-lucide="copy" class="h-4 w-4 text-gray-400 group-hover:text-primary"></i>
+                        </button>
+                        {% endif %}
+                        
+                        {% if request.user == item.posted_by %}
+                            <!-- Owner actions moved to header menu -->
+                        {% elif request.user.is_authenticated %}
+                            <a href="{% url 'send_message' item.id %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="mail" class="h-5 w-5"></i> Contact</a>
+                        {% else %}
+                            <a href="{% url 'landing' %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium transition-colors"><i data-lucide="log-in" class="h-5 w-5"></i> Sign in to Contact</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

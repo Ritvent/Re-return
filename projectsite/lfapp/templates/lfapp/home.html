@@ -164,7 +164,7 @@
 
                         <tbody class="divide-y divide-border">
                             {% for item in recent_activities %}
-                            <tr class="hover:bg-muted/30 transition-colors">
+                            <tr class="hover:bg-muted/30 transition-colors cursor-pointer" onclick="openItemModal('activity-{{ item.id }}')">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         {% if item.image %}
@@ -282,6 +282,8 @@
 
                                 <td class="px-6 py-4">
                                     <span class="text-muted-foreground text-sm">{{ item.get_category_display }}</span>
+                                    <!-- Include Modal for this item -->
+                                    {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="activity-" %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -322,7 +324,7 @@
                             </div>
             
                             <!-- Card -->
-                            <div class="bg-card border border-border rounded-lg p-3 shadow-sm">
+                            <div class="bg-card border border-border rounded-lg p-3 shadow-sm cursor-pointer" onclick="openItemModal('activity-{{ item.id }}')">
                                 <div class="flex gap-3">
                                     <!-- Image -->
                                     {% if item.image %}
@@ -424,4 +426,5 @@
 <script>
     lucide.createIcons();
 </script>
+{% include 'lfapp/includes/item_modal_click.html' %}
 {% endblock %}

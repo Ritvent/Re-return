@@ -1,5 +1,5 @@
 {% load static %}
-<div class="group relative bg-white p-3 pb-4 shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 md:hover:-translate-y-1 md:hover:rotate-1 md:hover:shadow-2xl sm:rounded-sm flex flex-col h-full">
+<div class="group relative bg-white p-3 pb-4 shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 md:hover:-translate-y-1 md:hover:rotate-1 md:hover:shadow-2xl sm:rounded-sm flex flex-col h-full cursor-pointer" onclick="openItemModal('completed-{{ item.id }}')">
 
     <!-- Pin Decoration -->
     <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-4 rounded-full bg-orange-500 shadow-md border border-orange-600 flex items-center justify-center">
@@ -49,7 +49,7 @@
             {% if item.completed_at %}
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <i data-lucide="check-check" class="h-4 w-4 text-green-600 flex-shrink-0"></i>
-                <span class="font-medium">Completed:</span>
+                <span class="font-medium">Resolved on:</span>
                 <span>{{ item.completed_at|date:"M d, Y" }}</span>
             </div>
             {% endif %}
@@ -127,3 +127,4 @@
         {% endif %}
     </div>
 </div>
+{% include 'lfapp/includes/item_modal.html' with modal_id_prefix="completed-" %}
