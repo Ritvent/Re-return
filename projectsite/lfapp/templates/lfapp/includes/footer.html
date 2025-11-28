@@ -1,0 +1,55 @@
+<footer class="bg-card border-t border-border mt-auto">
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Brand Column -->
+            <div class="md:col-span-1">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-xl font-bold text-foreground">Han<span class="text-primary">App</span></span>
+                    
+                </div>
+                <p class="text-sm text-muted-foreground mb-4">
+                    Lost and Found platform project for Palawan State University. Relay and Return, Retrieve and Recover.
+                </p>
+                <div class="flex gap-4">
+                    <a href="https://github.com/Ritvent/Re-return" class="text-muted-foreground hover:text-primary transition-colors">
+                        <i data-lucide="github" class="h-5 w-5"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div>
+                <h3 class="font-semibold text-foreground mb-4">Quick Links</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="{% url 'home' %}" class="text-muted-foreground hover:text-primary transition-colors">Home</a></li>
+                    <li><a href="{% url 'lost_items' %}" class="text-muted-foreground hover:text-primary transition-colors">Lost Items</a></li>
+                    <li><a href="{% url 'found_items' %}" class="text-muted-foreground hover:text-primary transition-colors">Found Items</a></li>
+                    <li><a href="{% url 'claimed_items' %}" class="text-muted-foreground hover:text-primary transition-colors">Success Stories</a></li>
+                </ul>
+            </div>
+
+            <!-- Contact -->
+            <div>
+                <h3 class="font-semibold text-foreground mb-4">Contact Us</h3>
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-start gap-3 text-muted-foreground">
+                        <i data-lucide="map-pin" class="h-5 w-5 text-primary shrink-0 mt-0.5"></i>
+                        <a href="https://www.google.com/maps/search/Palawan+State+University+Puerto+Princesa+City+Palawan" target="_blank" class="hover:text-primary transition-colors">
+                            <span>Palawan State University<br>Puerto Princesa City, Palawan</span>
+                        </a>
+                    </li>
+                    <li class="flex items-center gap-3 text-muted-foreground">
+                        <i data-lucide="mail" class="h-5 w-5 text-primary shrink-0"></i>
+                        <a href="mailto:palsuhanapp@gmail.com" class="hover:text-primary transition-colors">palsuhanapp@gmail.com</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-muted-foreground text-center md:text-left">
+                &copy; {% now "Y" %} PalSU HanApp. All rights reserved.
+            </p>
+        </div>
+    </div>
+</footer>
