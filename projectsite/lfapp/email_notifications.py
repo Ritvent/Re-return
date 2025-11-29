@@ -225,3 +225,58 @@ This is an automated message from PalSU HanApp Lost and Found System
         print(f"✅ Role change email sent to {user.email} (New Role: {new_role})")
     except Exception as e:
         print(f"❌ Failed to send role change email to {user.email}: {e}")
+
+
+def send_admin_new_item_notification(item):
+    """
+    Send email notification to all admins when a new item is posted.
+    
+    Args:
+        item: Item instance that was posted
+    """
+    from .models import CustomUser
+    from django.db.models import Q
+    
+    # Get all admins and superusers
+    admins = CustomUser.objects.filter(Q(role='admin') | Q(is_superuser=True)).distinct()
+    recipient_list = [admin.email for admin in admins if admin.email]
+    
+    if not recipient_list:
+        print("⚠️ No admins found to notify.")
+        return
+
+    subject = f"New Item Pending Review: {item.title} - PalSU HanApp"
+    
+    # Build admin URL (assuming standard admin path or custom dashboard)
+    # Change if deployed or add if DEBUG local else deployed host
+    admin_url = "http://127.0.0.1:8000/dashboard/moderation/" 
+    
+    message = f"""Hello Admin,
+
+A new item has been posted and is waiting for review.
+
+Item Details:
+- Title: {item.title}
+- Type: {item.get_item_type_display()}
+- Category: {item.get_category_display()}
+- Posted By: {item.posted_by.get_full_name() or item.posted_by.email}
+- Date: {item.created_at.strftime("%B %d, %Y %I:%M %p")}
+
+Please review this item in the moderation queue:
+{admin_url}
+
+---
+This is an automated message from PalSU HanApp Lost and Found System
+"""
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+        print(f"✅ Admin notification sent to {len(recipient_list)} admins for item: {item.title}")
+    except Exception as e:
+        print(f"❌ Failed to send admin notification: {e}")

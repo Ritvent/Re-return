@@ -1,0 +1,219 @@
+<!-- Contact Owner Modal -->
+<div id="contactModal" class="fixed inset-0 z-[150] hidden" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="contactModalBackdrop" onclick="closeContactModal()"></div>
+
+    <!-- Modal Panel -->
+    <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+        <div class="w-full max-w-lg bg-background rounded-2xl shadow-2xl transform transition-all scale-95 opacity-0 pointer-events-auto flex flex-col max-h-[90vh]" id="contactModalPanel">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                <div>
+                    <h3 class="text-lg font-semibold text-foreground">Contact Owner</h3>
+                    <p class="text-xs text-muted-foreground" id="contactModalSubtitle">Send a message to the poster</p>
+                </div>
+                <button onclick="closeContactModal()" class="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto">
+                <!-- Item Context -->
+                <div class="flex items-center gap-3 p-3 bg-muted/50 rounded-lg mb-6 border border-border/50">
+                    <div class="h-10 w-10 rounded-md bg-background flex items-center justify-center border border-border flex-shrink-0 overflow-hidden relative">
+                        <i data-lucide="package" id="contactModalIcon" class="h-5 w-5 text-primary transition-opacity"></i>
+                        <img id="contactModalImage" src="" alt="Item" class="h-full w-full object-cover hidden transition-opacity">
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider" id="contactModalContextTitle">Regarding Item</p>
+                        <p class="text-sm font-semibold text-foreground truncate" id="contactModalItemTitle">Loading...</p>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form id="contactForm" onsubmit="handleContactSubmit(event)" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" id="contactItemId" name="item_id">
+                    
+                    <!-- From -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-foreground">From (Your PSU Email)</label>
+                        <div class="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-muted">
+                            {% if request.user.profile_picture %}
+                                <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="h-5 w-5 rounded-full object-cover">
+                            {% elif request.user.google_profile_picture %}
+                                <img src="{{ request.user.google_profile_picture }}" alt="Profile" class="h-5 w-5 rounded-full object-cover">
+                            {% else %}
+                                <i data-lucide="user" class="h-4 w-4 text-muted-foreground"></i>
+                            {% endif %}
+                            <span class="text-sm text-foreground">{{ request.user.get_full_name|default:request.user.username }} ({{ request.user.email }})</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">✓ Your verified PSU identity</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="contactSubject" class="text-sm font-medium text-foreground">Subject *</label>
+                        <input type="text" id="contactSubject" name="subject" required placeholder="e.g., I found your item / This might be my item"
+                               class="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="contactMessage" class="text-sm font-medium text-foreground">Message *</label>
+                        <textarea id="contactMessage" name="message" rows="4" required placeholder="Write your message here..."
+                                  class="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"></textarea>
+                    </div>
+
+                    <!-- Phone Number (Optional) -->
+                    <div class="space-y-2">
+                        <label for="contactPhone" class="text-sm font-medium text-foreground">Contact Phone (Optional)</label>
+                        <input type="tel" id="contactPhone" name="phone" placeholder="e.g., 09123456789" value="{{ request.user.phone_number }}"
+                               class="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <p class="text-xs text-muted-foreground">Optional: Provide a phone number for faster contact</p>
+                    </div>
+
+                    <!-- Info Notice -->
+                    <div class="bg-primary/10 rounded-md p-3 border border-primary/20">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="shield-check" class="h-5 w-5 text-primary mt-0.5 flex-shrink-0"></i>
+                            <div>
+                                <p class="text-sm font-medium text-foreground">Verified Identity</p>
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    Your PSU email and name will be sent with this message. The recipient can view your contact details and reply to you directly.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="contactError" class="hidden p-3 text-sm text-destructive bg-destructive/10 rounded-md"></div>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-3 rounded-b-2xl">
+                <button type="button" onclick="closeContactModal()" class="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" form="contactForm" id="contactSubmitBtn" class="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2">
+                    <span>Send Message</span>
+                    <i data-lucide="send" class="h-3.5 w-3.5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openContactModal(itemId, itemTitle, ownerIdentifier, itemType, itemImageUrl) {
+        const modal = document.getElementById('contactModal');
+        const backdrop = document.getElementById('contactModalBackdrop');
+        const panel = document.getElementById('contactModalPanel');
+        
+        // Set content
+        document.getElementById('contactItemId').value = itemId;
+        document.getElementById('contactModalItemTitle').textContent = itemTitle;
+        document.getElementById('contactModalSubtitle').textContent = `Send a message to ${ownerIdentifier}`;
+        document.getElementById('contactModalContextTitle').textContent = `Regarding ${itemType}`;
+        
+        // Handle Image
+        const icon = document.getElementById('contactModalIcon');
+        const img = document.getElementById('contactModalImage');
+        
+        if (itemImageUrl) {
+            img.src = itemImageUrl;
+            img.classList.remove('hidden');
+            icon.classList.add('hidden');
+        } else {
+            img.classList.add('hidden');
+            icon.classList.remove('hidden');
+        }
+
+        // Reset inputs
+        document.getElementById('contactSubject').value = ''; // Clear subject to show placeholder
+        document.getElementById('contactMessage').value = ''; 
+        document.getElementById('contactError').classList.add('hidden');
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        // Trigger animations
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('opacity-0');
+            panel.classList.remove('scale-95', 'opacity-0');
+        });
+        
+        // Focus subject input (since it's empty now)
+        setTimeout(() => document.getElementById('contactSubject').focus(), 100);
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeContactModal() {
+        const modal = document.getElementById('contactModal');
+        const backdrop = document.getElementById('contactModalBackdrop');
+        const panel = document.getElementById('contactModalPanel');
+        
+        // Reverse animations
+        backdrop.classList.add('opacity-0');
+        panel.classList.add('scale-95', 'opacity-0');
+        
+        // Hide after animation
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 200);
+    }
+
+    async function handleContactSubmit(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const btn = document.getElementById('contactSubmitBtn');
+        const originalBtnContent = btn.innerHTML;
+        const errorDiv = document.getElementById('contactError');
+        
+        // Loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Sending...';
+        lucide.createIcons();
+        
+        try {
+            const formData = new FormData(form);
+            const itemId = formData.get('item_id');
+            
+            // We need to construct the URL dynamically or use a data attribute
+            // For now, let's assume a standard URL structure and update views.py to handle it
+            // Or better, use the existing URL pattern: /items/<int:item_id>/contact/
+            // Use the correct URL pattern matching urls.py: path('message/<int:item_id>/', ...)
+            const response = await fetch(`/message/${itemId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.status === 'success') {
+                closeContactModal();
+                // Show success toast (assuming we have a toast system, or just alert for now)
+                // Show success toast
+                showToast('Message sent successfully!', 'success'); 
+            } else {
+                throw new Error(data.message || 'Failed to send message');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            errorDiv.textContent = error.message;
+            errorDiv.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnContent;
+            lucide.createIcons();
+        }
+    }
+</script>

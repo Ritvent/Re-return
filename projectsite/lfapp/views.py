@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Subquery, OuterRef, Exists, Case, When, Value, CharField, Max
 from django.core.paginator import Paginator
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
@@ -13,7 +14,25 @@ import os
 
 from .models import Item, CustomUser, ContactMessage
 from .forms import ItemForm, ItemCompletionForm
-from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email
+from .utils import validate_image_file
+from django.core.exceptions import ValidationError
+from .email_notifications import send_item_pending_email, send_item_approved_email, send_item_rejected_email, send_role_change_email, send_admin_new_item_notification
+
+def annotate_user_conversations(queryset, user):
+    """Annotate items with existing thread ID for the current user"""
+    if not user.is_authenticated:
+        return queryset
+    
+    # Find the root message ID sent by this user for this item
+    thread_subquery = ContactMessage.objects.filter(
+        item=OuterRef('pk'),
+        sender=user,
+        parent_message__isnull=True
+    ).values('pk')[:1]
+    
+    return queryset.annotate(
+        existing_thread_id=Subquery(thread_subquery)
+    )
 
 def landing_view(request):
     """Landing page with login form"""
@@ -41,27 +60,31 @@ def home_view(request):
         item_type='lost',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:4]
+    ).select_related('posted_by').order_by('-created_at')
+    recent_lost = annotate_user_conversations(recent_lost, request.user)[:4]
     
     # Get recent found items (limit to 4)
     recent_found = Item.objects.filter(
         item_type='found',
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:4]
+    ).select_related('posted_by').order_by('-created_at')
+    recent_found = annotate_user_conversations(recent_found, request.user)[:4]
     
     # Get recent activities: recent posts + recent completions
     # Recent posts (both lost and found, approved and active)
     recent_posts = Item.objects.filter(
         status='approved',
         is_active=True
-    ).select_related('posted_by').order_by('-created_at')[:10]
+    ).select_related('posted_by').order_by('-created_at')
+    recent_posts = annotate_user_conversations(recent_posts, request.user)[:10]
     
     # Recent completed items (claimed and found)
     recent_completed = Item.objects.filter(
         status__in=['claimed', 'found'],
         is_active=True
-    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')[:10]
+    ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
+    recent_completed = annotate_user_conversations(recent_completed, request.user)[:10]
     
     # Combine and sort by most recent activity (either created_at or completed_at)
     all_activities = list(chain(recent_posts, recent_completed))
@@ -105,6 +128,8 @@ def lost_items_view(request):
             status__in=['approved']
         ).select_related('posted_by').order_by('-created_at')
     
+    items = annotate_user_conversations(items, request.user)
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -145,6 +170,8 @@ def found_items_view(request):
             status__in=['approved']
         ).select_related('posted_by').order_by('-created_at')
     
+    items = annotate_user_conversations(items, request.user)
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -189,8 +216,8 @@ def admin_dashboard_view(request):
     lost_percentage = round((lost_count / total_items * 100), 0) if total_items > 0 else 0
     found_percentage = round((found_count / total_items * 100), 0) if total_items > 0 else 0
     
-    # Get unique category count
-    category_count = all_items.values('category').distinct().count()
+    # Get unique user count
+    user_count = CustomUser.objects.filter(is_superuser=False).count()
     
     # Get pending items count for moderation queue badge
     pending_count = all_items.filter(status='pending').count()
@@ -202,7 +229,7 @@ def admin_dashboard_view(request):
         'found_count': found_count,
         'lost_percentage': int(lost_percentage),
         'found_percentage': int(found_percentage),
-        'category_count': category_count,
+        'user_count': user_count,
         'pending_count': pending_count,
     }
     
@@ -415,13 +442,20 @@ def post_lost_item_view(request):
             item = form.save(commit=False)
             item.item_type = 'lost'
             item.posted_by = request.user
-            item.status = 'pending'  # Items need admin approval
-            item.save()
             
-            # Send pending approval email
-            send_item_pending_email(item, request)
+            # Auto-approve for admins, otherwise pending
+            if request.user.is_admin_user():
+                item.status = 'approved'
+                item.save()
+                messages.success(request, 'Your lost item has been posted successfully.')
+            else:
+                item.status = 'pending'
+                item.save()
+                # Send emails for pending items
+                send_item_pending_email(item, request)
+                send_admin_new_item_notification(item)
+                messages.success(request, 'Your lost item has been submitted and is pending approval.')
             
-            messages.success(request, 'Your lost item has been submitted and is pending approval.')
             return redirect('lost_items')
     else:
         form = ItemForm(item_type='lost')
@@ -446,13 +480,20 @@ def post_found_item_view(request):
             item = form.save(commit=False)
             item.item_type = 'found'
             item.posted_by = request.user
-            item.status = 'pending'  # Items need admin approval
-            item.save()
             
-            # Send pending approval email
-            send_item_pending_email(item, request)
+            # Auto-approve for admins, otherwise pending
+            if request.user.is_admin_user():
+                item.status = 'approved'
+                item.save()
+                messages.success(request, 'Your found item has been posted successfully.')
+            else:
+                item.status = 'pending'
+                item.save()
+                # Send emails for pending items
+                send_item_pending_email(item, request)
+                send_admin_new_item_notification(item)
+                messages.success(request, 'Your found item has been submitted and is pending approval.')
             
-            messages.success(request, 'Your found item has been submitted and is pending approval.')
             return redirect('found_items')
     else:
         form = ItemForm(item_type='found')
@@ -469,6 +510,8 @@ def claimed_items_view(request):
         status__in=['claimed', 'found']
     ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
     
+    items = annotate_user_conversations(items, request.user)
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -608,11 +651,15 @@ def send_message_view(request, item_id):
     
     # Check if user is PSU verified
     if not request.user.is_psu_user():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Only verified PSU users can contact item posters.'}, status=403)
         messages.error(request, 'Only verified PSU users can contact item posters.')
         return redirect('home')
     
     # Can't message your own post
     if item.posted_by == request.user:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'You cannot message your own post.'}, status=400)
         messages.error(request, 'You cannot message your own post.')
         return redirect('home')
     
@@ -622,9 +669,11 @@ def send_message_view(request, item_id):
         sender_phone = request.POST.get('phone', '').strip()
         
         if not subject or not message_text:
-            messages.error(request, 'Subject and message are required.')
-            return render(request, 'lfapp/send_message.html', {'item': item})
-        
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'message': 'Please fill in all fields.'}, status=400)
+            messages.error(request, 'Please fill in all fields.')
+            return redirect('send_message', item_id=item_id)
+            
         # Create message
         contact_message = ContactMessage.objects.create(
             item=item,
@@ -670,41 +719,113 @@ This is an automated message from HanApp - PSU Lost and Found
             # Log error but don't fail the message creation
             print(f"Email sending failed: {e}")
         
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success', 'message': 'Message sent successfully!'})
+
         messages.success(request, f'Your message has been sent to {item.posted_by.get_full_name() or item.posted_by.email}!')
         return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     
-    return render(request, 'lfapp/send_message.html', {'item': item})
+
+    return redirect('home')
 
 @login_required
 def messages_inbox_view(request):
-    """View all received messages"""
-    # Get only root messages (not replies) received by user
-    received_messages = ContactMessage.objects.filter(
-        recipient=request.user,
-        parent_message__isnull=True
-    ).select_related('sender', 'item').order_by('-created_at')
+    """View all conversations (unified inbox + sent)"""
     
-    # Mark messages as read when viewing inbox
-    received_messages.filter(is_read=False).update(is_read=True)
+    # Get all root messages where user is either sender or recipient
+    # Exclude threads deleted by the current user
+    all_messages = ContactMessage.objects.filter(
+        Q(sender=request.user) | Q(recipient=request.user),
+        parent_message__isnull=True
+    ).exclude(
+        Q(sender=request.user, deleted_by_sender=True) |
+        Q(recipient=request.user, deleted_by_recipient=True)
+    ).select_related('sender', 'recipient', 'item')
+    
+    # Annotate with the latest message timestamp in the thread
+    latest_message_time = ContactMessage.objects.filter(
+        Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk'))
+    ).values('created_at').order_by('-created_at')[:1]
+    
+    all_messages = all_messages.annotate(
+        latest_msg_time=Subquery(latest_message_time)
+    )
+    
+    # Order by latest message time (most recent conversations first)
+    all_messages = all_messages.order_by('-latest_msg_time')
+    
+    # Annotate with conversation partner and direction
+    all_messages = all_messages.annotate(
+        # The "other user" in the conversation
+        other_user_id=Case(
+            When(sender=request.user, then='recipient__id'),
+            default='sender__id'
+        ),
+        # Direction: True if user received this message
+        is_incoming=Case(
+            When(recipient=request.user, then=Value(True)),
+            default=Value(False),
+            output_field=CharField()
+        )
+    )
+    
+    # Annotate with unread status (check if ANY message in thread is unread for current user)
+    unread_in_thread = ContactMessage.objects.filter(
+        Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk')),
+        recipient=request.user,
+        is_read=False
+    )
+    all_messages = all_messages.annotate(
+        has_unread=Exists(unread_in_thread)
+    )
+    
+    # Annotate with the latest message text, is_read status, and sender in the thread
+    latest_message_qs = ContactMessage.objects.filter(
+        Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk'))
+    ).order_by('-created_at')
+    
+    all_messages = all_messages.annotate(
+        latest_message_text=Subquery(latest_message_qs.values('message')[:1]),
+        latest_msg_is_read=Subquery(latest_message_qs.values('is_read')[:1]),
+        latest_msg_sender_id=Subquery(latest_message_qs.values('sender_id')[:1])
+    )
     
     context = {
-        'messages': received_messages,
+        'messages': all_messages,
     }
     return render(request, 'lfapp/messages_inbox.html', context)
 
+
 @login_required
 def messages_sent_view(request):
-    """View all sent messages"""
-    # Get only root messages (not replies) sent by user
-    sent_messages = ContactMessage.objects.filter(
-        sender=request.user,
+    """Redirect to unified messages view"""
+    from django.shortcuts import redirect
+    return redirect('messages_inbox')
+
+@login_required
+def delete_thread_view(request, message_id):
+    """Soft delete a message thread for the current user only"""
+    # Get the root message
+    root_message = get_object_or_404(
+        ContactMessage,
+        id=message_id,
         parent_message__isnull=True
-    ).select_related('recipient', 'item').order_by('-created_at')
+    )
     
-    context = {
-        'messages': sent_messages,
-    }
-    return render(request, 'lfapp/messages_sent.html', context)
+    # Verify user is part of this conversation
+    if request.user != root_message.sender and request.user != root_message.recipient:
+        messages.error(request, 'You do not have permission to delete this conversation.')
+        return redirect('messages_inbox')
+    
+    # Set the appropriate deletion flag
+    if request.user == root_message.sender:
+        root_message.deleted_by_sender = True
+    else:
+        root_message.deleted_by_recipient = True
+    
+    root_message.save()
+    messages.success(request, 'Conversation deleted from your view.')
+    return redirect('messages_inbox')
 
 @login_required
 def message_thread_view(request, message_id):
@@ -731,6 +852,14 @@ def message_thread_view(request, message_id):
         if not message_text and not image:
             messages.error(request, 'Please provide a message or image.')
             return redirect('message_thread', message_id=message_id)
+        
+        # Validate image extension and content
+        if image:
+            try:
+                validate_image_file(image)
+            except ValidationError as e:
+                messages.error(request, e.message)
+                return redirect('message_thread', message_id=message_id)
         
         # Determine recipient (the other person in conversation)
         recipient = root_message.sender if root_message.recipient == request.user else root_message.recipient
@@ -777,8 +906,8 @@ This is an automated message from HanApp - PSU Lost and Found
             email.send(fail_silently=False)
         except Exception as e:
             print(f"Email sending failed: {e}")
-        
-        messages.success(request, 'Your reply has been sent!')
+            
+        messages.success(request, 'Reply sent successfully!')
         return redirect('message_thread', message_id=message_id)
     
     context = {
@@ -787,6 +916,48 @@ This is an automated message from HanApp - PSU Lost and Found
         'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
     }
     return render(request, 'lfapp/message_thread.html', context)
+
+@login_required
+def delete_message_view(request, message_id):
+    """Delete a message"""
+    message = get_object_or_404(ContactMessage, id=message_id)
+    
+    # Check permission
+    if message.sender != request.user:
+        messages.error(request, 'You can only delete your own messages.')
+        return redirect('messages_inbox')
+    
+    # Determine redirect URL
+    if message.parent_message:
+        # It's a reply, go back to thread
+        redirect_url = f'/messages/thread/{message.parent_message.id}/'
+    else:
+        # It's a root message, go back to inbox (thread is gone)
+        redirect_url = 'messages_inbox'
+        
+    # Soft delete
+    message.is_deleted = True
+    message.save()
+    
+    # Delete image file if exists (optional: keep it if you want to restore, but usually good to save space)
+    # For soft delete, we might want to keep the image record but maybe delete the file?
+    # Let's keep the file for now in case of restoration, or delete it if privacy is key.
+    # User said "message removed by user", implying content is gone.
+    if message.image:
+        try:
+            if os.path.isfile(message.image.path):
+                os.remove(message.image.path)
+            message.image = None # Remove reference
+            message.save()
+        except Exception as e:
+            print(f"Error deleting message image: {e}")
+            
+    messages.success(request, 'Message removed.')
+    
+    if redirect_url == 'messages_inbox':
+        return redirect('messages_inbox')
+    else:
+        return redirect(redirect_url)
 
 @login_required
 def mark_item_complete_view(request, item_id):

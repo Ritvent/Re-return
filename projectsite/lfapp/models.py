@@ -87,6 +87,13 @@ class CustomUser(AbstractUser):
         if self.role in ['verified', 'admin']:
             validate_psu_email(self.email)
 
+    @property
+    def email_username(self):
+        """number only before the @"""
+        if self.email:
+            return self.email.split('@')[0]
+        return self.username
+
 """Items"""
 
 class Item(TimeStampedModel):
@@ -361,6 +368,17 @@ class ContactMessage(TimeStampedModel):
         help_text='Parent message if this is a reply'
     )
     is_read = models.BooleanField(default=False, help_text='Has recipient read this message')
+    is_deleted = models.BooleanField(default=False, help_text='Has sender deleted this message')
+    
+    # Soft delete tracking - per-user deletion
+    deleted_by_sender = models.BooleanField(
+        default=False,
+        help_text='Has sender deleted this thread from their view'
+    )
+    deleted_by_recipient = models.BooleanField(
+        default=False,
+        help_text='Has recipient deleted this thread from their view'
+    )
     
     class Meta:
         ordering = ['-created_at']

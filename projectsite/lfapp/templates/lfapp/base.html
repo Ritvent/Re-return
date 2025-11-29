@@ -58,8 +58,12 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="font-sans antialiased bg-background text-foreground">
-    {% block content %}{% endblock %}
+<body class="font-sans antialiased bg-background text-foreground min-h-screen flex flex-col">
+    <div class="flex-1">
+        {% block content %}{% endblock %}
+    </div>
+    
+    {% include 'lfapp/includes/footer.html' %}
     
     <!-- Initialize Lucide Icons -->
     <script>
@@ -69,6 +73,9 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+    
+    {% include 'lfapp/includes/toast.html' %}
+    {% include 'lfapp/includes/contact_modal.html' %}
 </body>
 </html>
 
