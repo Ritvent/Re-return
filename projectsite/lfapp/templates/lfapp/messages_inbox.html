@@ -20,8 +20,8 @@
     </div>
 
     <!-- Main Container -->
-    <main class="flex-1 container mx-auto px-0 md:px-4 py-0 md:py-6 overflow-hidden flex flex-col">
-        <div class="w-full max-w-5xl mx-auto h-full bg-background md:rounded-2xl shadow-2xl border-x md:border border-border/50 flex flex-col overflow-hidden relative">
+    <main class="flex-1 container mx-auto px-0 md:px-8 py-0 overflow-hidden flex flex-col">
+        <div class="w-full max-w-full mx-auto h-full bg-background shadow-2xl md:border md:border-border/50 flex flex-col overflow-hidden relative">
             
             <!-- Header -->
             <div class="flex-none px-4 md:px-6 py-3 md:py-4 border-b border-border/40 bg-background/80 backdrop-blur-md z-20">
@@ -34,7 +34,7 @@
             </div>
 
             <!-- Messages List -->
-            <div class="flex-1 overflow-y-auto scroll-smooth bg-slate-50/30">
+            <div class="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-slate-50/30">
                 {% if messages %}
                     {% regroup messages by latest_msg_time|date:"F j, Y" as messages_by_date %}
                     
@@ -56,7 +56,7 @@
                         - If user is sender: partner is recipient
                         {% endcomment %}
                         {% if msg.recipient == request.user %}
-                            {% comment %}Incoming message{% endcomment %}
+                            {% comment %}Incoming message (Root sent to user){% endcomment %}
                             {% with partner=msg.sender direction="From" %}
                         <div class="group relative transition-colors duration-200 {% if msg.has_unread %}bg-blue-50/80 hover:bg-blue-100/60{% else %}hover:bg-muted/30{% endif %}">
                             <a href="{% url 'message_thread' msg.id %}" class="block">
@@ -98,7 +98,7 @@
 
                                         <!-- Subject and Message -->
                                         <div class="flex items-center justify-between gap-4">
-                                            <p class="text-xs md:text-sm truncate flex-1 {% if msg.has_unread %}text-foreground{% else %}text-muted-foreground{% endif %}">
+                                            <p class="text-xs md:text-sm truncate flex-1 min-w-0 max-w-full {% if msg.has_unread %}text-foreground{% else %}text-muted-foreground{% endif %}">
                                                 <span class="{% if msg.has_unread %}font-semibold{% else %}font-medium text-foreground/80{% endif %}">
                                                     {% if "Inquiry about:" in msg.subject %}
                                                         Inquiry
@@ -109,8 +109,21 @@
                                                 <span class="mx-1">&middot;</span>
                                                 {{ msg.latest_message_text }}
                                             </p>
+                                            
+                                            <!-- Read Status Logic -->
                                             {% if msg.has_unread %}
                                                 <span class="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold flex-shrink-0">New</span>
+                                            {% elif msg.latest_msg_sender_id == request.user.id %}
+                                                <!-- Latest message sent by user: Show read receipt -->
+                                                {% if msg.latest_msg_is_read %}
+                                                    <div class="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                                        <i data-lucide="check-check" class="h-3 w-3"></i>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded-full">
+                                                        <i data-lucide="check" class="h-3 w-3"></i>
+                                                    </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -125,19 +138,22 @@
                         </div>
                             {% endwith %}
                         {% else %}
-                            {% comment %}Outgoing message{% endcomment %}
+                            {% comment %}Outgoing message (Root sent by user){% endcomment %}
                             {% with partner=msg.recipient direction="To" %}
-                        <div class="group relative hover:bg-muted/30 transition-colors duration-200">
+                        <div class="group relative transition-colors duration-200 {% if msg.has_unread %}bg-blue-50/80 hover:bg-blue-100/60{% else %}hover:bg-muted/30{% endif %}">
                             <a href="{% url 'message_thread' msg.id %}" class="block">
                                 <div class="px-4 md:px-6 py-4 flex items-start gap-3 md:gap-4">
                                     <!-- Avatar -->
-                                    <div class="flex-shrink-0 mt-1">
+                                    <div class="flex-shrink-0 mt-1 relative">
                                         {% if partner.google_profile_picture %}
-                                            <img src="{{ partner.google_profile_picture }}" alt="Profile" class="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border border-border shadow-sm group-hover:border-primary/30 transition-colors">
+                                            <img src="{{ partner.google_profile_picture }}" alt="Profile" class="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover shadow-sm group-hover:border-primary/30 transition-colors {% if msg.has_unread %}border-2 border-primary/40{% else %}border border-border{% endif %}">
                                         {% else %}
-                                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-border shadow-sm text-white font-bold text-sm md:text-base">
+                                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm text-white font-bold text-sm md:text-base {% if msg.has_unread %}border-2 border-primary/40{% else %}border border-border{% endif %}">
                                                 {{ partner.get_full_name|default:partner.username|make_list|first|upper }}
                                             </div>
+                                        {% endif %}
+                                        {% if msg.has_unread %}
+                                        <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-white"></span>
                                         {% endif %}
                                     </div>
 
@@ -145,11 +161,11 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between mb-1">
                                             <div class="flex items-center gap-2 min-w-0 flex-1">
-                                                <h3 class="font-semibold text-sm md:text-base text-foreground truncate pr-2 group-hover:text-primary transition-colors">
-                                                    You to {{ partner.get_full_name|default:partner.username }}
+                                                <h3 class="text-sm md:text-base truncate pr-2 group-hover:!text-primary transition-colors {% if msg.has_unread %}font-bold text-foreground{% else %}font-medium text-foreground/80{% endif %}">
+                                                    {{ partner.get_full_name|default:partner.username }}
                                                 </h3>
                                             </div>
-                                            <span class="text-[10px] md:text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">
+                                            <span class="text-[10px] md:text-xs flex-shrink-0 whitespace-nowrap {% if msg.has_unread %}font-semibold text-primary{% else %}text-muted-foreground{% endif %}">
                                                 {{ msg.latest_msg_time|date:"g:i A" }}
                                             </span>
                                         </div>
@@ -164,8 +180,8 @@
 
                                         <!-- Subject, Message, and Read Status -->
                                         <div class="flex items-center justify-between gap-4">
-                                            <p class="text-xs md:text-sm text-muted-foreground truncate flex-1">
-                                                <span class="font-medium text-foreground/80">
+                                            <p class="text-xs md:text-sm truncate flex-1 min-w-0 max-w-full {% if msg.has_unread %}text-foreground{% else %}text-muted-foreground{% endif %}">
+                                                <span class="{% if msg.has_unread %}font-semibold{% else %}font-medium text-foreground/80{% endif %}">
                                                     {% if "Inquiry about:" in msg.subject %}
                                                         Inquiry
                                                     {% else %}
@@ -176,15 +192,20 @@
                                                 {{ msg.latest_message_text }}
                                             </p>
                                             
-                                            <!-- Read Status for Sent Messages -->
-                                            {% if msg.is_read %}
-                                                <div class="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full">
-                                                    <i data-lucide="check-check" class="h-3 w-3"></i>
-                                                </div>
-                                            {% else %}
-                                                <div class="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded-full">
-                                                    <i data-lucide="check" class="h-3 w-3"></i>
-                                                </div>
+                                            <!-- Read Status Logic -->
+                                            {% if msg.has_unread %}
+                                                <span class="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold flex-shrink-0">New</span>
+                                            {% elif msg.latest_msg_sender_id == request.user.id %}
+                                                <!-- Latest message sent by user: Show read receipt -->
+                                                {% if msg.latest_msg_is_read %}
+                                                    <div class="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                                        <i data-lucide="check-check" class="h-3 w-3"></i>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded-full">
+                                                        <i data-lucide="check" class="h-3 w-3"></i>
+                                                    </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
