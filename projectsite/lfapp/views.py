@@ -779,13 +779,15 @@ def messages_inbox_view(request):
         has_unread=Exists(unread_in_thread)
     )
     
-    # Annotate with the latest message text in the thread
-    latest_message_subquery = ContactMessage.objects.filter(
+    # Annotate with the latest message text, is_read status, and sender in the thread
+    latest_message_qs = ContactMessage.objects.filter(
         Q(id=OuterRef('pk')) | Q(parent_message_id=OuterRef('pk'))
-    ).order_by('-created_at').values('message')[:1]
+    ).order_by('-created_at')
     
     all_messages = all_messages.annotate(
-        latest_message_text=Subquery(latest_message_subquery)
+        latest_message_text=Subquery(latest_message_qs.values('message')[:1]),
+        latest_msg_is_read=Subquery(latest_message_qs.values('is_read')[:1]),
+        latest_msg_sender_id=Subquery(latest_message_qs.values('sender_id')[:1])
     )
     
     context = {

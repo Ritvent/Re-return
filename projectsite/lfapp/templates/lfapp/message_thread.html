@@ -102,7 +102,7 @@
                                         <p class="italic text-muted-foreground/70 text-xs">Message removed by user</p>
                                     {% else %}
                                         {% if message.message %}
-                                        <p class="whitespace-pre-wrap leading-relaxed">{{ message.message }}</p>
+                                        <p class="whitespace-pre-wrap leading-relaxed break-words break-all">{{ message.message }}</p>
                                         {% endif %}
 
                                         {% if message.image %}
