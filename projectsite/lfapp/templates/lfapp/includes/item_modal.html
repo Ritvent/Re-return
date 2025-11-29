@@ -41,13 +41,37 @@
                     {% endif %}
                 {% endif %}
 
+                <!-- Instagram-style Bottom Overlay (Mobile Only) -->
+                <div class="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 pb-3">
+                    <div class="flex items-end justify-between text-white">
+                        <!-- Left: Profile Name or Email -->
+                        <div class="flex-1 min-w-0">
+                            {% if item.display_name %}
+                                <p class="text-sm font-semibold truncate">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                            {% else %}
+                                <p class="text-sm font-semibold truncate">{{ item.posted_by.email }}</p>
+                            {% endif %}
+                            <p class="text-xs text-white/80 truncate">{{ item.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        <!-- Right: Contact Number (Tap to Copy) -->
+                        {% if item.contact_number %}
+                        <div class="ml-3 flex-shrink-0">
+                            <button onclick="copyToClipboard('{{ item.contact_number }}', this)" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-colors">
+                                <i data-lucide="phone" class="h-3.5 w-3.5"></i>
+                                <span class="text-xs font-medium">{{ item.contact_number }}</span>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
             </div>
 
             <!-- Right Side: Details (Scrollable Body, Fixed Header/Footer) -->
             <div class="w-full md:w-[40%] h-1/2 md:h-full flex flex-col bg-white border-l border-gray-100">
                 
-                <!-- Header: User Info & Actions -->
-                <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white z-10">
+                <!-- Header: User Info & Actions (Hidden on Mobile) -->
+                <div class="hidden md:flex p-4 border-b border-gray-100 items-center justify-between flex-shrink-0 bg-white z-10">
                     <div class="flex items-center gap-3">
                         {% if item.display_name %}
                             {% if item.posted_by.google_profile_picture %}
@@ -113,6 +137,12 @@
                             <span class="px-2.5 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
                                 {{ item.get_item_type_display }}
                             </span>
+                            {% if item.completed_at %}
+                            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
+                                <i data-lucide="check-check" class="h-3.5 w-3.5"></i>
+                                Resolved {{ item.completed_at|date:"M d, Y" }}
+                            </span>
+                            {% endif %}
                         </div>
                         <h2 class="text-xl md:text-2xl font-bold text-gray-900 break-words">{{ item.title }}</h2>
                     </div>
@@ -142,12 +172,7 @@
 
                     <!-- Completion Details (Only for completed items) -->
                     {% if item.completed_at %}
-                    <div class="py-4 border-b border-gray-100">
-                        <div class="flex items-center gap-2 text-sm text-green-700 mb-3 bg-green-50 p-2 rounded-md border border-green-100">
-                            <i data-lucide="check-check" class="h-4 w-4 flex-shrink-0"></i>
-                            <span class="font-semibold">Resolved on {{ item.completed_at|date:"F d, Y" }}</span>
-                        </div>
-
+                    <div class="pb-4 border-b border-gray-100">
                         {% if item.completion_name and item.completion_email %}
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
@@ -181,19 +206,6 @@
                 <!-- Footer: Fixed Actions -->
                 <div class="p-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
                     <div class="flex flex-col gap-3">
-                        {% if item.contact_number %}
-                        <!-- Contact Number (Tap to Copy) -->
-                        <button onclick="copyToClipboard('{{ item.contact_number }}', this)" class="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors group">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="phone" class="h-5 w-5 text-primary"></i>
-                                <div class="text-left">
-                                    <p class="text-xs text-gray-500">Contact Number</p>
-                                    <p class="font-semibold text-gray-900">{{ item.contact_number }}</p>
-                                </div>
-                            </div>
-                            <i data-lucide="copy" class="h-4 w-4 text-gray-400 group-hover:text-primary"></i>
-                        </button>
-                        {% endif %}
                         
                         {% if request.user == item.posted_by %}
                             <!-- Owner actions moved to header menu -->
