@@ -84,6 +84,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'lfapp.context_processors.unread_messages',
+                'lfapp.context_processors.pending_items_count',
             ],
         },
     },
