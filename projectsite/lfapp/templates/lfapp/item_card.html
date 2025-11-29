@@ -14,9 +14,9 @@
     <!-- Image Container -->
     <div class="relative aspect-square w-full overflow-hidden bg-gray-100 shadow-inner mb-4 flex-shrink-0">
         {% if item.image %}
-            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover transition-transform duration-500 md:group-hover:scale-105" />
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover transition-transform duration-500 md:group-hover:scale-105 {% if not item.is_active and request.user == item.posted_by %}grayscale{% endif %}" />
         {% else %}
-            <div class="flex h-full w-full items-center justify-center bg-gray-50">
+            <div class="flex h-full w-full items-center justify-center bg-gray-50 {% if not item.is_active and request.user == item.posted_by %}grayscale{% endif %}">
                 <i data-lucide="image-off" class="h-12 w-12 text-gray-300"></i>
             </div>
         {% endif %}
@@ -28,6 +28,10 @@
         {% elif item.status == 'pending' and request.user == item.posted_by %}
         <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white shadow-sm">
             Pending Approval
+        </span>
+        {% elif not item.is_active and request.user == item.posted_by %}
+        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-gray-500 text-white shadow-sm">
+            Delisted
         </span>
         {% endif %}
 
@@ -41,7 +45,7 @@
     </div>
 
     <!-- Details Section -->
-    <div class="px-1 flex flex-col flex-grow">
+    <div class="px-1 flex flex-col flex-grow {% if not item.is_active and request.user == item.posted_by %}opacity-60{% endif %}">
         <!-- Fixed height container for variable content (title, desc, location, date, updated) -->
         <div class="h-52 overflow-hidden">
             <div class="mb-3">

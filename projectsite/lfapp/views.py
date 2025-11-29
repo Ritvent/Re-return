@@ -367,7 +367,7 @@ def admin_promote_user_view(request, user_id):
                 # Send email for step down
                 send_role_change_email(user_to_edit, 'verified', actor=request.user)
                 
-                messages.success(request, 'You have successfully stepped down from Admin role.')
+                messages.success(request, 'You have successfully stepped down from Admin role. Thank you for your service !')
                 return redirect('home') # Redirect to home as they lost access
             else:
                 messages.error(request, 'Invalid action on yourself.')

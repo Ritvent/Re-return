@@ -67,13 +67,7 @@
 
                         {% load socialaccount %}
 
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
+
 
                         <!-- Google Sign-In Button -->
                         <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg border bg-background hover:bg-accent transition-all shadow-sm">

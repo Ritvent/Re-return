@@ -9,6 +9,38 @@
 
     <main class="container mx-auto px-4 py-12">
 
+        {% if messages %}
+            <div class="fixed top-24 right-4 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+                {% for message in messages %}
+                    <div class="message-alert p-4 rounded-lg bg-background border border-primary text-foreground shadow-lg flex items-center gap-3 pointer-events-auto animate-in slide-in-from-right-5 fade-in duration-300" role="alert">
+                        <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="info" class="h-4 w-4 text-primary"></i>
+                        </div>
+                        <p class="text-sm font-medium">{{ message }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            <script>
+                //  message fades after 5 seconds
+                document.addEventListener('DOMContentLoaded', function() {
+                    const messages = document.querySelectorAll('.message-alert');
+                    
+                    messages.forEach(function(message) {
+                        setTimeout(function() {
+                            // Fade out effect
+                            message.style.transition = 'all 0.5s ease';
+                            message.style.opacity = '0';
+                            message.style.transform = 'translateX(100%)';
+                            
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500);
+                        }, 5000); // 5000ms = 5 seconds
+                    });
+                });
+            </script>
+        {% endif %}
+
         <!-- Welcome Banner -->
         <section class="mb-16">
             <div class="rounded-2xl p-10 md:p-14 bg-gradient-to-br 

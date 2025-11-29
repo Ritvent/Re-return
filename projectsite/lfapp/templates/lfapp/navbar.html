@@ -39,6 +39,9 @@
                         <button class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground hover:bg-primary/90{% else %}text-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
                             <i data-lucide="shield-user" class="h-4 w-4"></i>
                             Admin
+                            {% if pending_count > 0 %}
+                                <span class="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">{{ pending_count }}</span>
+                            {% endif %}
                         </button>
                     </a>
                     {% endif %}
@@ -135,6 +138,9 @@
                 <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
                     <i data-lucide="shield-user" class="h-4 w-4"></i>
                     Admin
+                    {% if pending_count > 0 %}
+                        <span class="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">{{ pending_count }}</span>
+                    {% endif %}
                 </a>
                 {% endif %}
             </div>
