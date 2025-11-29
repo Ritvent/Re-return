@@ -70,9 +70,6 @@
                                                 {{ partner.get_full_name|default:partner.username|make_list|first|upper }}
                                             </div>
                                         {% endif %}
-                                        {% if msg.has_unread %}
-                                        <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-white"></span>
-                                        {% endif %}
                                     </div>
 
                                     <!-- Content -->
@@ -151,9 +148,6 @@
                                             <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm text-white font-bold text-sm md:text-base {% if msg.has_unread %}border-2 border-primary/40{% else %}border border-border{% endif %}">
                                                 {{ partner.get_full_name|default:partner.username|make_list|first|upper }}
                                             </div>
-                                        {% endif %}
-                                        {% if msg.has_unread %}
-                                        <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-white"></span>
                                         {% endif %}
                                     </div>
 

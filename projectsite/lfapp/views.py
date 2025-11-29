@@ -635,7 +635,7 @@ def delete_item_view(request, item_id):
         item_type = item.item_type
         item.delete()
         
-        messages.success(request, f'🗑️ "{item_title}" has been permanently deleted.')
+        messages.success(request, f'"{item_title}" has been permanently deleted.')
         return redirect('lost_items' if item_type == 'lost' else 'found_items')
     
     # Show confirmation page
@@ -824,7 +824,6 @@ def delete_thread_view(request, message_id):
         root_message.deleted_by_recipient = True
     
     root_message.save()
-    messages.success(request, 'Conversation deleted from your view.')
     return redirect('messages_inbox')
 
 @login_required
