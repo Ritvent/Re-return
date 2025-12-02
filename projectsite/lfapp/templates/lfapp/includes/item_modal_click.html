@@ -105,6 +105,7 @@
         window.toggleItemMenu = function (itemId, buttonElement) {
             const menu = document.getElementById('menu-' + itemId);
             const sheet = document.getElementById('sheet-' + itemId);
+            const card = menu ? menu.closest('[data-item-menu]') : null;
             const isMobile = window.innerWidth < 768;
 
             if (isMobile) {
@@ -116,26 +117,26 @@
                     document.body.style.overflow = '';
                 }
             } else {
+                // Close other menus and restore their card rotation
                 document.querySelectorAll('[id^="menu-"]').forEach(m => {
-                    if (m.id !== 'menu-' + itemId) {
+                    if (m.id !== 'menu-' + itemId && !m.classList.contains('hidden')) {
                         m.classList.add('hidden');
+                        const otherCard = m.closest('[data-item-menu]');
+                        if (otherCard) {
+                            otherCard.classList.remove('!rotate-0');
+                        }
                     }
                 });
 
-                const isHidden = menu.classList.contains('hidden');
-                if (isHidden) {
-                    if (menu.parentElement !== document.body) {
-                        document.body.appendChild(menu);
-                    }
-                    const button = document.getElementById('btn-menu-' + itemId);
-                    if (button) {
-                        const rect = button.getBoundingClientRect();
-                        menu.style.top = (rect.bottom + 5) + 'px';
-                        menu.style.right = (window.innerWidth - rect.right) + 'px';
-                    }
+                // Toggle menu and card rotation
+                if (menu.classList.contains('hidden')) {
                     menu.classList.remove('hidden');
+                    // Disable rotation while menu is open
+                    if (card) card.classList.add('!rotate-0');
                 } else {
                     menu.classList.add('hidden');
+                    // Re-enable rotation when menu closes
+                    if (card) card.classList.remove('!rotate-0');
                 }
             }
         };
@@ -146,13 +147,16 @@
                 if (menu.classList.contains('hidden')) return;
                 const itemId = menu.id.replace('menu-', '');
                 const button = document.getElementById('btn-menu-' + itemId);
+                const card = menu.closest('[data-item-menu]');
                 if (button) {
                     if (!menu.contains(event.target) && !button.contains(event.target)) {
                         menu.classList.add('hidden');
+                        if (card) card.classList.remove('!rotate-0');
                     }
                 } else {
                     if (!menu.contains(event.target)) {
                         menu.classList.add('hidden');
+                        if (card) card.classList.remove('!rotate-0');
                     }
                 }
             });
@@ -162,6 +166,8 @@
             if (event.key === 'Escape') {
                 document.querySelectorAll('[id^="menu-"]').forEach(menu => {
                     menu.classList.add('hidden');
+                    const card = menu.closest('[data-item-menu]');
+                    if (card) card.classList.remove('!rotate-0');
                 });
                 document.querySelectorAll('[id^="sheet-"]').forEach(sheet => {
                     sheet.classList.add('hidden');
@@ -169,6 +175,7 @@
                 });
             }
         });
+
         window.toggleModalMenu = function(itemId) {
             const menu = document.getElementById('modal-menu-' + itemId);
             if (menu) {
