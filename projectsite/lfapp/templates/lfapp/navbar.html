@@ -4,8 +4,11 @@
         <div class="flex h-16 items-center justify-between">
             <div class="flex items-center gap-4">
                 <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="md:hidden p-1.5 rounded-md hover:bg-accent">
+                <button id="mobile-menu-btn" class="md:hidden p-1.5 rounded-md hover:bg-accent relative">
                     <i data-lucide="menu" class="h-5 w-5"></i>
+                    {% if user.is_authenticated and user.is_admin_user and pending_count > 0 %}
+                    <span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-destructive rounded-full border-2 border-card"></span>
+                    {% endif %}
                 </button>
 
                 <a href="{% url 'home' %}" class="flex items-center gap-2">
@@ -198,7 +201,7 @@
 <div id="how-it-works-modal" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300 opacity-0 flex items-center justify-center p-4">
     <div class="bg-card rounded-xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 opacity-0" id="how-it-works-content">
         <div class="p-6 border-b border-border flex items-center justify-between">
-            <h3 class="text-xl font-bold">How HanApp Works</h3>
+            <h3 class="text-xl font-bold">How Han<span class="text-primary">App</span> Works</h3>
             <button id="close-how-it-works" class="p-1 rounded-md hover:bg-accent text-muted-foreground">
                 <i data-lucide="x" class="h-5 w-5"></i>
             </button>
