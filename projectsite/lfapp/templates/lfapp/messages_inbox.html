@@ -104,7 +104,15 @@
                                                     {% endif %}
                                                 </span>
                                                 <span class="mx-1">&middot;</span>
-                                                {{ msg.latest_message_text }}
+                                                {% if msg.latest_message_text %}
+                                                    {{ msg.latest_message_text }}
+                                                {% elif msg.latest_message_image %}
+                                                    <span class="italic inline-flex items-center gap-1">
+                                                        <i data-lucide="image" class="h-3 w-3"></i> Sent a photo
+                                                    </span>
+                                                {% else %}
+                                                    <span class="italic">Message</span>
+                                                {% endif %}
                                             </p>
                                             
                                             <!-- Read Status Logic -->
@@ -183,7 +191,15 @@
                                                     {% endif %}
                                                 </span>
                                                 <span class="mx-1">&middot;</span>
-                                                {{ msg.latest_message_text }}
+                                                {% if msg.latest_message_text %}
+                                                    {{ msg.latest_message_text }}
+                                                {% elif msg.latest_message_image %}
+                                                    <span class="italic inline-flex items-center gap-1">
+                                                        <i data-lucide="image" class="h-3 w-3"></i> Sent a photo
+                                                    </span>
+                                                {% else %}
+                                                    <span class="italic">Message</span>
+                                                {% endif %}
                                             </p>
                                             
                                             <!-- Read Status Logic -->

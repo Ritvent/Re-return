@@ -787,6 +787,7 @@ def messages_inbox_view(request):
     
     all_messages = all_messages.annotate(
         latest_message_text=Subquery(latest_message_qs.values('message')[:1]),
+        latest_message_image=Subquery(latest_message_qs.values('image')[:1]),
         latest_msg_is_read=Subquery(latest_message_qs.values('is_read')[:1]),
         latest_msg_sender_id=Subquery(latest_message_qs.values('sender_id')[:1])
     )

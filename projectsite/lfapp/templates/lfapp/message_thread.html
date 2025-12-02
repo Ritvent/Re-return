@@ -160,10 +160,16 @@
                                 </button>
                             </div>
                         </div>
+                        <!-- Inline Error Message Removed from here -->
                     </div>
 
                     <!-- Text Input -->
                     <div class="flex-1 relative">
+                        <!-- Inline Error Message -->
+                        <div id="error-message" class="hidden absolute -top-10 left-0 z-50 text-xs text-destructive font-semibold animate-in slide-in-from-bottom-1 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-md border border-destructive/20 flex items-center gap-1.5">
+                            <i data-lucide="alert-circle" class="h-3.5 w-3.5"></i>
+                            <span id="error-text"></span>
+                        </div>
                         <textarea 
                             id="message-input"
                             name="message" 
@@ -216,12 +222,14 @@
                 document.getElementById('imagePreview').classList.remove('hidden');
             };
             reader.readAsDataURL(input.files[0]);
+            hideError(); // Clear error on new file
         }
     }
 
     function clearImage() {
         document.getElementById('image').value = '';
         document.getElementById('imagePreview').classList.add('hidden');
+        hideError(); // Clear error on clear
     }
 
     // Message Deletion
@@ -260,13 +268,43 @@
         }, 300);
     }
 
+
+
     // --- AJAX Send & Smart Polling ---
 
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
+    const errorMessage = document.getElementById('error-message');
     const threadId = "{{ root_message.id }}";
     const currentUserId = "{{ request.user.id }}";
     let lastMessageId = "{{ thread_messages.last.id|default:0 }}";
+
+    // Helper: Show/Hide Error
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        if (errorText) errorText.textContent = msg;
+        else errorDiv.textContent = msg; // Fallback
+        
+        errorDiv.classList.remove('hidden');
+    }
+
+    function hideError() {
+        errorMessage.classList.add('hidden');
+    }
+
+    // Hide error on input
+    messageInput.addEventListener('input', hideError);
+
+    // Submit on Enter (Shift+Enter for new line)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent default newline
+            if (this.value.trim() !== '') {
+                chatForm.dispatchEvent(new Event('submit')); // Trigger submit
+            }
+        }
+    });
 
     // 1. AJAX Send
     chatForm.addEventListener('submit', function(e) {
@@ -313,12 +351,12 @@
                 
                 scrollToBottom();
             } else {
-                alert('Error sending message: ' + data.message);
+                showError(data.message || 'Error sending message');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while sending the message.');
+            showError('An error occurred. Please try again.');
         });
     });
 
