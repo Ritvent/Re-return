@@ -139,7 +139,7 @@
 
             <!-- 3. Input Area -->
             <div class="flex-none p-3 md:p-4 bg-background border-t border-border/50 z-20">
-                <form method="post" enctype="multipart/form-data" class="relative flex items-end gap-2 max-w-4xl mx-auto w-full">
+                <form id="chat-form" method="post" enctype="multipart/form-data" class="relative flex items-end gap-2 max-w-4xl mx-auto w-full">
                     {% csrf_token %}
                     
                     <!-- Image Upload Button -->
@@ -165,6 +165,7 @@
                     <!-- Text Input -->
                     <div class="flex-1 relative">
                         <textarea 
+                            id="message-input"
                             name="message" 
                             rows="1" 
                             placeholder="Type a message..." 
@@ -257,6 +258,153 @@
             img.src = '';
             document.body.style.overflow = '';
         }, 300);
+    }
+
+    // --- AJAX Send & Smart Polling ---
+
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const threadId = "{{ root_message.id }}";
+    const currentUserId = "{{ request.user.id }}";
+    let lastMessageId = "{{ thread_messages.last.id|default:0 }}";
+
+    // 1. AJAX Send
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const messageText = messageInput.value.trim();
+        const imageInput = document.getElementById('image');
+        
+        if (!messageText && (!imageInput.files || imageInput.files.length === 0)) {
+            return;
+        }
+
+        // If there's an image, we MUST use FormData (JSON doesn't handle files easily)
+        // If it's just text, we can use JSON, but FormData is more consistent for this form
+        const formData = new FormData(chatForm);
+        
+        // Optimistic UI Update (Optional: Add message immediately before server confirms)
+        // For now, we'll wait for server response to be safe and get the correct ID/Timestamp
+        
+        fetch(chatForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                // 'X-CSRFToken': ... (FormData handles this if input is in form, or fetch adds it automatically? 
+                // Django CSRF token is in the form as hidden input, FormData picks it up.)
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Clear input
+                messageInput.value = '';
+                messageInput.style.height = ''; // Reset height
+                
+                // Clear image
+                clearImage();
+                
+                // Append the new message
+                appendMessage(data.data);
+                
+                // Update lastMessageId to avoid duplicate fetching
+                lastMessageId = data.data.id;
+                
+                scrollToBottom();
+            } else {
+                alert('Error sending message: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while sending the message.');
+        });
+    });
+
+    // 2. Smart Polling
+    function pollMessages() {
+        fetch(`/messages/get-new/${threadId}/?last_id=${lastMessageId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    // display only if it is not the same as the last message
+                    if (msg.id > lastMessageId) {
+                        appendMessage(msg);
+                        lastMessageId = msg.id;
+                    }
+                });
+                scrollToBottom();
+            }
+        })
+        .catch(error => console.error('Polling error:', error));
+    }
+
+
+    const pollInterval = 12000; // 12 secs for now
+    setInterval(pollMessages, pollInterval);
+
+    // Helper: Append Message to DOM
+    function appendMessage(msg) {
+        const isMe = msg.is_me || (msg.sender_id == currentUserId); // Handle both formats
+        
+        const div = document.createElement('div');
+        div.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300`;
+        
+        let profileHtml = '';
+        if (msg.profile_pic) {
+            profileHtml = `<img src="${msg.profile_pic}" alt="Profile" class="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover border border-border shadow-sm">`;
+        } else {
+            profileHtml = `
+                <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-muted flex items-center justify-center border border-border shadow-sm">
+                    <span class="text-[10px] font-bold text-muted-foreground">
+                        ${msg.sender_initial}
+                    </span>
+                </div>`;
+        }
+
+        let imageHtml = '';
+        if (msg.image_url) {
+            imageHtml = `
+                <div class="mt-2 -mx-1">
+                    <button onclick="openLightbox('${msg.image_url}')" class="block overflow-hidden rounded-lg w-full">
+                        <img src="${msg.image_url}" 
+                             alt="Attachment" 
+                             class="w-full aspect-[4/3] md:aspect-video object-cover hover:scale-105 transition-transform duration-300">
+                    </button>
+                </div>`;
+        }
+
+        div.innerHTML = `
+            <div class="flex max-w-[85%] md:max-w-[70%] gap-2 md:gap-3 ${isMe ? 'flex-row-reverse' : ''}">
+                
+                <!-- Profile Picture -->
+                <div class="flex-shrink-0 self-end mb-1">
+                    ${profileHtml}
+                </div>
+
+                <!-- Message Bubble -->
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                    
+                    <div class="relative group/bubble">
+                        <div class="px-4 py-2.5 md:py-3 shadow-sm relative text-sm
+                            ${isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' : 'bg-white border border-border/50 text-foreground rounded-2xl rounded-tl-sm'}">
+                            
+                            ${msg.message ? `<p class="whitespace-pre-wrap leading-relaxed break-words break-all">${msg.message}</p>` : ''}
+                            ${imageHtml}
+                        </div>
+                    </div>
+                    
+                    <!-- Timestamp -->
+                    <span class="text-[10px] text-muted-foreground mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                        ${msg.created_at}
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(div);
     }
 </script>
 {% endblock %}

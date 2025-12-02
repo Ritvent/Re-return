@@ -18,6 +18,7 @@ urlpatterns = [
     path('messages/inbox/', views.messages_inbox_view, name='messages_inbox'),
     path('messages/sent/', views.messages_sent_view, name='messages_sent'),
     path('messages/thread/<int:message_id>/', views.message_thread_view, name='message_thread'),
+    path('messages/get-new/<int:thread_id>/', views.get_thread_messages_view, name='get_thread_messages'), # where new messages are fetched
     path('messages/delete/<int:message_id>/', views.delete_message_view, name='delete_message'),
     path('messages/delete-thread/<int:message_id>/', views.delete_thread_view, name='delete_thread'),
     path('dashboard/', views.admin_dashboard_view, name='admin_dashboard'),

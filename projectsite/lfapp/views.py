@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+import json
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -845,10 +846,28 @@ def message_thread_view(request, message_id):
     
     # Handle reply submission
     if request.method == 'POST':
-        message_text = request.POST.get('message', '').strip()
+        # Check if it's an AJAX request (meaning it came from JavaScript, not a normal form submit)
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
+        # If JSON content type, parse body. Otherwise (FormData/Multipart), use request.POST
+        # We need to check this because sometimes we send JSON and sometimes we send Form Data
+        if request.content_type == 'application/json':
+            try:
+                # Try to read the JSON data from the request body
+                data = json.loads(request.body)
+                message_text = data.get('message', '').strip()
+            except json.JSONDecodeError:
+                # If it fails, just set message to empty
+                message_text = ''
+        else:
+            # If it's not JSON, just get it from the normal POST dictionary
+            message_text = request.POST.get('message', '').strip()
+            
         image = request.FILES.get('image')
         
         if not message_text and not image:
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'Please provide a message or image.'}, status=400)
             messages.error(request, 'Please provide a message or image.')
             return redirect('message_thread', message_id=message_id)
         
@@ -857,6 +876,8 @@ def message_thread_view(request, message_id):
             try:
                 validate_image_file(image)
             except ValidationError as e:
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': e.message}, status=400)
                 messages.error(request, e.message)
                 return redirect('message_thread', message_id=message_id)
         
@@ -906,6 +927,24 @@ This is an automated message from HanApp - PSU Lost and Found
         except Exception as e:
             print(f"Email sending failed: {e}")
             
+        if is_ajax:
+            # If it was an AJAX request, return a JSON response so the page doesn't reload
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Reply sent successfully!',
+                'data': {
+                    'id': reply.id,
+                    'message': reply.message,
+                    'created_at': reply.created_at.strftime("%b %d, %I:%M %p"), # Format: M d, g:i A
+                    'sender_id': request.user.id,
+                    'is_me': True, # This tells the frontend that I sent this message
+                    'sender_name': request.user.get_full_name() or request.user.username,
+                    'sender_initial': (request.user.get_full_name() or request.user.username)[0].upper(),
+                    'profile_pic': request.user.google_profile_picture if request.user.google_profile_picture else None,
+                    'image_url': reply.image.url if reply.image else None
+                }
+            })
+
         messages.success(request, 'Reply sent successfully!')
         return redirect('message_thread', message_id=message_id)
     
@@ -915,6 +954,46 @@ This is an automated message from HanApp - PSU Lost and Found
         'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
     }
     return render(request, 'lfapp/message_thread.html', context)
+
+@login_required
+def get_thread_messages_view(request, thread_id):
+    """API to get new messages for a thread (Smart Polling)"""
+    # Get the main message thread
+    root_message = get_object_or_404(ContactMessage, id=thread_id)
+    
+    # Check permission - make sure the user is allowed to see this
+    if root_message.sender != request.user and root_message.recipient != request.user:
+        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+    
+    # Get last message ID from queue param to fetch only new messages
+    # important so we don't download the whole chat history every time
+    last_id = request.GET.get('last_id')
+    
+    messages_qs = root_message.get_thread_messages()
+    
+    # If we have a last_id, only get messages that came AFTER that one
+    if last_id:
+        messages_qs = messages_qs.filter(id__gt=last_id)
+        
+    
+    messages_qs.filter(recipient=request.user, is_read=False).update(is_read=True)
+    
+    # Prepare the data list to send back to the frontend
+    data = []
+    for msg in messages_qs:
+        data.append({
+            'id': msg.id,
+            'message': msg.message,
+            'created_at': msg.created_at.strftime("%b %d, %I:%M %p"), # Short, Ex: Dec, 01, not military time, min, period
+            'sender_id': msg.sender.id,
+            'is_me': msg.sender == request.user, # Check if current user sent this message
+            'sender_name': msg.sender.get_full_name() or msg.sender.username,
+            'sender_initial': (msg.sender.get_full_name() or msg.sender.username)[0].upper(),
+            'profile_pic': msg.sender.google_profile_picture if msg.sender.google_profile_picture else None,
+            'image_url': msg.image.url if msg.image else None
+        })
+        
+    return JsonResponse({'status': 'success', 'messages': data})
 
 @login_required
 def delete_message_view(request, message_id):
