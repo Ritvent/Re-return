@@ -10,7 +10,6 @@
 
                 <a href="{% url 'home' %}" class="flex items-center gap-2">
                     <span class="text-xl font-bold text-foreground">Han<span class="text-primary">App</span></span>
-                    
                 </a>
 
                 <div class="hidden md:flex items-center gap-4 ml-4">
@@ -119,51 +118,223 @@
             </div>
         </div>
 
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-border py-4">
-            <div class="flex flex-col gap-2">
-                <a href="{% url 'home' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'home' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
-                    Home
-                </a>
-                <a href="{% url 'lost_items' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'lost_items' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
-                    Lost Items
-                </a>
-                <a href="{% url 'found_items' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'found_items' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
-                    Found Items
-                </a>
-                <a href="{% url 'claimed_items' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all {% if request.resolver_match.url_name == 'claimed_items' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
-                    Claimed Items
-                </a>
-                {% if user.is_authenticated and user.is_admin_user %}
-                <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary text-primary-foreground{% else %}text-foreground hover:bg-accent{% endif %}">
-                    <i data-lucide="shield-user" class="h-4 w-4"></i>
-                    Admin
-                    {% if pending_count > 0 %}
-                        <span class="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">{{ pending_count }}</span>
-                    {% endif %}
-                </a>
-                {% endif %}
+        <!-- Mobile Menu Sidebar Overlay -->
+        <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0 md:hidden"></div>
+
+        <!-- Mobile Menu Sidebar -->
+        <div id="mobile-menu" class="fixed inset-y-0 left-0 z-50 w-64 bg-card shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col">
+            <div class="p-4 border-b border-border flex items-center justify-between">
+                <a href="{% url 'home' %}" class="text-xl font-bold text-foreground">Han<span class="text-primary">App</span></a>
+                <button id="mobile-menu-close" class="p-1 rounded-md hover:bg-accent text-muted-foreground">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
             </div>
+            
+            <div class="flex-1 overflow-y-auto py-4">
+                <div class="flex flex-col gap-1 px-2">
+                    <a href="{% url 'home' %}" class="px-4 py-3 rounded-md text-base font-medium transition-all {% if request.resolver_match.url_name == 'home' %}bg-primary/10 text-primary{% else %}text-foreground hover:bg-accent{% endif %}">
+                        Home
+                    </a>
+                    <a href="{% url 'lost_items' %}" class="px-4 py-3 rounded-md text-base font-medium transition-all {% if request.resolver_match.url_name == 'lost_items' %}bg-primary/10 text-primary{% else %}text-foreground hover:bg-accent{% endif %}">
+                        Lost Items
+                    </a>
+                    <a href="{% url 'found_items' %}" class="px-4 py-3 rounded-md text-base font-medium transition-all {% if request.resolver_match.url_name == 'found_items' %}bg-primary/10 text-primary{% else %}text-foreground hover:bg-accent{% endif %}">
+                        Found Items
+                    </a>
+                    <a href="{% url 'claimed_items' %}" class="px-4 py-3 rounded-md text-base font-medium transition-all {% if request.resolver_match.url_name == 'claimed_items' %}bg-primary/10 text-primary{% else %}text-foreground hover:bg-accent{% endif %}">
+                        Claimed Items
+                    </a>
+
+                    <div class="my-2 border-t border-border/50"></div>
+
+                    <button id="how-it-works-btn-mobile" class="w-full text-left px-4 py-3 rounded-md text-base font-medium transition-all text-foreground hover:bg-accent flex items-center justify-between group">
+                        How it Works
+                        <i data-lucide="help-circle" class="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors"></i>
+                    </button>
+
+                    {% if user.is_authenticated and user.is_admin_user %}
+                    <div class="my-2 border-t border-border/50"></div>
+                    <a href="{% url 'admin_dashboard' %}" class="px-4 py-3 rounded-md text-base font-medium transition-all flex items-center gap-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-primary/10 text-primary{% else %}text-foreground hover:bg-accent{% endif %}">
+                        Admin
+                        {% if pending_count > 0 %}
+                            <span class="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if user.is_authenticated %}
+            <div class="p-4 border-t border-border bg-muted/30">
+                <div class="flex items-center gap-3">
+                    {% if user.google_profile_picture %}
+                        <img src="{{ user.google_profile_picture }}" alt="Profile" class="h-10 w-10 rounded-full object-cover border border-border">
+                    {% else %}
+                        <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-border">
+                            {{ user.email|make_list|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="overflow-hidden">
+                        <p class="font-medium truncate text-sm">{{ user.get_full_name|default:user.email }}</p>
+                        <p class="text-xs text-muted-foreground truncate">{{ user.email }}</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="p-4 border-t border-border">
+                <a href="{% url 'landing' %}">
+                    <button class="w-full px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="log-in" class="h-4 w-4"></i>
+                        Sign In
+                    </button>
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </nav>
 
+<!-- How it Works Modal -->
+<div id="how-it-works-modal" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300 opacity-0 flex items-center justify-center p-4">
+    <div class="bg-card rounded-xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 opacity-0" id="how-it-works-content">
+        <div class="p-6 border-b border-border flex items-center justify-between">
+            <h3 class="text-xl font-bold">How HanApp Works</h3>
+            <button id="close-how-it-works" class="p-1 rounded-md hover:bg-accent text-muted-foreground">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6">
+            <div class="flex gap-4">
+                <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary font-bold">1</div>
+                <div>
+                    <h4 class="font-bold mb-1">Report an Item</h4>
+                    <p class="text-sm text-muted-foreground">Lost something? Post a "Lost Item" report. Found something? Post a "Found Item" report.</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary font-bold">2</div>
+                <div>
+                    <h4 class="font-bold mb-1">Connect</h4>
+                    <p class="text-sm text-muted-foreground">Use the built-in chat to communicate securely with other users about the item.</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary font-bold">3</div>
+                <div>
+                    <h4 class="font-bold mb-1">Return & Claim</h4>
+                    <p class="text-sm text-muted-foreground">Meet up to return the item. Once done, mark the item as "Claimed" or "Returned" to close the case.</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-6 border-t border-border bg-muted/30 rounded-b-xl">
+            <button id="close-how-it-works-btn" class="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                Got it!
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Toggle dropdown menus
-    document.addEventListener('DOMContentLoaded', function() {
-        // Mobile Menu
+    (function() {
+        function initNavbar() {
+            // Mobile Menu Sidebar 
+
+        // How it Works Modal Logic
+        const howItWorksBtnMobile = document.getElementById('how-it-works-btn-mobile');
+        const howItWorksModal = document.getElementById('how-it-works-modal');
+        const howItWorksContent = document.getElementById('how-it-works-content');
+        const closeHowItWorks = document.getElementById('close-how-it-works');
+        const closeHowItWorksBtn = document.getElementById('close-how-it-works-btn');
+
+        function toggleHowItWorks() {
+            if (howItWorksModal.classList.contains('hidden')) {
+                // Open
+                howItWorksModal.classList.remove('hidden');
+                // Small delay for transition
+                setTimeout(() => {
+                    howItWorksModal.classList.remove('opacity-0');
+                    howItWorksContent.classList.remove('scale-95', 'opacity-0');
+                    howItWorksContent.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                // Close
+                howItWorksModal.classList.add('opacity-0');
+                howItWorksContent.classList.remove('scale-100', 'opacity-100');
+                howItWorksContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    howItWorksModal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        if (howItWorksBtnMobile) {
+            howItWorksBtnMobile.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Close mobile menu first if open
+                if (!document.getElementById('mobile-menu').classList.contains('-translate-x-full')) {
+                     // We can't easily call toggleMobileMenu here due to scope, but we can click the overlay
+                     document.getElementById('mobile-menu-overlay').click();
+                }
+                toggleHowItWorks();
+            });
+        }
+
+        if (closeHowItWorks) closeHowItWorks.addEventListener('click', toggleHowItWorks);
+        if (closeHowItWorksBtn) closeHowItWorksBtn.addEventListener('click', toggleHowItWorks);
+        if (howItWorksModal) {
+            howItWorksModal.addEventListener('click', function(e) {
+                if (e.target === howItWorksModal) toggleHowItWorks();
+            });
+        }
+
+        // Mobile Menu Sidebar Logic
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
         const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
         
-        if (mobileMenuBtn && mobileMenu) {
+        function toggleMobileMenu() {
+            const isHidden = mobileMenu.classList.contains('-translate-x-full');
+            
+            if (isHidden) {
+                // Open menu
+                mobileMenu.classList.remove('-translate-x-full');
+                mobileMenuOverlay.classList.remove('hidden');
+            
+                setTimeout(() => {
+                    mobileMenuOverlay.classList.remove('opacity-0');
+                }, 10);
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            } else {
+                // Close menu
+                mobileMenu.classList.add('-translate-x-full');
+                mobileMenuOverlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    mobileMenuOverlay.classList.add('hidden');
+                }, 300); // Wait for transition
+                document.body.style.overflow = '';
+            }
+        }
+
+        if (mobileMenuBtn) {
             mobileMenuBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                mobileMenu.classList.toggle('hidden');
-                // Close other menus
-                const postMenu = document.getElementById('post-menu');
-                const userMenu = document.getElementById('user-menu');
-                if (postMenu) postMenu.classList.add('hidden');
-                if (userMenu) userMenu.classList.add('hidden');
+                toggleMobileMenu();
+            });
+        }
+
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleMobileMenu();
+            });
+        }
+
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', function(e) {
+                toggleMobileMenu();
             });
         }
 
@@ -175,10 +346,9 @@
             postMenuBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 postMenu.classList.toggle('hidden');
-                // Close other menus
+                // Close user menu only (not mobile menu - it uses different toggle method)
                 const userMenu = document.getElementById('user-menu');
                 if (userMenu) userMenu.classList.add('hidden');
-                if (mobileMenu) mobileMenu.classList.add('hidden');
             });
         }
         
@@ -190,21 +360,27 @@
             menuBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 menu.classList.toggle('hidden');
-                // Close other menus
+                // Close post menu only (not mobile menu - it uses different toggle method)
                 if (postMenu) postMenu.classList.add('hidden');
-                if (mobileMenu) mobileMenu.classList.add('hidden');
             });
         }
         
-        // Close all menus when clicking outside
+        // Close dropdown menus when clicking outside (not the mobile sidebar)
         document.addEventListener('click', function() {
             if (menu) menu.classList.add('hidden');
             if (postMenu) postMenu.classList.add('hidden');
-            if (mobileMenu) mobileMenu.classList.add('hidden');
         });
 
-        // Reinitialize icons after dynamic content loads
+        // Reinitialize 
         lucide.createIcons();
-    });
+        }
+
+        // Run on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initNavbar);
+        } else {
+            initNavbar();
+        }
+    })();
 </script>
 

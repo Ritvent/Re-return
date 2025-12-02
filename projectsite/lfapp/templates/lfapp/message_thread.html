@@ -278,6 +278,7 @@
     const threadId = "{{ root_message.id }}";
     const currentUserId = "{{ request.user.id }}";
     let lastMessageId = "{{ thread_messages.last.id|default:0 }}";
+    let pendingMessages = []; // Queue for optimistic messages
 
     // Helper: Show/Hide Error
     function showError(msg) {
@@ -296,17 +297,17 @@
     // Hide error on input
     messageInput.addEventListener('input', hideError);
 
-    // Submit on Enter (Shift+Enter for new line)
+    // Submit on enter (Shift+Enter for new lien)
     messageInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Prevent default newline
+            e.preventDefault(); // Prevent default newline 
             if (this.value.trim() !== '') {
                 chatForm.dispatchEvent(new Event('submit')); // Trigger submit
             }
         }
     });
 
-    // 1. AJAX Send
+    // Need to test if lost connection or high ms
     chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -317,46 +318,88 @@
             return;
         }
 
-        // If there's an image, we MUST use FormData (JSON doesn't handle files easily)
-        // If it's just text, we can use JSON, but FormData is more consistent for this form
+        // File check
+        if (imageInput.files.length > 0) {
+            const file = imageInput.files[0];
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showError('Invalid file type. Please select an image (JPEG, PNG, GIF, WEBP).');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                 showError('File is too large. Max size is 5MB.');
+                 return;
+            }
+        }
+
+        // 1. Capture Data
         const formData = new FormData(chatForm);
+        const tempId = 'temp-' + Date.now();
+        const tempMsg = {
+            id: tempId,
+            message: messageText,
+            sender_id: currentUserId,
+            is_me: true,
+            created_at: 'Sending...',
+            profile_pic: "{{ request.user.google_profile_picture|default:'' }}",
+            sender_initial: "{{ request.user.first_name|first|upper }}",
+            image_url: imageInput.files[0] ? URL.createObjectURL(imageInput.files[0]) : null
+        };
+
+        // Add to pending queue
+        pendingMessages.push({
+            tempId: tempId,
+            message: messageText,
+            hasImage: !!imageInput.files.length
+        });
+
+        // 2. Optimistic Update
+        const msgElement = appendMessage(tempMsg);
+        msgElement.id = `msg-${tempId}`;
+        msgElement.classList.add('opacity-70'); 
+        scrollToBottom();
+
+        // 3. Clear Inputs
+        messageInput.value = '';
+        messageInput.style.height = '';
+        clearImage();
         
-        // Optimistic UI Update (Optional: Add message immediately before server confirms)
-        // For now, we'll wait for server response to be safe and get the correct ID/Timestamp
-        
+        // 4. Send Request
         fetch(chatForm.action, {
             method: 'POST',
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                // 'X-CSRFToken': ... (FormData handles this if input is in form, or fetch adds it automatically? 
-                // Django CSRF token is in the form as hidden input, FormData picks it up.)
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                // Clear input
-                messageInput.value = '';
-                messageInput.style.height = ''; // Reset height
+                // Success: Update the temp message
+                msgElement.classList.remove('opacity-70');
+                msgElement.id = `msg-${data.data.id}`; // Update ID
                 
-                // Clear image
-                clearImage();
-                
-                // Append the new message
-                appendMessage(data.data);
-                
-                // Update lastMessageId to avoid duplicate fetching
+                // Update timestamp
+                const timeSpan = msgElement.querySelector('span.text-\\[10px\\]');
+                if (timeSpan) timeSpan.textContent = data.data.created_at;
+
+                // Update lastMessageId
                 lastMessageId = data.data.id;
-                
-                scrollToBottom();
+
+                // Remove from pending queue
+                pendingMessages = pendingMessages.filter(m => m.tempId !== tempId);
             } else {
                 showError(data.message || 'Error sending message');
+                msgElement.remove(); // Remove failed message
+                pendingMessages = pendingMessages.filter(m => m.tempId !== tempId); // Remove from queue
+                // Restore input? (Optional, maybe later)
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showError('An error occurred. Please try again.');
+            showError('An error occurred. Please check your internet connection and try again.');
+            msgElement.remove();
+            pendingMessages = pendingMessages.filter(m => m.tempId !== tempId); // Remove from queue
         });
     });
 
@@ -369,6 +412,33 @@
                 data.messages.forEach(msg => {
                     // display only if it is not the same as the last message
                     if (msg.id > lastMessageId) {
+                        // Deduplication for own messages (Optimistic UI race condition)
+                        if (msg.sender_id == currentUserId) {
+                            // Check if this message matches a pending one
+                            const pendingIdx = pendingMessages.findIndex(m => 
+                                m.message === msg.message && 
+                                (!!msg.image_url === m.hasImage)
+                            );
+
+                            if (pendingIdx !== -1) {
+                                
+                                // For duplicates, update the current to be "real".
+                                const pending = pendingMessages[pendingIdx];
+                                const el = document.getElementById('msg-' + pending.tempId);
+                                if (el) {
+                                    el.classList.remove('opacity-70');
+                                    el.id = `msg-${msg.id}`;
+                                    const timeSpan = el.querySelector('span.text-\\[10px\\]');
+                                    if (timeSpan) timeSpan.textContent = msg.created_at;
+                                }
+                                
+                                // Remove from pending queue
+                                pendingMessages.splice(pendingIdx, 1);
+                                lastMessageId = msg.id;
+                                return; // Skip append
+                            }
+                        }
+
                         appendMessage(msg);
                         lastMessageId = msg.id;
                     }
@@ -443,6 +513,7 @@
         `;
         
         messagesContainer.appendChild(div);
+        return div;
     }
 </script>
 {% endblock %}
