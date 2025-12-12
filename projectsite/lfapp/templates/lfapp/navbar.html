@@ -11,9 +11,10 @@
                     {% endif %}
                 </button>
 
-                <a href="{% url 'home' %}" class="flex items-center gap-2">
-                    <span class="text-xl font-bold text-foreground">Han<span class="text-primary">App</span></span>
-                </a>
+            <a href="{% url 'home' %}" class="flex items-center gap-2">
+                <img src="{% static 'lfapp/images/hanapp-logo.png' %}" alt="HanApp Logo" class="h-8 w-8 object-contain" style="margin-right: -4px;">
+                <span class="text-xl font-bold text-foreground"><b>Han<span class="text-primary">App</span></b></span>
+            </a>
 
                 <div class="hidden md:flex items-center gap-4 ml-4">
                     <a href="{% url 'home' %}">
@@ -127,7 +128,10 @@
         <!-- Mobile Menu Sidebar -->
         <div id="mobile-menu" class="fixed inset-y-0 left-0 z-50 w-64 bg-card shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col">
             <div class="p-4 border-b border-border flex items-center justify-between">
-                <a href="{% url 'home' %}" class="text-xl font-bold text-foreground">Han<span class="text-primary">App</span></a>
+                <a href="{% url 'home' %}" class="flex items-center gap-2 text-xl font-bold text-foreground">
+                    <img src="{% static 'lfapp/images/hanapp-logo.png' %}" alt="HanApp Logo" class="h-8 w-8 object-contain" style="margin-right: -4px;">
+                    <b>Han<span class="text-primary">App</span></b>
+                </a>
                 <button id="mobile-menu-close" class="p-1 rounded-md hover:bg-accent text-muted-foreground">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
@@ -201,7 +205,7 @@
 <div id="how-it-works-modal" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300 opacity-0 flex items-center justify-center p-4">
     <div class="bg-card rounded-xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 opacity-0" id="how-it-works-content">
         <div class="p-6 border-b border-border flex items-center justify-between">
-            <h3 class="text-xl font-bold">How Han<span class="text-primary">App</span> Works</h3>
+            <h3 class="text-xl font-bold">How <b>Han<span class="text-primary">App</span></b> Works</h3>
             <button id="close-how-it-works" class="p-1 rounded-md hover:bg-accent text-muted-foreground">
                 <i data-lucide="x" class="h-5 w-5"></i>
             </button>
