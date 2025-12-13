@@ -311,9 +311,9 @@
                             </div>
                         {% endifchanged %}
             
-                        <!-- Timeline Item -->
+                        <!-- Mobile Timeline Item View -->
                         <div class="relative pl-6 pb-6 border-l-2 border-border last:border-0 ml-2">
-                            <!-- Dot -->
+                            <!-- Dot Pin -->
                             <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-background
                                 {% if item.item_type == 'lost' %}bg-red-500{% else %}bg-blue-500{% endif %}">
                             </div>
@@ -348,7 +348,7 @@
                                                     Returned
                                                 </span>
                                             {% elif item.status == 'approved' %}
-                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-orange-100 text-orange-700 flex-shrink-0">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-orange-100 text-primary flex-shrink-0">
                                                     Posted
                                                 </span>
                                             {% endif %}

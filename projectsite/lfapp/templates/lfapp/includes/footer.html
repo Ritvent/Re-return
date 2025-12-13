@@ -1,3 +1,4 @@
+{% load static %}
 <footer class="bg-card border-t border-border mt-16 md:mt-24">
     <div class="container mx-auto px-4 py-8 md:py-12">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -6,12 +7,14 @@
                 <div class="flex items-center gap-2 mb-4">
                     {% if request.resolver_match.url_name == 'landing' %}
                     <a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" class="flex items-center gap-2">
+                        <img src="{% static 'lfapp/images/hanapp-logo.png' %}" alt="HanApp Logo" class="h-8 w-8 object-contain" style="margin-right: -4px;">
                         <span class="text-xl font-bold text-foreground">
                             <b>Han<span class="text-primary">App</span></b>
                         </span>
                     </a>
                     {% else %}
                     <a href="{% url 'home' %}" class="flex items-center gap-2">
+                        <img src="{% static 'lfapp/images/hanapp-logo.png' %}" alt="HanApp Logo" class="h-8 w-8 object-contain" style="margin-right: -4px;">
                         <span class="text-xl font-bold text-foreground">
                             <b>Han<span class="text-primary">App</span></b>
                         </span>

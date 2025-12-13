@@ -4,7 +4,7 @@
     data-long-press="{{ item.id }}" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none;" {% endif %}>
 
     <!-- Stretched Link for Card Clickability -->
-    <button type="button" onclick="openItemModal({{ item.id }})" class="absolute inset-0 z-10 w-full h-full rounded-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer text-left" aria-label="View details for {{ item.title }}"></button>
+    <button type="button" onclick="openItemModal({{ item.id }})" class="absolute inset-0 z-10 w-full h-full rounded-sm focus:outline-none cursor-pointer text-left" aria-label="View details for {{ item.title }}"></button>
 
     <!-- Pin Decoration -->
     <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-4 rounded-full bg-orange-500 shadow-md border border-orange-600 flex items-center justify-center">
@@ -149,7 +149,7 @@
             <div id="menu-{{ item.id }}"
                 class="hidden absolute top-0 right-0 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                 <a href="{% url 'edit_item' item.id %}"
-                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-sm text-slate-700">
                     <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
                     <span>Edit Item</span>
                 </a>
@@ -190,7 +190,7 @@
                     </div>
                     <div class="p-2">
                         <a href="{% url 'edit_item' item.id %}"
-                            class="flex items-center gap-4 px-4 py-4 hover:bg-slate-50 rounded-lg transition-colors">
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-orange-50 rounded-lg transition-colors">
                             <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                                 <i data-lucide="pencil" class="h-5 w-5 text-orange-600"></i>
                             </div>
