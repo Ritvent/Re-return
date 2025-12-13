@@ -383,6 +383,18 @@
                 const timeSpan = msgElement.querySelector('span.text-\\[10px\\]');
                 if (timeSpan) timeSpan.textContent = data.data.created_at;
 
+                // Add delete button
+                const bubbleContainer = msgElement.querySelector('.group\\/bubble');
+                if (bubbleContainer && !bubbleContainer.querySelector('button[onclick^="confirmDelete"]')) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.setAttribute('onclick', `confirmDelete('${data.data.id}')`);
+                    deleteBtn.className = 'absolute top-1/2 -translate-y-1/2 -left-8 p-1.5 text-muted-foreground hover:text-destructive opacity-0 group-hover/bubble:opacity-100 transition-opacity';
+                    deleteBtn.title = 'Delete message';
+                    deleteBtn.innerHTML = '<i data-lucide="trash-2" class="h-4 w-4"></i>';
+                    bubbleContainer.appendChild(deleteBtn);
+                    lucide.createIcons();
+                }
+
                 // Update lastMessageId
                 lastMessageId = data.data.id;
 
@@ -484,6 +496,17 @@
                 </div>`;
         }
 
+        // Delete button for own messages 
+        let deleteButtonHtml = '';
+        if (isMe && msg.id && !String(msg.id).startsWith('temp-')) {
+            deleteButtonHtml = `
+                <button onclick="confirmDelete('${msg.id}')" 
+                        class="absolute top-1/2 -translate-y-1/2 -left-8 p-1.5 text-muted-foreground hover:text-destructive opacity-0 group-hover/bubble:opacity-100 transition-opacity"
+                        title="Delete message">
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                </button>`;
+        }
+
         div.innerHTML = `
             <div class="flex max-w-[85%] md:max-w-[70%] gap-2 md:gap-3 ${isMe ? 'flex-row-reverse' : ''}">
                 
@@ -502,6 +525,7 @@
                             ${msg.message ? `<p class="whitespace-pre-wrap leading-relaxed break-words break-all">${msg.message}</p>` : ''}
                             ${imageHtml}
                         </div>
+                        ${deleteButtonHtml}
                     </div>
                     
                     <!-- Timestamp -->
@@ -513,6 +537,7 @@
         `;
         
         messagesContainer.appendChild(div);
+        lucide.createIcons();
         return div;
     }
 </script>
