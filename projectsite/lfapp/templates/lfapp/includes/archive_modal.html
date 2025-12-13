@@ -1,0 +1,209 @@
+<!-- Admin Archive Modal -->
+{% if request.user.is_admin_user %}
+<div id="archiveModal" class="fixed inset-0 z-[200] hidden" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="archiveModalBackdrop" onclick="closeArchiveModal()"></div>
+
+    <!-- Modal Panel -->
+    <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+        <div class="w-full max-w-md bg-background rounded-2xl shadow-2xl transform transition-all scale-95 opacity-0 pointer-events-auto flex flex-col max-h-[90vh]" id="archiveModalPanel">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-full bg-destructive/10">
+                        <i data-lucide="archive" class="h-5 w-5 text-destructive"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-foreground">Archive Item</h3>
+                        <p class="text-xs text-muted-foreground">Remove this item as admin</p>
+                    </div>
+                </div>
+                <button onclick="closeArchiveModal()" class="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto">
+                <!-- Item Info Preview -->
+                <div class="flex items-center gap-3 p-3 bg-destructive/5 rounded-lg mb-6 border border-destructive/20">
+                    <div class="h-10 w-10 rounded-md bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="package" class="h-5 w-5 text-destructive"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Archiving Item</p>
+                        <p class="text-sm font-semibold text-foreground truncate" id="archiveModalItemTitle">Loading...</p>
+                    </div>
+                </div>
+
+                <!-- Warning Notice -->
+                <div class="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 mb-6 border border-amber-200 dark:border-amber-800">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="alert-triangle" class="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-sm font-medium text-amber-800 dark:text-amber-400">Admin Action</p>
+                            <p class="text-xs text-amber-700 dark:text-amber-500 mt-1">This will remove the item from public view and move it to the admin archive. The item poster will not be notified.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form id="archiveForm" onsubmit="handleArchiveSubmit(event)" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" id="archiveItemId" name="item_id">
+                    
+                    <!-- Reason -->
+                    <div class="space-y-2">
+                        <label for="archiveReason" class="text-sm font-medium text-foreground">Reason for Archiving *</label>
+                        <select id="archiveReason" name="reason" required
+                                class="w-full px-3 py-2.5 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <option value="">Select a reason...</option>
+                            <option value="spam">Spam</option>
+                            <option value="inappropriate">Inappropriate content</option>
+                            <option value="duplicate">Duplicate post</option>
+                            <option value="resolved">Resolved / No longer needed</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="space-y-2">
+                        <label for="archiveNotes" class="text-sm font-medium text-foreground">Additional Notes (Optional)</label>
+                        <textarea id="archiveNotes" name="notes" rows="3" placeholder="Add any additional context for this action..."
+                                  class="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"></textarea>
+                        <p class="text-xs text-muted-foreground">This will be logged for admin records.</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-border flex items-center justify-end gap-3 bg-muted/30">
+                <button type="button" onclick="closeArchiveModal()" class="px-4 py-2 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" form="archiveForm" id="archiveSubmitBtn" class="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors flex items-center gap-2">
+                    <i data-lucide="archive" class="h-4 w-4"></i>
+                    Archive Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openArchiveModal(itemId, itemTitle) {
+        const modal = document.getElementById('archiveModal');
+        const backdrop = document.getElementById('archiveModalBackdrop');
+        const panel = document.getElementById('archiveModalPanel');
+        
+        // Set item info
+        document.getElementById('archiveItemId').value = itemId;
+        document.getElementById('archiveModalItemTitle').textContent = itemTitle;
+        
+        // Reset form
+        document.getElementById('archiveForm').reset();
+        document.getElementById('archiveItemId').value = itemId;
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('opacity-0');
+            backdrop.classList.add('opacity-100');
+            panel.classList.remove('scale-95', 'opacity-0');
+            panel.classList.add('scale-100', 'opacity-100');
+        });
+        
+        // Re-init Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    function closeArchiveModal() {
+        const modal = document.getElementById('archiveModal');
+        const backdrop = document.getElementById('archiveModalBackdrop');
+        const panel = document.getElementById('archiveModalPanel');
+        
+        // Animate out
+        backdrop.classList.remove('opacity-100');
+        backdrop.classList.add('opacity-0');
+        panel.classList.remove('scale-100', 'opacity-100');
+        panel.classList.add('scale-95', 'opacity-0');
+        
+        // Hide after animation
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 200);
+    }
+
+    async function handleArchiveSubmit(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const submitBtn = document.getElementById('archiveSubmitBtn');
+        const itemId = document.getElementById('archiveItemId').value;
+        const reason = document.getElementById('archiveReason').value;
+        const notes = document.getElementById('archiveNotes').value;
+        
+        if (!reason) {
+            alert('Please select a reason for archiving.');
+            return;
+        }
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Archiving...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+        try {
+            const response = await fetch(`/dashboard/archive/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: new URLSearchParams({
+                    'reason': reason,
+                    'notes': notes
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                closeArchiveModal();
+                // Show success message and reload
+                showToast('Item archived successfully', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Failed to archive item');
+            }
+        } catch (error) {
+            console.error('Archive error:', error);
+            alert('Failed to archive item: ' + error.message);
+            
+            // Reset button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="archive" class="h-4 w-4"></i> Archive Item';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('archiveModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closeArchiveModal();
+            }
+        }
+    });
+</script>
+{% endif %}

@@ -23,7 +23,7 @@
                             Manage and monitor all lost and found items in the system
                         </p>
                     </div>
-                    <div class="flex gap-4">
+                    <div class="flex flex-wrap gap-4">
                         <a href="{% url 'admin_users' %}">
                             <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
                                 <i data-lucide="users" class="h-4 w-4"></i>
@@ -37,6 +37,12 @@
                                 {% if pending_count > 0 %}
                                     <span class="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{{ pending_count }}</span>
                                 {% endif %}
+                            </button>
+                        </a>
+                        <a href="{% url 'admin_archived' %}">
+                            <button class="px-4 py-2 rounded-md border border-border text-foreground font-medium hover:bg-accent transition-all flex items-center gap-2">
+                                <i data-lucide="archive" class="h-4 w-4"></i>
+                                Archived Items
                             </button>
                         </a>
                     </div>
@@ -196,12 +202,13 @@
                         <table class="w-full table-fixed">
                             <thead>
                                 <tr class="border-b bg-muted/50">
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[28%]">Item</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[10%]">Type</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[12%]">Status</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[15%]">Category</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[12%]">Posted</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[23%]">Posted By</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[25%]">Item</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[9%]">Type</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[11%]">Status</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[13%]">Category</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[11%]">Posted</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[21%]">Posted By</th>
+                                    <th class="text-center px-4 py-3 text-sm font-medium w-[10%]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -291,10 +298,17 @@
                                         <!-- Include Modal for this item -->
                                         {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="admin-" %}
                                     </td>
+                                    <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
+                                        <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" 
+                                            class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
+                                            title="Archive item">
+                                            <i data-lucide="archive" class="h-4 w-4"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">No items found</td>
+                                    <td colspan="7" class="px-4 py-8 text-center text-muted-foreground">No items found</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -391,6 +405,12 @@
                                         </div>
                                         <span class="text-[10px] text-muted-foreground truncate">{{ item.posted_by.email }}</span>
                                     </div>
+                                    <!-- Archive button for mobile -->
+                                    <button type="button" onclick="event.stopPropagation(); openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" 
+                                        class="ml-auto p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
+                                        title="Archive item">
+                                        <i data-lucide="archive" class="h-4 w-4"></i>
+                                    </button>
                                 </div>
                                 <!-- No need to include modal here as it's already in the desktop loop which is always rendered -->
                             </div>

@@ -94,13 +94,14 @@
                     </div>
                     
                     <!-- Triple Dot Menu -->
-                    {% if request.user == item.posted_by %}
+                    {% if request.user == item.posted_by or request.user.is_admin_user %}
                     <div class="relative">
                         <button type="button" onclick="toggleModalMenu('{{ modal_id_prefix|default:'' }}{{ item.id }}')" class="flex p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
                             <i data-lucide="more-vertical" class="h-6 w-6"></i>
                         </button>
                         <!-- Dropdown Menu -->
                         <div id="modal-menu-{{ modal_id_prefix|default:'' }}{{ item.id }}" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
+                            {% if request.user == item.posted_by %}
                              <a href="{% url 'edit_item' item.id %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
                                 <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
                                 <span>Edit Item</span>
@@ -124,6 +125,21 @@
                                 <i data-lucide="trash-2" class="h-4 w-4"></i>
                                 <span>Delete Item</span>
                             </a>
+                            {% endif %}
+                            
+                            {% if request.user.is_admin_user and request.user != item.posted_by %}
+                            <!-- Admin Archive Option -->
+                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
+                                <i data-lucide="archive" class="h-4 w-4"></i>
+                                <span>Archive as Admin</span>
+                            </button>
+                            {% elif request.user.is_admin_user and request.user == item.posted_by %}
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
+                                <i data-lucide="archive" class="h-4 w-4"></i>
+                                <span>Archive as Admin</span>
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}

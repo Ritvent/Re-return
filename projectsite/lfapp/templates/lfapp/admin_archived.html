@@ -1,0 +1,345 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Archived Items - HanApp Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="rounded-full bg-muted p-2">
+                        <i data-lucide="archive" class="h-5 w-5 text-muted-foreground"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold">Archived Items</h1>
+                </div>
+                <p class="text-muted-foreground">Items removed by administrators</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'admin_dashboard' %}">
+                    <button class="px-4 py-2 rounded-md border border-border hover:bg-accent transition-all flex items-center gap-2">
+                        <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                        Back to Dashboard
+                    </button>
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Total Archived</span>
+                    <i data-lucide="archive" class="h-4 w-4 text-muted-foreground"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ total_archived }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Spam</span>
+                    <i data-lucide="ban" class="h-4 w-4 text-red-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ spam_count }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Inappropriate</span>
+                    <i data-lucide="alert-triangle" class="h-4 w-4 text-amber-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ inappropriate_count }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Duplicate</span>
+                    <i data-lucide="copy" class="h-4 w-4 text-blue-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ duplicate_count }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Resolved/Other</span>
+                    <i data-lucide="check-circle" class="h-4 w-4 text-green-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ resolved_other_count }}</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-card border border-border rounded-xl p-4 mb-6 shadow-sm">
+            <form method="GET" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search by title or description..." 
+                           class="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                </div>
+                <div class="w-full md:w-40">
+                    <select name="type" class="w-full px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <option value="lost" {% if request.GET.type == 'lost' %}selected{% endif %}>Lost</option>
+                        <option value="found" {% if request.GET.type == 'found' %}selected{% endif %}>Found</option>
+                    </select>
+                </div>
+                <div class="w-full md:w-48">
+                    <select name="reason" class="w-full px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" onchange="this.form.submit()">
+                        <option value="">All Reasons</option>
+                        <option value="spam" {% if request.GET.reason == 'spam' %}selected{% endif %}>Spam</option>
+                        <option value="inappropriate" {% if request.GET.reason == 'inappropriate' %}selected{% endif %}>Inappropriate</option>
+                        <option value="duplicate" {% if request.GET.reason == 'duplicate' %}selected{% endif %}>Duplicate</option>
+                        <option value="resolved" {% if request.GET.reason == 'resolved' %}selected{% endif %}>Resolved</option>
+                        <option value="other" {% if request.GET.reason == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                    Filter
+                </button>
+                {% if request.GET.search or request.GET.type or request.GET.reason %}
+                    <a href="{% url 'admin_archived' %}" class="px-4 py-2 rounded-md border border-border hover:bg-accent transition-all text-center">
+                        Clear
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Archived Items Table -->
+        <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            {% if items %}
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-muted/50 border-b border-border">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Item</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Type</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Original Status</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Posted By</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Archived By</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Reason</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Date Archived</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        {% for item in items %}
+                        <tr class="hover:bg-muted/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3 max-w-xs">
+                                    {% if item.image %}
+                                        <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded-lg object-cover border border-border flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                                            <i data-lucide="image-off" class="h-5 w-5 text-muted-foreground"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="min-w-0">
+                                        <p class="font-medium truncate" title="{{ item.title }}">{{ item.title }}</p>
+                                        <p class="text-xs text-muted-foreground truncate">{{ item.category }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full
+                                    {% if item.item_type == 'lost' %}
+                                        bg-red-100 text-red-700
+                                    {% else %}
+                                        bg-blue-100 text-blue-700
+                                    {% endif %}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full
+                                    {% if item.status == 'pending' %}
+                                        bg-amber-100 text-amber-700
+                                    {% elif item.status == 'approved' %}
+                                        bg-green-100 text-green-700
+                                    {% elif item.status == 'rejected' %}
+                                        bg-red-100 text-red-700
+                                    {% elif item.status == 'claimed' or item.status == 'found' %}
+                                        bg-purple-100 text-purple-700
+                                    {% else %}
+                                        bg-gray-100 text-gray-700
+                                    {% endif %}">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    {% if item.posted_by.google_profile_picture %}
+                                        <img src="{{ item.posted_by.google_profile_picture }}" alt="Profile" class="h-6 w-6 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                            {{ item.posted_by.email|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="text-sm truncate max-w-[120px]" title="{{ item.posted_by.email }}">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if item.archived_by %}
+                                <div class="flex items-center gap-2">
+                                    {% if item.archived_by.google_profile_picture %}
+                                        <img src="{{ item.archived_by.google_profile_picture }}" alt="Profile" class="h-6 w-6 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs">
+                                            {{ item.archived_by.email|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="text-sm truncate max-w-[120px]" title="{{ item.archived_by.email }}">{{ item.archived_by.get_full_name|default:item.archived_by.email }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted-foreground">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full
+                                        {% if item.archive_reason == 'spam' %}
+                                            bg-red-100 text-red-700
+                                        {% elif item.archive_reason == 'inappropriate' %}
+                                            bg-amber-100 text-amber-700
+                                        {% elif item.archive_reason == 'duplicate' %}
+                                            bg-blue-100 text-blue-700
+                                        {% elif item.archive_reason == 'resolved' %}
+                                            bg-green-100 text-green-700
+                                        {% else %}
+                                            bg-gray-100 text-gray-700
+                                        {% endif %}">
+                                        {% if item.archive_reason == 'spam' %}
+                                            <i data-lucide="ban" class="h-3 w-3"></i>
+                                        {% elif item.archive_reason == 'inappropriate' %}
+                                            <i data-lucide="alert-triangle" class="h-3 w-3"></i>
+                                        {% elif item.archive_reason == 'duplicate' %}
+                                            <i data-lucide="copy" class="h-3 w-3"></i>
+                                        {% elif item.archive_reason == 'resolved' %}
+                                            <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                        {% else %}
+                                            <i data-lucide="more-horizontal" class="h-3 w-3"></i>
+                                        {% endif %}
+                                        {{ item.get_archive_reason_display }}
+                                    </span>
+                                    {% if item.archive_notes %}
+                                    <p class="text-xs text-muted-foreground mt-1 truncate max-w-[150px]" title="{{ item.archive_notes }}">{{ item.archive_notes }}</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-muted-foreground text-sm">
+                                {% if item.archived_at %}
+                                    {{ item.archived_at|date:"M d, Y" }}<br>
+                                    <span class="text-xs">{{ item.archived_at|time:"g:i A" }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="md:hidden divide-y divide-border">
+                {% for item in items %}
+                <div class="p-4 hover:bg-muted/30 transition-colors">
+                    <div class="flex items-start gap-3 mb-3">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-14 w-14 rounded-lg object-cover border border-border flex-shrink-0">
+                        {% else %}
+                            <div class="h-14 w-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                                <i data-lucide="image-off" class="h-6 w-6 text-muted-foreground"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium truncate">{{ item.title }}</p>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full
+                                    {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full
+                                    {% if item.archive_reason == 'spam' %}bg-red-100 text-red-700
+                                    {% elif item.archive_reason == 'inappropriate' %}bg-amber-100 text-amber-700
+                                    {% elif item.archive_reason == 'duplicate' %}bg-blue-100 text-blue-700
+                                    {% elif item.archive_reason == 'resolved' %}bg-green-100 text-green-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ item.get_archive_reason_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <p class="text-muted-foreground">Posted by</p>
+                            <p class="font-medium truncate">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+                        </div>
+                        <div>
+                            <p class="text-muted-foreground">Archived by</p>
+                            <p class="font-medium truncate">{{ item.archived_by.get_full_name|default:item.archived_by.email }}</p>
+                        </div>
+                        <div class="col-span-2">
+                            <p class="text-muted-foreground">Archived on {{ item.archived_at|date:"M d, Y" }} at {{ item.archived_at|time:"g:i A" }}</p>
+                        </div>
+                        {% if item.archive_notes %}
+                        <div class="col-span-2 bg-muted/50 p-2 rounded-md">
+                            <p class="text-muted-foreground">Notes:</p>
+                            <p class="text-foreground">{{ item.archive_notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="p-12 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <i data-lucide="archive" class="h-8 w-8 text-muted-foreground"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">No Archived Items</h3>
+                <p class="text-muted-foreground mb-4">Items removed by administrators will appear here.</p>
+                <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Pagination -->
+        {% if items.has_other_pages %}
+        <div class="mt-6 flex justify-center">
+            <nav class="flex items-center gap-1">
+                {% if items.has_previous %}
+                    <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="First">
+                        <i data-lucide="chevrons-left" class="h-4 w-4"></i>
+                    </a>
+                    <a href="?page={{ items.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="Previous">
+                        <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                    </a>
+                {% endif %}
+                
+                <span class="px-4 py-2 text-sm">
+                    Page {{ items.number }} of {{ items.paginator.num_pages }}
+                </span>
+                
+                {% if items.has_next %}
+                    <a href="?page={{ items.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="Next">
+                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                    </a>
+                    <a href="?page={{ items.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="Last">
+                        <i data-lucide="chevrons-right" class="h-4 w-4"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
