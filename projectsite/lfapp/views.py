@@ -620,6 +620,7 @@ def claimed_items_view(request):
 def edit_item_view(request, item_id):
     """Edit an existing item - Only owner can edit"""
     from django.utils import timezone
+    from .email_notifications import send_admin_item_updated_notification
     
     item = get_object_or_404(Item, id=item_id)
     
@@ -632,6 +633,20 @@ def edit_item_view(request, item_id):
     if not request.user.can_post_items():
         messages.error(request, 'You must be a verified user to edit items.')
         return redirect('home')
+    
+    # Capture old values before update for comparison
+    old_values = {
+        'title': item.title,
+        'description': item.description,
+        'category': item.category,
+        'location_lost': item.location_lost,
+        'location_found': item.location_found,
+        'date_lost': item.date_lost,
+        'date_found': item.date_found,
+        'contact_number': item.contact_number,
+        'display_name': item.display_name,
+        'image': item.image.name if item.image else '',
+    }
     
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES, instance=item, item_type=item.item_type)
@@ -651,6 +666,10 @@ def edit_item_view(request, item_id):
             # Send pending email if status changed to pending
             if status_changed_to_pending:
                 send_item_pending_email(updated_item, request)
+            
+            # Notify admins about the update with comparison
+            if not request.user.is_admin_user():
+                send_admin_item_updated_notification(updated_item, old_values)
             
             messages.success(request, 'Your item has been updated and is pending approval.')
             return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
