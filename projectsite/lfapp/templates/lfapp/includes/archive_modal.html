@@ -27,23 +27,34 @@
             <!-- Body -->
             <div class="p-6 overflow-y-auto">
                 <!-- Item Info Preview -->
-                <div class="flex items-center gap-3 p-3 bg-destructive/5 rounded-lg mb-6 border border-destructive/20">
-                    <div class="h-10 w-10 rounded-md bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="package" class="h-5 w-5 text-destructive"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Archiving Item</p>
-                        <p class="text-sm font-semibold text-foreground truncate" id="archiveModalItemTitle">Loading...</p>
+                <div class="p-4 bg-destructive/5 rounded-lg mb-6 border border-destructive/20">
+                    <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">Archiving Item</p>
+                    <div class="flex gap-4">
+                        <!-- Item Image -->
+                        <div class="flex-shrink-0">
+                            <div id="archiveModalImageContainer" class="h-20 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                                <i data-lucide="image" class="h-8 w-8 text-muted-foreground" id="archiveModalNoImage"></i>
+                                <img id="archiveModalImage" src="" alt="Item" class="h-full w-full object-cover hidden">
+                            </div>
+                        </div>
+                        <!-- Item & Poster Info -->
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-foreground line-clamp-2" id="archiveModalItemTitle">Loading...</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <i data-lucide="user" class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0"></i>
+                                <p class="text-xs text-muted-foreground truncate" id="archiveModalPoster">Loading...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Warning Notice -->
-                <div class="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 mb-6 border border-amber-200 dark:border-amber-800">
+                <div class="bg-muted/50 rounded-lg p-4 mb-6 border border-border">
                     <div class="flex items-start gap-3">
-                        <i data-lucide="alert-triangle" class="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0"></i>
+                        <i data-lucide="info" class="h-5 w-5 text-destructive mt-0.5 flex-shrink-0"></i>
                         <div>
-                            <p class="text-sm font-medium text-amber-800 dark:text-amber-400">Admin Action</p>
-                            <p class="text-xs text-amber-700 dark:text-amber-500 mt-1">This will remove the item from public view and move it to the admin archive. The item poster will not be notified.</p>
+                            <p class="text-sm font-medium text-foreground">Admin Action</p>
+                            <p class="text-xs text-muted-foreground mt-1">This will remove the item from public view and move it to the admin archive. The poster will be notified via email.</p>
                         </div>
                     </div>
                 </div>
@@ -92,7 +103,7 @@
 </div>
 
 <script>
-    function openArchiveModal(itemId, itemTitle) {
+    function openArchiveModal(itemId, itemTitle, posterName, imageUrl) {
         const modal = document.getElementById('archiveModal');
         const backdrop = document.getElementById('archiveModalBackdrop');
         const panel = document.getElementById('archiveModalPanel');
@@ -100,6 +111,20 @@
         // Set item info
         document.getElementById('archiveItemId').value = itemId;
         document.getElementById('archiveModalItemTitle').textContent = itemTitle;
+        document.getElementById('archiveModalPoster').textContent = posterName || 'Unknown';
+        
+        // Set item image
+        const imgEl = document.getElementById('archiveModalImage');
+        const noImgIcon = document.getElementById('archiveModalNoImage');
+        if (imageUrl) {
+            imgEl.src = imageUrl;
+            imgEl.classList.remove('hidden');
+            noImgIcon.classList.add('hidden');
+        } else {
+            imgEl.src = '';
+            imgEl.classList.add('hidden');
+            noImgIcon.classList.remove('hidden');
+        }
         
         // Reset form
         document.getElementById('archiveForm').reset();

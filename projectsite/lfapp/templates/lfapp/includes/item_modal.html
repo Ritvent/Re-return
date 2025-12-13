@@ -53,15 +53,20 @@
                             {% endif %}
                             <p class="text-xs text-white/80 truncate">{{ item.created_at|date:"M d, Y" }}</p>
                         </div>
-                        <!-- Right: Contact Number (Tap to Copy) -->
-                        {% if item.contact_number %}
-                        <div class="ml-3 flex-shrink-0">
+                        <!-- Right: Actions -->
+                        <div class="ml-3 flex-shrink-0 flex items-center gap-2">
+                            {% if item.contact_number %}
                             <button onclick="copyToClipboard('{{ item.contact_number }}', this)" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-colors">
                                 <i data-lucide="phone" class="h-3.5 w-3.5"></i>
                                 <span class="text-xs font-medium">{{ item.contact_number }}</span>
                             </button>
+                            {% endif %}
+                            {% if request.user.is_admin_user %}
+                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center justify-center p-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded-full transition-colors" title="Archive as Admin">
+                                <i data-lucide="archive" class="h-4 w-4"></i>
+                            </button>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -129,13 +134,13 @@
                             
                             {% if request.user.is_admin_user and request.user != item.posted_by %}
                             <!-- Admin Archive Option -->
-                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
+                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
                                 <i data-lucide="archive" class="h-4 w-4"></i>
                                 <span>Archive as Admin</span>
                             </button>
                             {% elif request.user.is_admin_user and request.user == item.posted_by %}
                             <div class="border-t border-slate-200 my-1"></div>
-                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
+                            <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
                                 <i data-lucide="archive" class="h-4 w-4"></i>
                                 <span>Archive as Admin</span>
                             </button>

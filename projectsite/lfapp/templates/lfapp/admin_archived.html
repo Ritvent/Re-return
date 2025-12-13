@@ -214,7 +214,7 @@
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <button type="button" onclick="openPermanentDeleteModal('{{ item.id }}', '{{ item.title|escapejs }}')" 
+                                <button type="button" onclick="openPermanentDeleteModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
                                     class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
                                     title="Permanently delete">
                                     <i data-lucide="trash-2" class="h-4 w-4"></i>
@@ -269,7 +269,7 @@
                             <p class="text-muted-foreground">Archived on {{ item.archived_at|date:"M d, Y" }} at {{ item.archived_at|time:"g:i A" }}</p>
                         </div>
                         <div class="col-span-2 pt-2 border-t border-border mt-2">
-                            <button type="button" onclick="openPermanentDeleteModal('{{ item.id }}', '{{ item.title|escapejs }}')" 
+                            <button type="button" onclick="openPermanentDeleteModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
                                 class="w-full px-3 py-2 rounded-md text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 transition-colors flex items-center justify-center gap-2">
                                 <i data-lucide="trash-2" class="h-4 w-4"></i>
                                 Permanently Delete
@@ -358,23 +358,34 @@
             <!-- Body -->
             <div class="p-6">
                 <!-- Item Info Preview -->
-                <div class="flex items-center gap-3 p-3 bg-destructive/5 rounded-lg mb-6 border border-destructive/20">
-                    <div class="h-10 w-10 rounded-md bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="package" class="h-5 w-5 text-destructive"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Deleting Item</p>
-                        <p class="text-sm font-semibold text-foreground truncate" id="permanentDeleteItemTitle">Loading...</p>
+                <div class="p-4 bg-destructive/5 rounded-lg mb-6 border border-destructive/20">
+                    <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">Deleting Item</p>
+                    <div class="flex gap-4">
+                        <!-- Item Image -->
+                        <div class="flex-shrink-0">
+                            <div class="h-20 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                                <i data-lucide="image" class="h-8 w-8 text-muted-foreground" id="permanentDeleteNoImage"></i>
+                                <img id="permanentDeleteImage" src="" alt="Item" class="h-full w-full object-cover hidden">
+                            </div>
+                        </div>
+                        <!-- Item & Poster Info -->
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-foreground line-clamp-2" id="permanentDeleteItemTitle">Loading...</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <i data-lucide="user" class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0"></i>
+                                <p class="text-xs text-muted-foreground truncate" id="permanentDeletePoster">Loading...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Warning Notice -->
-                <div class="bg-destructive/10 rounded-lg p-4 border border-destructive/20">
+                <div class="bg-muted/50 rounded-lg p-4 border border-border">
                     <div class="flex items-start gap-3">
                         <i data-lucide="alert-circle" class="h-5 w-5 text-destructive mt-0.5 flex-shrink-0"></i>
                         <div>
-                            <p class="text-sm font-medium text-destructive">Warning: Permanent Deletion</p>
-                            <p class="text-xs text-muted-foreground mt-1">This will permanently delete this item from the database. All associated data including images and messages will be lost forever. This action cannot be reversed.</p>
+                            <p class="text-sm font-medium text-foreground">Warning: Permanent Deletion</p>
+                            <p class="text-xs text-muted-foreground mt-1">This will permanently delete this item and all associated data (including images and messages). This action cannot be reversed.</p>
                         </div>
                     </div>
                 </div>
@@ -397,7 +408,7 @@
 <script>
     let currentDeleteItemId = null;
     
-    function openPermanentDeleteModal(itemId, itemTitle) {
+    function openPermanentDeleteModal(itemId, itemTitle, posterName, imageUrl) {
         currentDeleteItemId = itemId;
         const modal = document.getElementById('permanentDeleteModal');
         const backdrop = document.getElementById('permanentDeleteBackdrop');
@@ -405,6 +416,20 @@
         
         // Set item info
         document.getElementById('permanentDeleteItemTitle').textContent = itemTitle;
+        document.getElementById('permanentDeletePoster').textContent = posterName || 'Unknown';
+        
+        // Set item image
+        const imgEl = document.getElementById('permanentDeleteImage');
+        const noImgIcon = document.getElementById('permanentDeleteNoImage');
+        if (imageUrl) {
+            imgEl.src = imageUrl;
+            imgEl.classList.remove('hidden');
+            noImgIcon.classList.add('hidden');
+        } else {
+            imgEl.src = '';
+            imgEl.classList.add('hidden');
+            noImgIcon.classList.remove('hidden');
+        }
         
         // Show modal
         modal.classList.remove('hidden');

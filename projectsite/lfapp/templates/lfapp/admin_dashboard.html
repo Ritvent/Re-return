@@ -299,7 +299,7 @@
                                         {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="admin-" %}
                                     </td>
                                     <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
-                                        <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" 
+                                        <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
                                             class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
                                             title="Archive item">
                                             <i data-lucide="archive" class="h-4 w-4"></i>
@@ -406,7 +406,7 @@
                                         <span class="text-[10px] text-muted-foreground truncate">{{ item.posted_by.email }}</span>
                                     </div>
                                     <!-- Archive button for mobile -->
-                                    <button type="button" onclick="event.stopPropagation(); openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}')" 
+                                    <button type="button" onclick="event.stopPropagation(); openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
                                         class="ml-auto p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
                                         title="Archive item">
                                         <i data-lucide="archive" class="h-4 w-4"></i>
