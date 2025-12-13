@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 import json
+from django.utils import timezone
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -8,7 +9,8 @@ from django.db.models import Q, Count, Subquery, OuterRef, Exists, Case, When, V
 from django.core.paginator import Paginator
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
-from django.utils import timezone
+from itertools import chain
+from operator import attrgetter
 from itertools import chain
 from operator import attrgetter
 import os
@@ -617,6 +619,8 @@ def claimed_items_view(request):
 @login_required
 def edit_item_view(request, item_id):
     """Edit an existing item - Only owner can edit"""
+    from django.utils import timezone
+    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -635,6 +639,8 @@ def edit_item_view(request, item_id):
             updated_item = form.save(commit=False)
             # Keep original posted_by and reset to pending if not admin
             updated_item.posted_by = item.posted_by
+            # Track when content was edited by poster
+            updated_item.content_updated_at = timezone.now()
             status_changed_to_pending = False
             if not request.user.is_admin_user():
                 if updated_item.status != 'pending':

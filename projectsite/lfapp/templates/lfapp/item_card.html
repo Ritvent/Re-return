@@ -79,11 +79,10 @@
                 </div>
                 {% endif %}
 
-                {% load tz %}
-                {% if item.updated_at|date:"Y-m-d H:i" != item.created_at|date:"Y-m-d H:i" %}
+                {% if item.content_updated_at %}
                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                     <i data-lucide="refresh-cw" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                    <span>Updated on: {{ item.updated_at|date:"M d, Y" }}</span>
+                    <span>Updated on: {{ item.content_updated_at|date:"M d, Y" }}</span>
                 </div>
                 {% endif %}
             </div>

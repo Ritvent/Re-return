@@ -201,6 +201,11 @@ class Item(TimeStampedModel):
         default=True,
         help_text='Whether the item is listed publicly (users can delist their posts)'
     )
+    content_updated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the item content was last edited by the poster'
+    )
     
     # Admin archive fields
     ARCHIVE_REASON_CHOICES = [
