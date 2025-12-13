@@ -205,10 +205,58 @@ def admin_dashboard_view(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('home')
     
-    # Get all items
+    # Get all items base queryset
     all_items = Item.objects.select_related('posted_by').order_by('-created_at')
     
-    # Calculate statistics
+    # Get filter parameters
+    item_type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+    date_preset = request.GET.get('date_preset', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Handle date preset options
+    from datetime import timedelta
+    today = timezone.now().date()
+    
+    if date_preset == 'today':
+        date_from = str(today)
+        date_to = str(today)
+    elif date_preset == 'last-7-days':
+        date_from = str(today - timedelta(days=7))
+        date_to = str(today)
+    elif date_preset == 'last-30-days':
+        date_from = str(today - timedelta(days=30))
+        date_to = str(today)
+    elif date_preset == 'custom':
+        # Use the custom date_from and date_to values from the form
+        pass
+    else:
+        # All time - clear date filters
+        date_from = ''
+        date_to = ''
+    
+    # Apply filters
+    filtered_items = all_items
+    if item_type_filter:
+        filtered_items = filtered_items.filter(item_type=item_type_filter)
+    if status_filter:
+        filtered_items = filtered_items.filter(status=status_filter)
+    if search_query:
+        filtered_items = filtered_items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(posted_by__email__icontains=search_query) |
+            Q(posted_by__first_name__icontains=search_query) |
+            Q(posted_by__last_name__icontains=search_query)
+        )
+    if date_from:
+        filtered_items = filtered_items.filter(created_at__date__gte=date_from)
+    if date_to:
+        filtered_items = filtered_items.filter(created_at__date__lte=date_to)
+    
+    # Calculate statistics (from all items, not filtered)
     total_items = all_items.count()
     lost_count = all_items.filter(item_type='lost').count()
     found_count = all_items.filter(item_type='found').count()
@@ -223,8 +271,20 @@ def admin_dashboard_view(request):
     # Get pending items count for moderation queue badge
     pending_count = all_items.filter(status='pending').count()
     
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(filtered_items, 10)  # 10 items per page
+    page = request.GET.get('page')
+    
+    try:
+        items_page = paginator.page(page)
+    except PageNotAnInteger:
+        items_page = paginator.page(1)
+    except EmptyPage:
+        items_page = paginator.page(paginator.num_pages)
+    
     context = {
-        'all_items': all_items,
+        'all_items': items_page,
         'total_items': total_items,
         'lost_count': lost_count,
         'found_count': found_count,
@@ -232,6 +292,13 @@ def admin_dashboard_view(request):
         'found_percentage': int(found_percentage),
         'user_count': user_count,
         'pending_count': pending_count,
+        'item_type_filter': item_type_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'date_preset': date_preset,
+        'date_from': date_from if date_preset == 'custom' else '',
+        'date_to': date_to if date_preset == 'custom' else '',
+        'filtered_count': filtered_items.count(),
     }
     
     return render(request, 'lfapp/admin_dashboard.html', context)
