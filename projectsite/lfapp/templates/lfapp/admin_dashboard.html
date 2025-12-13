@@ -227,7 +227,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full
+                                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap
                                             {% if item.item_type == 'lost' %}
                                                 bg-destructive/10 text-destructive
                                             {% else %}
@@ -341,29 +341,31 @@
                                             {{ item.get_item_type_display }}
                                         </span>
                                     </div>
-                                    <p class="text-xs text-muted-foreground mb-1">{{ item.get_category_display }}</p>
-                                    <!-- Status Badge -->
-                                    {% if item.status == 'claimed' %}
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700">
-                                            <i data-lucide="check-circle" class="h-2.5 w-2.5"></i>
-                                            Claimed
-                                        </span>
-                                    {% elif item.status == 'found' %}
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700">
-                                            <i data-lucide="check-circle" class="h-2.5 w-2.5"></i>
-                                            Returned
-                                        </span>
-                                    {% elif item.status == 'pending' %}
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-yellow-100 text-yellow-700">
-                                            <i data-lucide="clock" class="h-2.5 w-2.5"></i>
-                                            Pending
-                                        </span>
-                                    {% elif item.status == 'rejected' %}
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-destructive/10 text-destructive">
-                                            <i data-lucide="x-circle" class="h-2.5 w-2.5"></i>
-                                            Rejected
-                                        </span>
-                                    {% endif %}
+                                    <div class="flex justify-between items-center gap-2">
+                                        <p class="text-xs text-muted-foreground truncate" title="{{ item.get_category_display }}">{{ item.get_category_display }}</p>
+                                        <!-- Status Badge -->
+                                        {% if item.status == 'claimed' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                                <i data-lucide="check-circle" class="h-2.5 w-2.5"></i>
+                                                Claimed
+                                            </span>
+                                        {% elif item.status == 'found' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                                <i data-lucide="check-circle" class="h-2.5 w-2.5"></i>
+                                                Returned
+                                            </span>
+                                        {% elif item.status == 'pending' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-yellow-100 text-yellow-700 flex-shrink-0">
+                                                <i data-lucide="clock" class="h-2.5 w-2.5"></i>
+                                                Pending
+                                            </span>
+                                        {% elif item.status == 'rejected' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-destructive/10 text-destructive flex-shrink-0">
+                                                <i data-lucide="x-circle" class="h-2.5 w-2.5"></i>
+                                                Rejected
+                                            </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             
