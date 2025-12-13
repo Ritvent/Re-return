@@ -228,13 +228,39 @@
                 <div class="p-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
                     <div class="flex flex-col gap-3">
                         
-                        {% if request.user == item.posted_by %}
+                        {% if request.user.is_admin_user and item.status == 'pending' %}
+                            <!-- Admin Moderation Actions for Pending Items -->
+                            <div class="flex gap-2">
+                                <form action="{% url 'admin_quick_approve' item.id %}" method="post" class="flex-1">
+                                    {% csrf_token %}
+                                    <button type="submit" class="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium transition-all text-sm">
+                                        <i data-lucide="check" class="h-5 w-5"></i> Approve
+                                    </button>
+                                </form>
+                                <form action="{% url 'admin_quick_reject' item.id %}" method="post" class="flex-1">
+                                    {% csrf_token %}
+                                    <button type="submit" class="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-all text-sm">
+                                        <i data-lucide="x" class="h-5 w-5"></i> Reject
+                                    </button>
+                                </form>
+                            </div>
+                        {% elif request.user == item.posted_by %}
                             <!-- Owner actions moved to header menu -->
                         {% elif request.user.is_authenticated %}
-                            {% if item.existing_thread_id %}
-                                <a href="{% url 'message_thread' item.existing_thread_id %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="message-circle" class="h-5 w-5"></i> View Chat</a>
-                            {% else %}
-                                <button onclick="openContactModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{{ item.get_item_type_display|escapejs }}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="mail" class="h-5 w-5"></i> Contact</button>
+                            {% if item.status == 'approved' %}
+                                {% if item.existing_thread_id %}
+                                    <a href="{% url 'message_thread' item.existing_thread_id %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="message-circle" class="h-5 w-5"></i> View Chat</a>
+                                {% else %}
+                                    <button onclick="openContactModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{{ item.get_item_type_display|escapejs }}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm"><i data-lucide="mail" class="h-5 w-5"></i> Contact</button>
+                                {% endif %}
+                            {% elif item.status == 'pending' %}
+                                <div class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md bg-amber-50 text-amber-700 text-sm">
+                                    <i data-lucide="clock" class="h-5 w-5"></i> Pending Approval
+                                </div>
+                            {% elif item.status == 'rejected' %}
+                                <div class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-md bg-red-50 text-red-700 text-sm">
+                                    <i data-lucide="x-circle" class="h-5 w-5"></i> Item Rejected
+                                </div>
                             {% endif %}
                         {% else %}
                             <a href="{% url 'landing' %}" class="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium transition-colors"><i data-lucide="log-in" class="h-5 w-5"></i> Sign in to Contact</a>
