@@ -165,7 +165,8 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: new URLSearchParams({
                     'reason': reason,
@@ -178,7 +179,9 @@
             if (data.success) {
                 closeArchiveModal();
                 // Show success message and reload
-                showToast('Item archived successfully', 'success');
+                if (typeof showToast === 'function') {
+                    showToast('Item archived successfully', 'success');
+                }
                 setTimeout(() => {
                     window.location.reload();
                 }, 1000);

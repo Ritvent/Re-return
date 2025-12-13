@@ -196,18 +196,18 @@
 
                                 <td class="px-6 py-4">
                                     {% if item.status == 'claimed' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                            <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                                            <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
                                             Claimed
                                         </span>
                                     {% elif item.status == 'found' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                            <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                                            <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
                                             Returned
                                         </span>
                                     {% elif item.status == 'approved' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                                            <i data-lucide="pin" class="h-3 w-3"></i>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary whitespace-nowrap">
+                                            <i data-lucide="pin" class="h-3 w-3 flex-shrink-0"></i>
                                             Posted
                                         </span>
                                     {% endif %}

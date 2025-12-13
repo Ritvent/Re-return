@@ -1171,7 +1171,7 @@ def mark_item_complete_view(request, item_id):
 
 @login_required
 def admin_archive_item_view(request, item_id):
-    """Admin archive/delete an item with reason and optional noets"""
+    """Admin archive/delete an item with reason and optional notes"""
     # Check if user is admin
     if not request.user.is_admin_user():
         messages.error(request, 'You do not have permission to perform this action.')
@@ -1180,8 +1180,8 @@ def admin_archive_item_view(request, item_id):
     item = get_object_or_404(Item, id=item_id)
     
     if request.method == 'POST':
-        archive_reason = request.POST.get('archive_reason', 'other')
-        archive_notes = request.POST.get('archive_notes', '')
+        archive_reason = request.POST.get('reason', 'other')
+        archive_notes = request.POST.get('notes', '')
         
         # Archive the item
         item.is_archived = True
@@ -1191,11 +1191,15 @@ def admin_archive_item_view(request, item_id):
         item.archive_notes = archive_notes
         item.save()
         
+        # Send email notification to the poster
+        from .email_notifications import send_item_archived_email
+        send_item_archived_email(item, request.user, archive_reason, archive_notes)
+        
         messages.success(request, f'Item "{item.title}" has been archived.')
         
         # Handle AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'message': 'Item archived successfully'})
+            return JsonResponse({'success': True, 'message': 'Item archived successfully'})
         
         # Redirect back to where we came from
         next_url = request.POST.get('next', 'admin_dashboard')
@@ -1203,6 +1207,32 @@ def admin_archive_item_view(request, item_id):
     
     # GET request - shouldn't happen normally, redirect to dashboard
     return redirect('admin_dashboard')
+
+
+@login_required
+def admin_permanent_delete_view(request, item_id):
+    """Permanently delete an archived item from the database"""
+    # Check if user is admin
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    item = get_object_or_404(Item, id=item_id, is_archived=True)
+    
+    if request.method == 'POST':
+        item_title = item.title
+        item.delete()
+        
+        messages.success(request, f'Item "{item_title}" has been permanently deleted.')
+        
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Item permanently deleted'})
+        
+        return redirect('admin_archived')
+    
+    # GET request - shouldn't happen normally, redirect to archived
+    return redirect('admin_archived')
 
 
 @login_required
