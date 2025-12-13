@@ -52,13 +52,23 @@
                 </div>
 
                 <!-- Item Context Badge -->
-                <a href="{% if root_message.item.item_type == 'lost' %}{% url 'lost_items' %}{% else %}{% url 'found_items' %}{% endif %}" 
+                {% with item=root_message.item %}
+                <button type="button" onclick="openItemModal('thread-{{ item.id }}')"
                    class="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-muted/50 hover:bg-muted transition-colors border border-border/50 group max-w-[150px] md:max-w-md flex-shrink-0 ml-2">
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-6 h-6 rounded-md object-cover flex-shrink-0 border border-border/30">
+                    {% else %}
+                    <div class="w-6 h-6 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="image-off" class="h-3 w-3 text-muted-foreground"></i>
+                    </div>
+                    {% endif %}
                     <span class="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
-                        Re: {{ root_message.item.title }}
+                        {{ item.title }}
                     </span>
-                    <i data-lucide="external-link" class="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0 hidden md:block"></i>
-                </a>
+                    <i data-lucide="expand" class="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0 hidden md:block"></i>
+                </button>
+                {% include 'lfapp/includes/item_modal.html' with item=item modal_id_prefix="thread-" %}
+                {% endwith %}
             </div>
 
             <!-- 2. Messages Area -->
@@ -541,4 +551,6 @@
         return div;
     }
 </script>
+
+{% include 'lfapp/includes/item_modal_click.html' %}
 {% endblock %}
