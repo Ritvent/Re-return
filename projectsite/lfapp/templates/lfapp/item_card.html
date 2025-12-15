@@ -147,6 +147,7 @@
             <!-- Desktop Dropdown Menu -->
             <div id="menu-{{ item.id }}"
                 class="hidden absolute top-0 right-0 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                {% if item.status != 'pending' %}
                 <a href="{% url 'edit_item' item.id %}"
                     class="flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-sm text-slate-700">
                     <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
@@ -167,6 +168,7 @@
                 </a>
                 {% endif %}
                 <div class="border-t border-slate-200 my-1"></div>
+                {% endif %}
                 <a href="{% url 'delete_item' item.id %}"
                     class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
                     <i data-lucide="trash-2" class="h-4 w-4"></i>
@@ -188,6 +190,7 @@
                         <h3 class="font-semibold text-lg">Manage Item</h3>
                     </div>
                     <div class="p-2">
+                        {% if item.status != 'pending' %}
                         <a href="{% url 'edit_item' item.id %}"
                             class="flex items-center gap-4 px-4 py-4 hover:bg-orange-50 rounded-lg transition-colors">
                             <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
@@ -222,6 +225,7 @@
                                 <div class="text-xs text-green-600">{% if item.item_type == 'lost' %}Item has been recovered{% else %}Item has been returned to owner{% endif %}</div>
                             </div>
                         </a>
+                        {% endif %}
                         {% endif %}
                         <a href="{% url 'delete_item' item.id %}"
                             class="flex items-center gap-4 px-4 py-4 hover:bg-red-50 rounded-lg transition-colors">

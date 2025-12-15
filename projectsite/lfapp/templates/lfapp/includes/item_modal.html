@@ -61,7 +61,7 @@
                                 <span class="text-xs font-medium">{{ item.contact_number }}</span>
                             </button>
                             {% endif %}
-                            {% if request.user.is_admin_user %}
+                            {% if request.user.is_admin_user and item.status != 'pending' %}
                             <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center justify-center p-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded-full transition-colors" title="Archive as Admin">
                                 <i data-lucide="archive" class="h-4 w-4"></i>
                             </button>
@@ -99,7 +99,7 @@
                     </div>
                     
                     <!-- Triple Dot Menu -->
-                    {% if request.user == item.posted_by or request.user.is_admin_user %}
+                    {% if request.user == item.posted_by or request.user.is_admin_user and item.status != 'pending' and request.user != item.posted_by %}
                     <div class="relative">
                         <button type="button" onclick="toggleModalMenu('{{ modal_id_prefix|default:'' }}{{ item.id }}')" class="flex p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
                             <i data-lucide="more-vertical" class="h-6 w-6"></i>
@@ -107,6 +107,7 @@
                         <!-- Dropdown Menu -->
                         <div id="modal-menu-{{ modal_id_prefix|default:'' }}{{ item.id }}" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
                             {% if request.user == item.posted_by %}
+                            {% if item.status != 'pending' %}
                              <a href="{% url 'edit_item' item.id %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
                                 <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
                                 <span>Edit Item</span>
@@ -126,19 +127,20 @@
                             </a>
                             {% endif %}
                             <div class="border-t border-slate-200 my-1"></div>
+                            {% endif %}
                             <a href="{% url 'delete_item' item.id %}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
                                 <i data-lucide="trash-2" class="h-4 w-4"></i>
                                 <span>Delete Item</span>
                             </a>
                             {% endif %}
                             
-                            {% if request.user.is_admin_user and request.user != item.posted_by %}
+                            {% if request.user.is_admin_user and request.user != item.posted_by and item.status != 'pending' %}
                             <!-- Admin Archive Option -->
                             <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
                                 <i data-lucide="archive" class="h-4 w-4"></i>
                                 <span>Archive as Admin</span>
                             </button>
-                            {% elif request.user.is_admin_user and request.user == item.posted_by %}
+                            {% elif request.user.is_admin_user and request.user == item.posted_by and item.status != 'pending' %}
                             <div class="border-t border-slate-200 my-1"></div>
                             <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left">
                                 <i data-lucide="archive" class="h-4 w-4"></i>
