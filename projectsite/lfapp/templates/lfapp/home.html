@@ -175,8 +175,8 @@
                                             </div>
                                         {% endif %}
                                         <div class="min-w-0">
-                                            <p class="font-medium truncate">{{ item.title }}</p>
-                                            <p class="text-muted-foreground text-xs truncate">
+                                            <p class="font-medium truncate" title="{{ item.title }}">{{ item.title }}</p>
+                                            <p class="text-muted-foreground text-xs truncate" title="{{ item.description }}">
                                                 {{ item.description }}
                                             </p>
                                         </div>
@@ -352,7 +352,6 @@
                                                     Posted
                                                 </span>
                                             {% endif %}
-                                        </div>
                                         
                                         <!-- User Info -->
                                         <div class="mt-2">
