@@ -601,6 +601,11 @@ def claimed_items_view(request):
             Q(claimed_by__email__icontains=search_query)
         )
     
+    # Status filter, claimed or found
+    status_filter = request.GET.get('status', '')
+    if status_filter and status_filter in ['claimed', 'found']:
+        items = items.filter(status=status_filter)
+    
     # Category filter
     category_filter = request.GET.get('category', '')
     if category_filter:
