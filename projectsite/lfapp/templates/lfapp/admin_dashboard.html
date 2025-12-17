@@ -198,17 +198,17 @@
                 </div>
                 <div class="px-6 py-6">
                     <!-- Desktop Table View -->
-                    <div class="hidden md:block rounded-md border">
+                    <div class="hidden xl:block rounded-md border overflow-x-auto">
                         <table class="w-full table-fixed">
                             <thead>
                                 <tr class="border-b bg-muted/50">
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[25%]">Item</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[23%]">Item</th>
                                     <th class="text-left px-4 py-3 text-sm font-medium w-[9%]">Type</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[11%]">Status</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[13%]">Category</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[11%]">Posted</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium w-[21%]">Posted By</th>
-                                    <th class="text-center px-4 py-3 text-sm font-medium w-[10%]">Actions</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[10%]">Status</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[12%]">Category</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[10%]">Posted</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[28%]">Posted By</th>
+                                    <th class="text-center px-4 py-3 text-sm font-medium w-[8%]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -299,11 +299,13 @@
                                         {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="admin-" %}
                                     </td>
                                     <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
+                                        {% if item.status != 'pending' %}
                                         <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
                                             class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
                                             title="Archive item">
                                             <i data-lucide="archive" class="h-4 w-4"></i>
                                         </button>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -315,8 +317,8 @@
                         </table>
                     </div>
 
-                    <!-- Mobile Card View -->
-                    <div class="md:hidden space-y-4">
+                    <!-- Mobile/Tablet Card View -->
+                    <div class="xl:hidden space-y-4">
                         {% for item in all_items %}
                         <div class="bg-card border rounded-lg p-4 shadow-sm cursor-pointer" onclick="openItemModal('admin-{{ item.id }}')">
                             <div class="flex gap-3 mb-3">
@@ -407,12 +409,6 @@
                                         </div>
                                         <span class="text-[10px] text-muted-foreground truncate">{{ item.posted_by.email }}</span>
                                     </div>
-                                    <!-- Archive button for mobile -->
-                                    <button type="button" onclick="event.stopPropagation(); openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
-                                        class="ml-auto p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
-                                        title="Archive item">
-                                        <i data-lucide="archive" class="h-4 w-4"></i>
-                                    </button>
                                 </div>
                                 <!-- No need to include modal here as it's already in the desktop loop which is always rendered -->
                             </div>

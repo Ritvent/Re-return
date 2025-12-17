@@ -109,7 +109,7 @@
         <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
             {% if items %}
             <!-- Desktop Table View -->
-            <div class="hidden md:block overflow-x-auto">
+            <div class="hidden xl:block overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-muted/50 border-b border-border">
                         <tr>
@@ -226,8 +226,8 @@
                 </table>
             </div>
 
-            <!-- Mobile Card View -->
-            <div class="md:hidden divide-y divide-border">
+            <!-- Mobile/Tablet Card View -->
+            <div class="xl:hidden divide-y divide-border">
                 {% for item in items %}
                 <div class="p-4 hover:bg-muted/30 transition-colors">
                     <div class="flex items-start gap-3 mb-3">
