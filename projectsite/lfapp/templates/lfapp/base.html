@@ -8,10 +8,10 @@
     <title>{% block title %}HanApp - Find What You Lost{% endblock %}</title>
     
     <!-- Favicons -->
-    <link rel="icon" type="image/png" href="{% static 'lfapp/images/icon-light-32x32.png' %}" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="{% static 'lfapp/images/icon-dark-32x32.png' %}" media="(prefers-color-scheme: dark)">
-    <link rel="icon" type="image/svg+xml" href="{% static 'lfapp/images/icon.svg' %}">
-    <link rel="apple-touch-icon" href="{% static 'lfapp/images/apple-icon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'lfapp/images/hanapp-logo.ico' %}" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="{% static 'lfapp/images/hanapp-logo.ico' %}" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/svg+xml" href="{% static 'lfapp/images/hanapp-logo.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'lfapp/images/hanapp-logo.png' %}">
     
     <!-- Tailwind CSS CDN with custom config -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -76,6 +76,7 @@
     
     {% include 'lfapp/includes/toast.html' %}
     {% include 'lfapp/includes/contact_modal.html' %}
+    {% include 'lfapp/includes/archive_modal.html' %}
 </body>
 </html>
 

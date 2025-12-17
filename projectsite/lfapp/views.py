@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+import json
+from django.utils import timezone
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,7 +9,8 @@ from django.db.models import Q, Count, Subquery, OuterRef, Exists, Case, When, V
 from django.core.paginator import Paginator
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
-from django.utils import timezone
+from itertools import chain
+from operator import attrgetter
 from itertools import chain
 from operator import attrgetter
 import os
@@ -59,7 +62,8 @@ def home_view(request):
     recent_lost = Item.objects.filter(
         item_type='lost',
         status='approved',
-        is_active=True
+        is_active=True,
+        is_archived=False
     ).select_related('posted_by').order_by('-created_at')
     recent_lost = annotate_user_conversations(recent_lost, request.user)[:4]
     
@@ -67,7 +71,8 @@ def home_view(request):
     recent_found = Item.objects.filter(
         item_type='found',
         status='approved',
-        is_active=True
+        is_active=True,
+        is_archived=False
     ).select_related('posted_by').order_by('-created_at')
     recent_found = annotate_user_conversations(recent_found, request.user)[:4]
     
@@ -75,14 +80,16 @@ def home_view(request):
     # Recent posts (both lost and found, approved and active)
     recent_posts = Item.objects.filter(
         status='approved',
-        is_active=True
+        is_active=True,
+        is_archived=False
     ).select_related('posted_by').order_by('-created_at')
     recent_posts = annotate_user_conversations(recent_posts, request.user)[:10]
     
     # Recent completed items (claimed and found)
     recent_completed = Item.objects.filter(
         status__in=['claimed', 'found'],
-        is_active=True
+        is_active=True,
+        is_archived=False
     ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
     recent_completed = annotate_user_conversations(recent_completed, request.user)[:10]
     
@@ -118,14 +125,16 @@ def lost_items_view(request):
     # Show approved items to everyone, plus pending items to their owners
     if request.user.is_authenticated:
         items = Item.objects.filter(
-            item_type='lost'
+            item_type='lost',
+            is_archived=False
         ).filter(
             Q(status='approved', is_active=True) | Q(posted_by=request.user)
         ).exclude(status='found').select_related('posted_by').order_by('-created_at')
     else:
         items = Item.objects.filter(
             item_type='lost',
-            status__in=['approved']
+            status__in=['approved'],
+            is_archived=False
         ).select_related('posted_by').order_by('-created_at')
     
     items = annotate_user_conversations(items, request.user)
@@ -160,14 +169,16 @@ def found_items_view(request):
     # Show approved items to everyone, plus pending items to their owners
     if request.user.is_authenticated:
         items = Item.objects.filter(
-            item_type='found'
+            item_type='found',
+            is_archived=False
         ).filter(
             Q(status='approved', is_active=True) | Q(posted_by=request.user)
         ).exclude(status='claimed').select_related('posted_by').order_by('-created_at')
     else:
         items = Item.objects.filter(
             item_type='found',
-            status__in=['approved']
+            status__in=['approved'],
+            is_archived=False
         ).select_related('posted_by').order_by('-created_at')
     
     items = annotate_user_conversations(items, request.user)
@@ -204,10 +215,58 @@ def admin_dashboard_view(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('home')
     
-    # Get all items
-    all_items = Item.objects.select_related('posted_by').order_by('-created_at')
+    # Get all items base queryset (exclude archived)
+    all_items = Item.objects.filter(is_archived=False).select_related('posted_by').order_by('-created_at')
     
-    # Calculate statistics
+    # Get filter parameters
+    item_type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+    date_preset = request.GET.get('date_preset', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Handle date preset options
+    from datetime import timedelta
+    today = timezone.now().date()
+    
+    if date_preset == 'today':
+        date_from = str(today)
+        date_to = str(today)
+    elif date_preset == 'last-7-days':
+        date_from = str(today - timedelta(days=7))
+        date_to = str(today)
+    elif date_preset == 'last-30-days':
+        date_from = str(today - timedelta(days=30))
+        date_to = str(today)
+    elif date_preset == 'custom':
+        # Use the custom date_from and date_to values from the form
+        pass
+    else:
+        # All time - clear date filters
+        date_from = ''
+        date_to = ''
+    
+    # Apply filters
+    filtered_items = all_items
+    if item_type_filter:
+        filtered_items = filtered_items.filter(item_type=item_type_filter)
+    if status_filter:
+        filtered_items = filtered_items.filter(status=status_filter)
+    if search_query:
+        filtered_items = filtered_items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(posted_by__email__icontains=search_query) |
+            Q(posted_by__first_name__icontains=search_query) |
+            Q(posted_by__last_name__icontains=search_query)
+        )
+    if date_from:
+        filtered_items = filtered_items.filter(created_at__date__gte=date_from)
+    if date_to:
+        filtered_items = filtered_items.filter(created_at__date__lte=date_to)
+    
+    # Calculate statistics (from all items, not filtered)
     total_items = all_items.count()
     lost_count = all_items.filter(item_type='lost').count()
     found_count = all_items.filter(item_type='found').count()
@@ -222,8 +281,20 @@ def admin_dashboard_view(request):
     # Get pending items count for moderation queue badge
     pending_count = all_items.filter(status='pending').count()
     
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(filtered_items, 10)  # 10 items per page
+    page = request.GET.get('page')
+    
+    try:
+        items_page = paginator.page(page)
+    except PageNotAnInteger:
+        items_page = paginator.page(1)
+    except EmptyPage:
+        items_page = paginator.page(paginator.num_pages)
+    
     context = {
-        'all_items': all_items,
+        'all_items': items_page,
         'total_items': total_items,
         'lost_count': lost_count,
         'found_count': found_count,
@@ -231,6 +302,13 @@ def admin_dashboard_view(request):
         'found_percentage': int(found_percentage),
         'user_count': user_count,
         'pending_count': pending_count,
+        'item_type_filter': item_type_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'date_preset': date_preset,
+        'date_from': date_from if date_preset == 'custom' else '',
+        'date_to': date_to if date_preset == 'custom' else '',
+        'filtered_count': filtered_items.count(),
     }
     
     return render(request, 'lfapp/admin_dashboard.html', context)
@@ -243,13 +321,14 @@ def admin_moderation_queue_view(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('home')
     
-    # Get pending items for moderation
+    # Get pending items for moderation (exclude archived)
     pending_items = Item.objects.filter(
-        status='pending'
+        status='pending',
+        is_archived=False
     ).select_related('posted_by').order_by('-created_at')
     
-    # Get all items for statistics
-    all_items = Item.objects.all()
+    # Get all items for statistics (exclude archived)
+    all_items = Item.objects.filter(is_archived=False)
     pending_count = pending_items.count()
     approved_count = all_items.filter(status='approved').count()
     rejected_count = all_items.filter(status='rejected').count()
@@ -507,7 +586,8 @@ def post_found_item_view(request):
 def claimed_items_view(request):
     """View all completed items (both claimed and found) - Public access allowed"""
     items = Item.objects.filter(
-        status__in=['claimed', 'found']
+        status__in=['claimed', 'found'],
+        is_archived=False
     ).select_related('posted_by', 'claimed_by').order_by('-completed_at')
     
     items = annotate_user_conversations(items, request.user)
@@ -520,6 +600,11 @@ def claimed_items_view(request):
             Q(description__icontains=search_query) |
             Q(claimed_by__email__icontains=search_query)
         )
+    
+    # Status filter, claimed or found
+    status_filter = request.GET.get('status', '')
+    if status_filter and status_filter in ['claimed', 'found']:
+        items = items.filter(status=status_filter)
     
     # Category filter
     category_filter = request.GET.get('category', '')
@@ -539,6 +624,9 @@ def claimed_items_view(request):
 @login_required
 def edit_item_view(request, item_id):
     """Edit an existing item - Only owner can edit"""
+    from django.utils import timezone
+    from .email_notifications import send_admin_item_updated_notification
+    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if user is the owner
@@ -551,12 +639,35 @@ def edit_item_view(request, item_id):
         messages.error(request, 'You must be a verified user to edit items.')
         return redirect('home')
     
+    # Capture old values before update for comparison
+    old_values = {
+        'title': item.title,
+        'description': item.description,
+        'category': item.category,
+        'location_lost': item.location_lost,
+        'location_found': item.location_found,
+        'date_lost': item.date_lost,
+        'date_found': item.date_found,
+        'contact_number': item.contact_number,
+        'display_name': item.display_name,
+        'image': item.image.name if item.image else '',
+    }
+    
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES, instance=item, item_type=item.item_type)
         if form.is_valid():
             updated_item = form.save(commit=False)
+            
+            # Handle image deletion if requested
+            if request.POST.get('delete_image') == 'true':
+                if updated_item.image:
+                    updated_item.image.delete(save=False)
+                    updated_item.image = None
+            
             # Keep original posted_by and reset to pending if not admin
             updated_item.posted_by = item.posted_by
+            # Track when content was edited by poster
+            updated_item.content_updated_at = timezone.now()
             status_changed_to_pending = False
             if not request.user.is_admin_user():
                 if updated_item.status != 'pending':
@@ -568,7 +679,15 @@ def edit_item_view(request, item_id):
             if status_changed_to_pending:
                 send_item_pending_email(updated_item, request)
             
-            messages.success(request, 'Your item has been updated and is pending approval.')
+            # Notify admins about the update with comparison
+            if not request.user.is_admin_user():
+                send_admin_item_updated_notification(updated_item, old_values)
+            
+            # If admins then get success message immediately
+            if request.user.is_admin_user():
+                messages.success(request, 'Item updated successfully.')
+            else:
+                messages.success(request, 'Your item has been updated and is pending approval.')
             return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     else:
         form = ItemForm(instance=item, item_type=item.item_type)
@@ -786,6 +905,7 @@ def messages_inbox_view(request):
     
     all_messages = all_messages.annotate(
         latest_message_text=Subquery(latest_message_qs.values('message')[:1]),
+        latest_message_image=Subquery(latest_message_qs.values('image')[:1]),
         latest_msg_is_read=Subquery(latest_message_qs.values('is_read')[:1]),
         latest_msg_sender_id=Subquery(latest_message_qs.values('sender_id')[:1])
     )
@@ -845,10 +965,28 @@ def message_thread_view(request, message_id):
     
     # Handle reply submission
     if request.method == 'POST':
-        message_text = request.POST.get('message', '').strip()
+        # Check if it's an AJAX request (meaning it came from JavaScript, not a normal form submit)
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
+        # If JSON content type, parse body. Otherwise (FormData/Multipart), use request.POST
+        # We need to check this because sometimes we send JSON and sometimes we send Form Data
+        if request.content_type == 'application/json':
+            try:
+                # Try to read the JSON data from the request body
+                data = json.loads(request.body)
+                message_text = data.get('message', '').strip()
+            except json.JSONDecodeError:
+                # If it fails, just set message to empty
+                message_text = ''
+        else:
+            # If it's not JSON, just get it from the normal POST dictionary
+            message_text = request.POST.get('message', '').strip()
+            
         image = request.FILES.get('image')
         
         if not message_text and not image:
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'Please provide a message or image.'}, status=400)
             messages.error(request, 'Please provide a message or image.')
             return redirect('message_thread', message_id=message_id)
         
@@ -857,6 +995,8 @@ def message_thread_view(request, message_id):
             try:
                 validate_image_file(image)
             except ValidationError as e:
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': e.message}, status=400)
                 messages.error(request, e.message)
                 return redirect('message_thread', message_id=message_id)
         
@@ -906,6 +1046,24 @@ This is an automated message from HanApp - PSU Lost and Found
         except Exception as e:
             print(f"Email sending failed: {e}")
             
+        if is_ajax:
+            # If it was an AJAX request, return a JSON response so the page doesn't reload
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Reply sent successfully!',
+                'data': {
+                    'id': reply.id,
+                    'message': reply.message,
+                    'created_at': reply.created_at.strftime("%b %d, %I:%M %p"), # Format: M d, g:i A
+                    'sender_id': request.user.id,
+                    'is_me': True, # This tells the frontend that I sent this message
+                    'sender_name': request.user.get_full_name() or request.user.username,
+                    'sender_initial': (request.user.get_full_name() or request.user.username)[0].upper(),
+                    'profile_pic': request.user.google_profile_picture if request.user.google_profile_picture else None,
+                    'image_url': reply.image.url if reply.image else None
+                }
+            })
+
         messages.success(request, 'Reply sent successfully!')
         return redirect('message_thread', message_id=message_id)
     
@@ -915,6 +1073,46 @@ This is an automated message from HanApp - PSU Lost and Found
         'other_user': root_message.sender if root_message.recipient == request.user else root_message.recipient,
     }
     return render(request, 'lfapp/message_thread.html', context)
+
+@login_required
+def get_thread_messages_view(request, thread_id):
+    """API to get new messages for a thread (Smart Polling)"""
+    # Get the main message thread
+    root_message = get_object_or_404(ContactMessage, id=thread_id)
+    
+    # Check permission - make sure the user is allowed to see this
+    if root_message.sender != request.user and root_message.recipient != request.user:
+        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+    
+    # Get last message ID from queue param to fetch only new messages
+    # important so we don't download the whole chat history every time
+    last_id = request.GET.get('last_id')
+    
+    messages_qs = root_message.get_thread_messages()
+    
+    # If we have a last_id, only get messages that came AFTER that one
+    if last_id:
+        messages_qs = messages_qs.filter(id__gt=last_id)
+        
+    
+    messages_qs.filter(recipient=request.user, is_read=False).update(is_read=True)
+    
+    # Prepare the data list to send back to the frontend
+    data = []
+    for msg in messages_qs:
+        data.append({
+            'id': msg.id,
+            'message': msg.message,
+            'created_at': msg.created_at.strftime("%b %d, %I:%M %p"), # Short, Ex: Dec, 01, not military time, min, period
+            'sender_id': msg.sender.id,
+            'is_me': msg.sender == request.user, # Check if current user sent this message
+            'sender_name': msg.sender.get_full_name() or msg.sender.username,
+            'sender_initial': (msg.sender.get_full_name() or msg.sender.username)[0].upper(),
+            'profile_pic': msg.sender.google_profile_picture if msg.sender.google_profile_picture else None,
+            'image_url': msg.image.url if msg.image else None
+        })
+        
+    return JsonResponse({'status': 'success', 'messages': data})
 
 @login_required
 def delete_message_view(request, message_id):
@@ -1010,4 +1208,140 @@ def mark_item_complete_view(request, item_id):
         'completion_type': completion_type,
     }
     return render(request, 'lfapp/mark_complete.html', context)
+
+
+@login_required
+def admin_archive_item_view(request, item_id):
+    """Admin archive/delete an item with reason and optional notes"""
+    # Check if user is admin
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    item = get_object_or_404(Item, id=item_id)
+    
+    if request.method == 'POST':
+        archive_reason = request.POST.get('reason', 'other')
+        archive_notes = request.POST.get('notes', '')
+        
+        # Archive the item
+        item.is_archived = True
+        item.archived_by = request.user
+        item.archived_at = timezone.now()
+        item.archive_reason = archive_reason
+        item.archive_notes = archive_notes
+        item.save()
+        
+        # Send email notification to the poster
+        from .email_notifications import send_item_archived_email
+        send_item_archived_email(item, request.user, archive_reason, archive_notes)
+        
+        messages.success(request, f'Item "{item.title}" has been archived.')
+        
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Item archived successfully'})
+        
+        # Redirect back to where we came from
+        next_url = request.POST.get('next', 'admin_dashboard')
+        return redirect(next_url)
+    
+    # GET request - shouldn't happen normally, redirect to dashboard
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_permanent_delete_view(request, item_id):
+    """Permanently delete an archived item from the database"""
+    # Check if user is admin
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('home')
+    
+    item = get_object_or_404(Item, id=item_id, is_archived=True)
+    
+    if request.method == 'POST':
+        item_title = item.title
+        item.delete()
+        
+        messages.success(request, f'Item "{item_title}" has been permanently deleted.')
+        
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Item permanently deleted'})
+        
+        return redirect('admin_archived')
+    
+    # GET request - shouldn't happen normally, redirect to archived
+    return redirect('admin_archived')
+
+
+@login_required
+def admin_archived_items_view(request):
+    """View all archived items"""
+    # Check if user is admin
+    if not request.user.is_admin_user():
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('home')
+    
+    # Get filter parameters
+    item_type_filter = request.GET.get('type', '')
+    reason_filter = request.GET.get('reason', '')
+    search_query = request.GET.get('search', '')
+    
+    # Get all archived items for stats (before filtering)
+    all_archived = Item.objects.filter(is_archived=True)
+    total_archived = all_archived.count()
+    spam_count = all_archived.filter(archive_reason='spam').count()
+    inappropriate_count = all_archived.filter(archive_reason='inappropriate').count()
+    duplicate_count = all_archived.filter(archive_reason='duplicate').count()
+    resolved_count = all_archived.filter(archive_reason='resolved').count()
+    other_count = all_archived.filter(archive_reason='other').count()
+    resolved_other_count = resolved_count + other_count
+    
+    # Get archived items for display
+    archived_items = all_archived.select_related('posted_by', 'archived_by').order_by('-archived_at')
+    
+    # Apply filters
+    if item_type_filter:
+        archived_items = archived_items.filter(item_type=item_type_filter)
+    if reason_filter:
+        archived_items = archived_items.filter(archive_reason=reason_filter)
+    if search_query:
+        archived_items = archived_items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(posted_by__email__icontains=search_query)
+        )
+    
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(archived_items, 10)
+    page = request.GET.get('page')
+    
+    try:
+        items_page = paginator.page(page)
+    except PageNotAnInteger:
+        items_page = paginator.page(1)
+    except EmptyPage:
+        items_page = paginator.page(paginator.num_pages)
+    
+    # Get pending items count for navbar badge
+    pending_count = Item.objects.filter(status='pending', is_archived=False).count()
+    
+    context = {
+        'items': items_page,
+        'total_archived': total_archived,
+        'spam_count': spam_count,
+        'inappropriate_count': inappropriate_count,
+        'duplicate_count': duplicate_count,
+        'resolved_other_count': resolved_other_count,
+        'item_type_filter': item_type_filter,
+        'reason_filter': reason_filter,
+        'search_query': search_query,
+        'pending_count': pending_count,
+        'archive_reasons': Item.ARCHIVE_REASON_CHOICES,
+    }
+    
+    return render(request, 'lfapp/admin_archived.html', context)
 

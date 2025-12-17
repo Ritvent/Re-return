@@ -201,6 +201,50 @@ class Item(TimeStampedModel):
         default=True,
         help_text='Whether the item is listed publicly (users can delist their posts)'
     )
+    content_updated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the item content was last edited by the poster'
+    )
+    
+    # Admin archive fields
+    ARCHIVE_REASON_CHOICES = [
+        ('spam', 'Spam'),
+        ('inappropriate', 'Inappropriate content'),
+        ('duplicate', 'Duplicate post'),
+        ('resolved', 'Resolved/No longer needed'),
+        ('other', 'Other'),
+    ]
+    
+    is_archived = models.BooleanField(
+        default=False,
+        help_text='Whether the item was archived/deleted by admin'
+    )
+    archived_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='archived_items',
+        help_text='Admin who archived this item'
+    )
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the item was archived by admin'
+    )
+    archive_reason = models.CharField(
+        max_length=20,
+        choices=ARCHIVE_REASON_CHOICES,
+        blank=True,
+        default='',
+        help_text='Reason for archiving'
+    )
+    archive_notes = models.TextField(
+        blank=True,
+        default='',
+        help_text='Additional notes about why item was archived'
+    )
 
     class Meta:
         ordering = ['-created_at']

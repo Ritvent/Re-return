@@ -6,6 +6,8 @@ Sends automated emails when items are posted, approved, or rejected.
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
+from .models import CustomUser, Item
+from django.db.models import Q
 
 
 def send_item_pending_email(item, request=None):
@@ -280,3 +282,165 @@ This is an automated message from PalSU HanApp Lost and Found System
         print(f"✅ Admin notification sent to {len(recipient_list)} admins for item: {item.title}")
     except Exception as e:
         print(f"❌ Failed to send admin notification: {e}")
+
+
+def send_item_archived_email(item, archived_by, reason, notes=''):
+    """
+    Send email notif when admin delete/archive an item
+    """
+    user = item.posted_by
+    user_name = user.get_full_name() or user.email
+    admin_name = archived_by.get_full_name() or archived_by.email
+    
+    
+    reason_display = {
+        'spam': 'Spam',
+        'inappropriate': 'Inappropriate content',
+        'duplicate': 'Duplicate post',
+        'resolved': 'Resolved / No longer needed',
+        'other': 'Other'
+    }.get(reason, reason)
+    
+    subject = f"Your item has been removed - PalSU HanApp"
+    
+    # Itep type
+    if item.item_type == 'lost':
+        location = item.location_lost
+    else:
+        location = item.location_found
+    
+    # Notes section if provided
+    notes_section = ""
+    if notes:
+        notes_section = f"""
+Additional Notes from Admin:
+{notes}
+"""
+    
+    message = f"""Hello {user_name},
+
+We are writing to inform you that your item posting has been removed from PalSU HanApp.
+
+Item Details:
+- Title: {item.title}
+- Type: {item.get_item_type_display()}
+- Category: {item.get_category_display()}
+- Location: {location}
+
+Removal Details:
+- Reason: {reason_display}
+- Removed by Admin: {admin_name}
+- Date: {item.archived_at.strftime("%B %d, %Y at %I:%M %p")}
+{notes_section}
+If you believe this was done in error or have any questions, please contact the system administrator.
+
+Thank you for your understanding.
+
+---
+This is an automated message from PalSU HanApp Lost and Found System
+"""
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        print(f"✅ Archive notification email sent to {user.email} for item: {item.title}")
+    except Exception as e:
+        print(f"❌ Failed to send archive notification to {user.email}: {e}")
+
+
+def send_admin_item_updated_notification(item, old_values):
+    
+    # Send email notification to all admins when an item is updated by its poster.
+    # Get admins
+    admins = CustomUser.objects.filter(Q(role='admin') | Q(is_superuser=True)).distinct()
+    recipient_list = [admin.email for admin in admins if admin.email]
+    
+    if not recipient_list:
+        print("⚠️ No admins found to notify.")
+        return
+
+    subject = f"Item Updated - Pending Re-approval: {item.title} - PalSU HanApp"
+    
+    # For comparison of changes
+    admin_url = "http://127.0.0.1:8000/dashboard/moderation/"
+    
+    # Original POST
+    old_category = dict(Item.CATEGORY_CHOICES).get(old_values.get('category'), old_values.get('category'))
+    
+    if item.item_type == 'lost':
+        old_location_label = "Location Lost"
+        old_location_value = old_values.get('location_lost', 'Not specified')
+        old_date_label = "Date Lost"
+        old_date_value = old_values.get('date_lost').strftime("%B %d, %Y") if old_values.get('date_lost') else "Not specified"
+        
+        new_location_label = "Location Lost"
+        new_location_value = item.location_lost or 'Not specified'
+        new_date_label = "Date Lost"
+        new_date_value = item.date_lost.strftime("%B %d, %Y") if item.date_lost else "Not specified"
+    else:
+        old_location_label = "Location Found"
+        old_location_value = old_values.get('location_found', 'Not specified')
+        old_date_label = "Date Found"
+        old_date_value = old_values.get('date_found').strftime("%B %d, %Y") if old_values.get('date_found') else "Not specified"
+        
+        new_location_label = "Location Found"
+        new_location_value = item.location_found or 'Not specified'
+        new_date_label = "Date Found"
+        new_date_value = item.date_found.strftime("%B %d, %Y") if item.date_found else "Not specified"
+    
+    # Check if image was changed
+    image_changed = old_values.get('image') != (item.image.name if item.image else '')
+    image_note = "\n\n📷 Note: The item image was also changed." if image_changed else ""
+    
+    message = f"""Hello Admin,
+
+An existing item has been updated by its poster and requires re-approval.
+
+Item Information:
+- Item ID: #{item.id}
+- Posted By: {item.posted_by.get_full_name() or item.posted_by.email}
+- Original Post Date: {item.created_at.strftime("%B %d, %Y")}
+- Updated: {item.content_updated_at.strftime("%B %d, %Y at %I:%M %p") if item.content_updated_at else 'Just now'}
+
+=== ORIGINAL POST ===
+Title: {old_values.get('title', '')}
+Description: {old_values.get('description', '')}
+Category: {old_category}
+{old_location_label}: {old_location_value}
+{old_date_label}: {old_date_value}
+Contact Number: {old_values.get('contact_number') or 'Not provided'}
+Display Name: {'Yes' if old_values.get('display_name') else 'No'}
+
+=== UPDATED POST ===
+Title: {item.title}
+Description: {item.description}
+Category: {item.get_category_display()}
+{new_location_label}: {new_location_value}
+{new_date_label}: {new_date_value}
+Contact Number: {item.contact_number or 'Not provided'}
+Display Name: {'Yes' if item.display_name else 'No'}{image_note}
+
+Please review this updated item in the moderation queue:
+{admin_url}
+
+---
+This is an automated message from PalSU HanApp Lost and Found System
+"""
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+        print(f"✅ Admin update notification sent to {len(recipient_list)} admins for item: {item.title}")
+    except Exception as e:
+        print(f"❌ Failed to send admin update notification: {e}")
+

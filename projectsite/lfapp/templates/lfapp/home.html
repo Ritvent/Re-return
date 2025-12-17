@@ -34,7 +34,7 @@
 
                 {% else %}
                     <h1 class="text-4xl md:text-5xl font-bold leading-snug mb-4">
-                        Welcome to Han<span class="text-primary">App</span>!
+                        Welcome to <b>Han<span class="text-primary">App</span></b>!
                     </h1>
                     <p class="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
                         Browse lost and found items. Sign in with your PalSU email to report new items.
@@ -135,7 +135,17 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-3xl font-bold">Recent Activities</h2>
-                    <p class="text-muted-foreground">Recently completed items</p>
+                    <!-- Legend, mobile view only -->
+                    <div class="flex items-center gap-4 mt-2 md:hidden">
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-2.5 w-2.5 rounded-full bg-red-500"></div>
+                            <span class="text-xs text-muted-foreground">Lost</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                            <span class="text-xs text-muted-foreground">Found</span>
+                        </div>
+                    </div>
                 </div>
                 <a href="{% url 'claimed_items' %}">
                     <button class="px-4 py-2 rounded-md flex items-center gap-2
@@ -175,8 +185,8 @@
                                             </div>
                                         {% endif %}
                                         <div class="min-w-0">
-                                            <p class="font-medium truncate">{{ item.title }}</p>
-                                            <p class="text-muted-foreground text-xs truncate">
+                                            <p class="font-medium truncate" title="{{ item.title }}">{{ item.title }}</p>
+                                            <p class="text-muted-foreground text-xs truncate" title="{{ item.description }}">
                                                 {{ item.description }}
                                             </p>
                                         </div>
@@ -184,11 +194,11 @@
                                 </td>
 
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full
+                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap
                                         {% if item.item_type == 'lost' %}
                                             bg-destructive/10 text-destructive
                                         {% else %}
-                                            bg-primary/10 text-primary
+                                            bg-blue-100 text-blue-700
                                         {% endif %}">
                                         {{ item.get_item_type_display }}
                                     </span>
@@ -196,18 +206,18 @@
 
                                 <td class="px-6 py-4">
                                     {% if item.status == 'claimed' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                            <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                                            <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
                                             Claimed
                                         </span>
                                     {% elif item.status == 'found' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                            <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                                            <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
                                             Returned
                                         </span>
                                     {% elif item.status == 'approved' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                                            <i data-lucide="file-text" class="h-3 w-3"></i>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary whitespace-nowrap">
+                                            <i data-lucide="pin" class="h-3 w-3 flex-shrink-0"></i>
                                             Posted
                                         </span>
                                     {% endif %}
@@ -311,9 +321,9 @@
                             </div>
                         {% endifchanged %}
             
-                        <!-- Timeline Item -->
+                        <!-- Mobile Timeline Item View -->
                         <div class="relative pl-6 pb-6 border-l-2 border-border last:border-0 ml-2">
-                            <!-- Dot -->
+                            <!-- Dot Pin -->
                             <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-background
                                 {% if item.item_type == 'lost' %}bg-red-500{% else %}bg-blue-500{% endif %}">
                             </div>
@@ -348,7 +358,7 @@
                                                     Returned
                                                 </span>
                                             {% elif item.status == 'approved' %}
-                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-700 flex-shrink-0">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-orange-100 text-primary flex-shrink-0">
                                                     Posted
                                                 </span>
                                             {% endif %}
@@ -357,7 +367,7 @@
                                         <!-- User Info -->
                                         <div class="mt-2">
                                             {% if item.status == 'claimed' or item.status == 'found' %}
-                                                <p class="text-[10px] text-muted-foreground mb-0.5">
+                                                <p class="text-[10px] text-green-600 mt-0.5">
                                                     {% if item.item_type == 'found' %}Claimed by:{% else %}Returned by:{% endif %}
                                                 </p>
                                                 {% if item.completion_name and item.completion_email %}

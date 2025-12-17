@@ -140,15 +140,31 @@
                             </label>
                             
                             {% if is_edit and item.image %}
-                            <div class="mb-3 p-3 rounded-md border border-border bg-muted/30">
+                            <div id="currentImageContainer" class="mb-3 p-3 rounded-md border border-border bg-muted/30">
                                 <p class="text-sm font-medium text-foreground mb-2">Current Image:</p>
-                                <img src="{{ item.image.url }}" alt="Current item image" class="w-full max-w-[300px] sm:max-w-xs rounded-md border border-border">
+                                <img id="currentImage" src="{{ item.image.url }}" alt="Current item image" class="w-full max-w-[300px] sm:max-w-xs rounded-md border border-border">
+                                <button type="button" onclick="removeCurrentImage()" class="mt-2 text-xs text-destructive hover:underline flex items-center gap-1">
+                                    <i data-lucide="x" class="h-3 w-3"></i>
+                                    Remove current image
+                                </button>
                                 <p class="text-xs text-muted-foreground mt-2">
                                     <i data-lucide="info" class="h-3 w-3 inline"></i>
-                                    Keep current image or upload a new one to replace it
+                                    Upload a new image to replace it, or remove to delete
                                 </p>
                             </div>
+                            <!-- Hidden input to mark image for deletion -->
+                            <input type="hidden" id="deleteImage" name="delete_image" value="false">
                             {% endif %}
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreviewContainer" class="hidden mb-3 p-3 rounded-md border border-border bg-muted/30">
+                                <p class="text-sm font-medium text-foreground mb-2">Image Preview:</p>
+                                <img id="imagePreview" src="" alt="Image preview" class="w-full max-w-[300px] sm:max-w-xs rounded-md border border-border">
+                                <button type="button" onclick="clearImagePreview()" class="mt-2 text-xs text-destructive hover:underline flex items-center gap-1">
+                                    <i data-lucide="x" class="h-3 w-3"></i>
+                                    Remove image
+                                </button>
+                            </div>
                             
                             <div class="flex gap-2">
                                 {{ form.image }}
@@ -157,7 +173,7 @@
                                 <p class="text-sm text-destructive">{{ form.image.errors.0 }}</p>
                             {% endif %}
                             <p class="text-xs text-muted-foreground">
-                                {% if is_edit %}Upload a new photo to replace the current image{% else %}Upload a photo of the item to help with identification{% endif %}
+                                {% if is_edit %}Upload a new photo to replace the current image posted{% else %}Upload a photo of the item to help with identification{% endif %}
                             </p>
                         </div>
 
@@ -216,5 +232,92 @@
 
 <script>
     lucide.createIcons();
+    
+    // Image preview functionality
+    const imageInput = document.querySelector('input[type="file"]');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const currentImageContainer = document.getElementById('currentImageContainer');
+    const deleteImageInput = document.getElementById('deleteImage');
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.classList.remove('hidden');
+                    // Hide current image when new one is selected
+                    if (currentImageContainer) {
+                        currentImageContainer.classList.add('hidden');
+                    }
+                    lucide.createIcons();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    function clearImagePreview() {
+        if (imageInput) {
+            imageInput.value = '';
+        }
+        imagePreview.src = '';
+        imagePreviewContainer.classList.add('hidden');
+        // Show current image again if it exists
+        if (currentImageContainer) {
+            currentImageContainer.classList.remove('hidden');
+        }
+    }
+    
+    function removeCurrentImage() {
+        if (currentImageContainer) {
+            currentImageContainer.classList.add('hidden');
+        }
+        if (deleteImageInput) {
+            deleteImageInput.value = 'true';
+        }
+        lucide.createIcons();
+    }
+    
+    //  Client-side form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let hasErrors = false;
+        const errors = [];
+        
+        // Get form fields
+        const contactNumber = document.querySelector('input[name="contact_number"]');
+        
+        // Clear previous error messages
+        document.querySelectorAll('.client-error').forEach(el => el.remove());
+        
+        // Validate contact number (if provided)
+        if (contactNumber && contactNumber.value.trim() !== '') {
+            const contactValue = contactNumber.value.trim();
+          
+            const validPattern = /^[\d\s\+\-\(\)]+$/;
+            
+            if (!validPattern.test(contactValue)) {
+                hasErrors = true;
+                const errorDiv = document.createElement('p');
+                errorDiv.className = 'text-sm text-destructive client-error mt-1';
+                errorDiv.textContent = 'Contact number can only contain digits, +, -, spaces, and parentheses';
+                contactNumber.parentElement.appendChild(errorDiv);
+                
+                // Scroll to the error
+                contactNumber.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                contactNumber.focus();
+            }
+        }
+        
+        // If has errors, prevent submission
+        if (hasErrors) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // If no errors, form will submit successfully
+    });
 </script>
 {% endblock %}

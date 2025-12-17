@@ -4,7 +4,7 @@
     data-long-press="{{ item.id }}" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none;" {% endif %}>
 
     <!-- Stretched Link for Card Clickability -->
-    <button type="button" onclick="openItemModal({{ item.id }})" class="absolute inset-0 z-10 w-full h-full rounded-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer text-left" aria-label="View details for {{ item.title }}"></button>
+    <button type="button" onclick="openItemModal({{ item.id }})" class="absolute inset-0 z-10 w-full h-full rounded-sm focus:outline-none cursor-pointer text-left" aria-label="View details for {{ item.title }}"></button>
 
     <!-- Pin Decoration -->
     <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-4 rounded-full bg-orange-500 shadow-md border border-orange-600 flex items-center justify-center">
@@ -46,7 +46,7 @@
 
     <!-- Details Section -->
     <div class="px-1 flex flex-col flex-grow {% if not item.is_active and request.user == item.posted_by %}opacity-60{% endif %}">
-        <!-- Fixed height container for variable content (title, desc, location, date, updated) -->
+        <!-- Fixed height for all details at max (title, desc, location, date, updated) -->
         <div class="h-52 overflow-hidden">
             <div class="mb-3">
                 <span
@@ -79,11 +79,10 @@
                 </div>
                 {% endif %}
 
-                {% load tz %}
-                {% if item.updated_at|date:"Y-m-d H:i" != item.created_at|date:"Y-m-d H:i" %}
+                {% if item.content_updated_at %}
                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                     <i data-lucide="refresh-cw" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                    <span>Updated on: {{ item.updated_at|date:"M d, Y" }}</span>
+                    <span>Updated on: {{ item.content_updated_at|date:"M d, Y" }}</span>
                 </div>
                 {% endif %}
             </div>
@@ -147,9 +146,10 @@
         <div>
             <!-- Desktop Dropdown Menu -->
             <div id="menu-{{ item.id }}"
-                class="hidden fixed w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                class="hidden absolute top-0 right-0 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                {% if item.status != 'pending' %}
                 <a href="{% url 'edit_item' item.id %}"
-                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-sm text-slate-700">
                     <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
                     <span>Edit Item</span>
                 </a>
@@ -168,6 +168,7 @@
                 </a>
                 {% endif %}
                 <div class="border-t border-slate-200 my-1"></div>
+                {% endif %}
                 <a href="{% url 'delete_item' item.id %}"
                     class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
                     <i data-lucide="trash-2" class="h-4 w-4"></i>
@@ -189,8 +190,9 @@
                         <h3 class="font-semibold text-lg">Manage Item</h3>
                     </div>
                     <div class="p-2">
+                        {% if item.status != 'pending' %}
                         <a href="{% url 'edit_item' item.id %}"
-                            class="flex items-center gap-4 px-4 py-4 hover:bg-slate-50 rounded-lg transition-colors">
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-orange-50 rounded-lg transition-colors">
                             <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                                 <i data-lucide="pencil" class="h-5 w-5 text-orange-600"></i>
                             </div>
@@ -223,6 +225,7 @@
                                 <div class="text-xs text-green-600">{% if item.item_type == 'lost' %}Item has been recovered{% else %}Item has been returned to owner{% endif %}</div>
                             </div>
                         </a>
+                        {% endif %}
                         {% endif %}
                         <a href="{% url 'delete_item' item.id %}"
                             class="flex items-center gap-4 px-4 py-4 hover:bg-red-50 rounded-lg transition-colors">
