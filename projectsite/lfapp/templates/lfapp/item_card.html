@@ -55,7 +55,7 @@
                 </span>
                 <h3 class="font-semibold text-lg mb-1 line-clamp-1 break-all">{{ item.title }}</h3>
                 <!-- Fixed height for 2 lines of description to ensure consistent positioning -->
-                <p class="text-sm text-muted-foreground line-clamp-2 break-all" style="min-height: 2.5rem;">{{ item.description }}</p>
+                <p class="text-sm text-muted-foreground line-clamp-2" style="min-height: 2.5rem; word-break: keep-all; overflow-wrap: anywhere;">{{ item.description }}</p>
             </div>
 
             <div class="space-y-2">
