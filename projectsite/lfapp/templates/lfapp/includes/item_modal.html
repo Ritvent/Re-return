@@ -52,6 +52,9 @@
                                 <p class="text-sm font-semibold truncate">{{ item.posted_by.email }}</p>
                             {% endif %}
                             <p class="text-xs text-white/80 truncate">{{ item.created_at|date:"M d, Y" }}</p>
+                            {% if item.content_updated_at and item.content_updated_at != item.created_at %}
+                            <p class="text-xs text-white/70 truncate">Updated: {{ item.content_updated_at|date:"M d, Y" }}</p>
+                            {% endif %}
                         </div>
                         <!-- Right: Actions -->
                         <div class="ml-3 flex-shrink-0 flex items-center gap-2">
@@ -88,12 +91,18 @@
                                 <p class="text-sm font-semibold text-gray-900">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
                                 <p class="text-xs text-gray-500">{{ item.posted_by.email }}</p>
                                 <p class="text-xs text-gray-400">{{ item.created_at|date:"F d, Y" }}</p>
+                                {% if item.content_updated_at and item.content_updated_at != item.created_at %}
+                                <p class="text-xs text-gray-400">Updated: {{ item.content_updated_at|date:"F d, Y" }}</p>
+                                {% endif %}
                             </div>
                         {% else %}
                             <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200"><i data-lucide="user" class="h-5 w-5 text-gray-400"></i></div>
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ item.posted_by.email }}</p>
                                 <p class="text-xs text-gray-500">{{ item.created_at|date:"F d, Y" }}</p>
+                                {% if item.content_updated_at and item.content_updated_at != item.created_at %}
+                                <p class="text-xs text-gray-400">Updated: {{ item.content_updated_at|date:"F d, Y" }}</p>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </div>

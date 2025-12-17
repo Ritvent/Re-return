@@ -173,7 +173,7 @@
                                 <p class="text-sm text-destructive">{{ form.image.errors.0 }}</p>
                             {% endif %}
                             <p class="text-xs text-muted-foreground">
-                                {% if is_edit %}Upload a new photo to replace the current image{% else %}Upload a photo of the item to help with identification{% endif %}
+                                {% if is_edit %}Upload a new photo to replace the current image posted{% else %}Upload a photo of the item to help with identification{% endif %}
                             </p>
                         </div>
 
@@ -260,7 +260,9 @@
     }
     
     function clearImagePreview() {
-        imageInput.value = '';
+        if (imageInput) {
+            imageInput.value = '';
+        }
         imagePreview.src = '';
         imagePreviewContainer.classList.add('hidden');
         // Show current image again if it exists
@@ -278,5 +280,44 @@
         }
         lucide.createIcons();
     }
+    
+    //  Client-side form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let hasErrors = false;
+        const errors = [];
+        
+        // Get form fields
+        const contactNumber = document.querySelector('input[name="contact_number"]');
+        
+        // Clear previous error messages
+        document.querySelectorAll('.client-error').forEach(el => el.remove());
+        
+        // Validate contact number (if provided)
+        if (contactNumber && contactNumber.value.trim() !== '') {
+            const contactValue = contactNumber.value.trim();
+          
+            const validPattern = /^[\d\s\+\-\(\)]+$/;
+            
+            if (!validPattern.test(contactValue)) {
+                hasErrors = true;
+                const errorDiv = document.createElement('p');
+                errorDiv.className = 'text-sm text-destructive client-error mt-1';
+                errorDiv.textContent = 'Contact number can only contain digits, +, -, spaces, and parentheses';
+                contactNumber.parentElement.appendChild(errorDiv);
+                
+                // Scroll to the error
+                contactNumber.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                contactNumber.focus();
+            }
+        }
+        
+        // If has errors, prevent submission
+        if (hasErrors) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // If no errors, form will submit successfully
+    });
 </script>
 {% endblock %}

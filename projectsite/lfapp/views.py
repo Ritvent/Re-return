@@ -652,6 +652,13 @@ def edit_item_view(request, item_id):
         form = ItemForm(request.POST, request.FILES, instance=item, item_type=item.item_type)
         if form.is_valid():
             updated_item = form.save(commit=False)
+            
+            # Handle image deletion if requested
+            if request.POST.get('delete_image') == 'true':
+                if updated_item.image:
+                    updated_item.image.delete(save=False)
+                    updated_item.image = None
+            
             # Keep original posted_by and reset to pending if not admin
             updated_item.posted_by = item.posted_by
             # Track when content was edited by poster
@@ -671,7 +678,11 @@ def edit_item_view(request, item_id):
             if not request.user.is_admin_user():
                 send_admin_item_updated_notification(updated_item, old_values)
             
-            messages.success(request, 'Your item has been updated and is pending approval.')
+            # If admins then get success message immediately
+            if request.user.is_admin_user():
+                messages.success(request, 'Item updated successfully.')
+            else:
+                messages.success(request, 'Your item has been updated and is pending approval.')
             return redirect('lost_items' if item.item_type == 'lost' else 'found_items')
     else:
         form = ItemForm(instance=item, item_type=item.item_type)
