@@ -1,0 +1,323 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Report {{ item_type|title }} Item - Lost & Found{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Card -->
+            <div class="bg-card border border-border rounded-lg shadow-sm">
+                <!-- Card Header -->
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-2xl font-bold text-card-foreground">
+                        {% if is_edit %}Edit{% else %}Report{% endif %} {{ item_type|title }} Item
+                    </h2>
+                    <p class="text-muted-foreground mt-2">
+                        {% if is_edit %}
+                            Update the details of your {{ item_type }} item report below.
+                        {% elif item_type == 'found' %}
+                            Your report can help someone get their belongings back. Share what you found, you might be helping a fellow PalSUan who's looking for it.
+                        {% else %}
+                            Fill out the form below to report a {{ item_type }} item. The more details you provide, the easier it is for fellow PalSUans to help out.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Card Content -->
+                <div class="p-6">
+                    <!-- Display Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-destructive/10 text-destructive{% else %}bg-primary/10 text-primary{% endif %}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" class="space-y-6">
+                        {% csrf_token %}
+
+                        <!-- Title -->
+                        <div class="space-y-2">
+                            <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.title.label }} *
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <p class="text-sm text-destructive">{{ form.title.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="space-y-2">
+                            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.description.label }} *
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <p class="text-sm text-destructive">{{ form.description.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Category and Date -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Category -->
+                            <div class="space-y-2">
+                                <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                    {{ form.category.label }} *
+                                </label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <p class="text-sm text-destructive">{{ form.category.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Date -->
+                            <div class="space-y-2">
+                                {% if item_type == 'lost' %}
+                                    <label for="{{ form.date_lost.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                        {{ form.date_lost.label }} *
+                                    </label>
+                                    {{ form.date_lost }}
+                                    {% if form.date_lost.errors %}
+                                        <p class="text-sm text-destructive">{{ form.date_lost.errors.0 }}</p>
+                                    {% endif %}
+                                {% else %}
+                                    <label for="{{ form.date_found.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                        {{ form.date_found.label }} *
+                                    </label>
+                                    {{ form.date_found }}
+                                    {% if form.date_found.errors %}
+                                        <p class="text-sm text-destructive">{{ form.date_found.errors.0 }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="space-y-2">
+                            {% if item_type == 'lost' %}
+                                <label for="{{ form.location_lost.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                    {{ form.location_lost.label }} *
+                                </label>
+                                {{ form.location_lost }}
+                                {% if form.location_lost.errors %}
+                                    <p class="text-sm text-destructive">{{ form.location_lost.errors.0 }}</p>
+                                {% endif %}
+                            {% else %}
+                                <label for="{{ form.location_found.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                    {{ form.location_found.label }} *
+                                </label>
+                                {{ form.location_found }}
+                                {% if form.location_found.errors %}
+                                    <p class="text-sm text-destructive">{{ form.location_found.errors.0 }}</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Contact Number -->
+                        <div class="space-y-2">
+                            <label for="{{ form.contact_number.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.contact_number.label }}
+                            </label>
+                            {{ form.contact_number }}
+                            {% if form.contact_number.errors %}
+                                <p class="text-sm text-destructive">{{ form.contact_number.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground">
+                                Optional: Provide a contact number for this item. Only numbers, +, -, spaces, and parentheses are allowed.
+                            </p>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="space-y-2">
+                            <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-foreground">
+                                {{ form.image.label }}
+                            </label>
+                            
+                            {% if is_edit and item.image %}
+                            <div id="currentImageContainer" class="mb-3 p-3 rounded-md border border-border bg-muted/30">
+                                <p class="text-sm font-medium text-foreground mb-2">Current Image:</p>
+                                <img id="currentImage" src="{{ item.image.url }}" alt="Current item image" class="w-full max-w-[300px] sm:max-w-xs rounded-md border border-border">
+                                <button type="button" onclick="removeCurrentImage()" class="mt-2 text-xs text-destructive hover:underline flex items-center gap-1">
+                                    <i data-lucide="x" class="h-3 w-3"></i>
+                                    Remove current image
+                                </button>
+                                <p class="text-xs text-muted-foreground mt-2">
+                                    <i data-lucide="info" class="h-3 w-3 inline"></i>
+                                    Upload a new image to replace it, or remove to delete
+                                </p>
+                            </div>
+                            <!-- Hidden input to mark image for deletion -->
+                            <input type="hidden" id="deleteImage" name="delete_image" value="false">
+                            {% endif %}
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreviewContainer" class="hidden mb-3 p-3 rounded-md border border-border bg-muted/30">
+                                <p class="text-sm font-medium text-foreground mb-2">Image Preview:</p>
+                                <img id="imagePreview" src="" alt="Image preview" class="w-full max-w-[300px] sm:max-w-xs rounded-md border border-border">
+                                <button type="button" onclick="clearImagePreview()" class="mt-2 text-xs text-destructive hover:underline flex items-center gap-1">
+                                    <i data-lucide="x" class="h-3 w-3"></i>
+                                    Remove image
+                                </button>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                {{ form.image }}
+                            </div>
+                            {% if form.image.errors %}
+                                <p class="text-sm text-destructive">{{ form.image.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground">
+                                {% if is_edit %}Upload a new photo to replace the current image posted{% else %}Upload a photo of the item to help with identification{% endif %}
+                            </p>
+                        </div>
+
+                        <!-- Display Name Checkbox -->
+                        <div class="space-y-2">
+                            <div class="flex items-start gap-3 p-4 rounded-md border border-border bg-card">
+                                <div class="flex items-center h-5">
+                                    {{ form.display_name }}
+                                </div>
+                                <div class="flex-1">
+                                    <label for="{{ form.display_name.id_for_label }}" class="text-sm font-medium text-foreground cursor-pointer">
+                                        {{ form.display_name.label }}
+                                        {% if item_type == 'found' %}<span class="text-destructive">*</span>{% endif %}
+                                    </label>
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        {{ form.display_name.help_text }}
+                                    </p>
+                                    {% if form.display_name.errors %}
+                                        <p class="text-sm text-destructive mt-1">{{ form.display_name.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Info Notice -->
+                        <div class="bg-muted/50 rounded-md p-4 border border-border">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="info" class="h-5 w-5 text-muted-foreground mt-0.5"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-foreground">Contact Information</p>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        Your corporate email ({{ user.email }}) will be shared.
+                                        Items are subject to admin approval before being published.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="flex gap-4">
+                            <button type="submit" class="flex-1 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                                {% if is_edit %}Update{% else %}Report{% endif %} {{ item_type|title }} Item
+                            </button>
+                            <a href="{% if item_type == 'lost' %}{% url 'lost_items' %}{% else %}{% url 'found_items' %}{% endif %}">
+                                <button type="button" class="px-6 py-3 rounded-md border border-input bg-background text-foreground font-medium hover:bg-accent hover:text-accent-foreground transition-all">
+                                    Cancel
+                                </button>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+    
+    // Image preview functionality
+    const imageInput = document.querySelector('input[type="file"]');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const currentImageContainer = document.getElementById('currentImageContainer');
+    const deleteImageInput = document.getElementById('deleteImage');
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.classList.remove('hidden');
+                    // Hide current image when new one is selected
+                    if (currentImageContainer) {
+                        currentImageContainer.classList.add('hidden');
+                    }
+                    lucide.createIcons();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    function clearImagePreview() {
+        if (imageInput) {
+            imageInput.value = '';
+        }
+        imagePreview.src = '';
+        imagePreviewContainer.classList.add('hidden');
+        // Show current image again if it exists
+        if (currentImageContainer) {
+            currentImageContainer.classList.remove('hidden');
+        }
+    }
+    
+    function removeCurrentImage() {
+        if (currentImageContainer) {
+            currentImageContainer.classList.add('hidden');
+        }
+        if (deleteImageInput) {
+            deleteImageInput.value = 'true';
+        }
+        lucide.createIcons();
+    }
+    
+    //  Client-side form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let hasErrors = false;
+        const errors = [];
+        
+        // Get form fields
+        const contactNumber = document.querySelector('input[name="contact_number"]');
+        
+        // Clear previous error messages
+        document.querySelectorAll('.client-error').forEach(el => el.remove());
+        
+        // Validate contact number (if provided)
+        if (contactNumber && contactNumber.value.trim() !== '') {
+            const contactValue = contactNumber.value.trim();
+          
+            const validPattern = /^[\d\s\+\-\(\)]+$/;
+            
+            if (!validPattern.test(contactValue)) {
+                hasErrors = true;
+                const errorDiv = document.createElement('p');
+                errorDiv.className = 'text-sm text-destructive client-error mt-1';
+                errorDiv.textContent = 'Contact number can only contain digits, +, -, spaces, and parentheses';
+                contactNumber.parentElement.appendChild(errorDiv);
+                
+                // Scroll to the error
+                contactNumber.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                contactNumber.focus();
+            }
+        }
+        
+        // If has errors, prevent submission
+        if (hasErrors) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // If no errors, form will submit successfully
+    });
+</script>
+{% endblock %}

@@ -1,167 +1,176 @@
 {% extends 'lfapp/base.html' %}
 {% load static %}
 
-{% block title %}HanApp - Find What You Lost{% endblock %}
+{% block title %}HanApp — Find What You Lost{% endblock %}
 
 {% block content %}
 <div class="min-h-screen">
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-primary/10 via-background to-accent/20">
-        <div class="container mx-auto px-4 py-20">
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
-                <!-- Left side - Content -->
-                <div class="space-y-6">
-                    <div class="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
-                        <i data-lucide="search" class="h-4 w-4 text-primary"></i>
-                        <span class="text-sm font-medium text-primary">PalSU Lost & Found</span>
-                    </div>
 
-                    <h1 class="text-5xl lg:text-6xl font-bold text-balance leading-tight">
-                        Han<span class="text-primary">App</span>
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-primary/10 via-background to-accent/20 relative overflow-hidden">
+
+        <!-- Decorative gradient blobs -->
+        <div class="absolute -top-20 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl opacity-50"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-40"></div>
+
+        <div class="container mx-auto px-4 py-24 relative">
+
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+
+                <!-- LEFT CONTENT -->
+                <div class="space-y-8 animate-in fade-in slide-in-from-left duration-700">
+                    <h1 class="text-5xl lg:text-6xl font-extrabold leading-tight text-balance tracking-tight flex items-center gap-4">
+                                            <img src="{% static 'lfapp/images/hanapp-logo.png' %}" alt="HanApp Logo" class="h-28 w-28 object-contain" style="margin-right: -12px;">
+                        <b>Han<span class="text-primary">App</span></b>
                     </h1>
 
-                    <p class="text-xl text-muted-foreground text-pretty leading-relaxed">
-                        A simple platform to help reunite people with their lost belongings. Report lost items, browse found
-                        items, and help make someone's day.
+                    <p class="text-xl text-muted-foreground leading-relaxed max-w-xl">
+                        A simple and fast way to reunite people with their lost belongings.
+                        Report items, browse recent finds, and help make someone's day.
                     </p>
 
-                    <div class="flex flex-wrap gap-6 pt-4">
-                        <div class="flex items-start gap-3">
-                            <div class="mt-1 rounded-full bg-primary/10 p-2">
-                                <i data-lucide="package" class="h-5 w-5 text-primary"></i>
+                    <!-- Feature icons -->
+                    <div class="flex flex-col md:flex-row md:flex-wrap gap-6 md:gap-8 pt-6">
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="rounded-full bg-primary/10 p-2.5 md:p-3 flex-shrink-0">
+                                <i data-lucide="package" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i>
                             </div>
-                            <div>
-                                <h3 class="font-semibold">Easy Reporting</h3>
-                                <p class="text-sm text-muted-foreground">Report lost or found items in seconds</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <div class="mt-1 rounded-full bg-primary/10 p-2">
-                                <i data-lucide="check-circle" class="h-5 w-5 text-primary"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold">Quick Matches</h3>
-                                <p class="text-sm text-muted-foreground">Find your items faster with our search</p>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-base md:text-lg">Easy Reporting</h3>
+                                <p class="text-sm text-muted-foreground">
+                                    Post lost or found items in under a minute.
+                                </p>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Right side - Login Form -->
-                <div class="flex justify-center lg:justify-end">
-                    <div class="w-full max-w-md bg-card rounded-xl border py-6 shadow-xl">
-                        <div class="px-6 mb-6">
-                            <h2 class="text-2xl font-semibold mb-2">Welcome Back</h2>
-                            <p class="text-sm text-muted-foreground">Sign in to access your lost and found items</p>
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="rounded-full bg-primary/10 p-2.5 md:p-3 flex-shrink-0">
+                                <i data-lucide="bell" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-base md:text-lg">Real-Time Updates</h3>
+                                <p class="text-sm text-muted-foreground">
+                                    Get instant notification when someone wants to help or connect.
+                                </p>
+                            </div>
                         </div>
-                        <div class="px-6">
-                            <form method="post" action="{% url 'login' %}" class="space-y-4">
-                                {% csrf_token %}
-                                {% if messages %}
-                                    {% for message in messages %}
-                                        <div class="p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
-                                            {{ message }}
-                                        </div>
-                                    {% endfor %}
-                                {% endif %}
-                                
-                                {% if form.errors %}
-                                    <div class="p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
-                                        {% for field, errors in form.errors.items %}
-                                            {% for error in errors %}
-                                                <p>{{ error }}</p>
-                                            {% endfor %}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-
-                                <div class="space-y-2">
-                                    <label for="email" class="text-sm font-medium">Email</label>
-                                    <input
-                                        id="email"
-                                        name="username"
-                                        type="email"
-                                        placeholder="example@psu.palawan.edu.ph"
-                                        required
-                                        class="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                    />
-                                </div>
-
-                                <div class="space-y-2">
-                                    <label for="password" class="text-sm font-medium">Password</label>
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        placeholder="Enter your password"
-                                        required
-                                        class="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                    />
-                                </div>
-
-                                <button type="submit" class="w-full px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
-                                    Sign In
-                                </button>
-
-                                <div class="mt-4 p-4 bg-muted rounded-lg">
-                                    <p class="text-sm font-medium mb-2 text-foreground">Demo Accounts:</p>
-                                    <div class="space-y-1 text-xs text-muted-foreground">
-                                        <p>Admin: test / test</p>
-                                        <p>User: test / test</p>
-                                    </div>
-                                </div>
-                            </form>
+                        
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="rounded-full bg-primary/10 p-2.5 md:p-3 flex-shrink-0">
+                                <i data-lucide="badge-check" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-base md:text-lg">Verified Returns</h3>
+                                <p class="text-sm text-muted-foreground">
+                                    Real people, real returns, real results.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- RIGHT CONTENT (Login Card) -->
+                <div class="flex justify-center lg:justify-end animate-in fade-in slide-in-from-right duration-700">
+                    <div class="w-full max-w-md bg-card border rounded-xl p-8 shadow-2xl backdrop-blur-sm">
+
+                        <h2 class="text-3xl font-bold mb-2">Welcome</h2>
+                        <p class="text-sm text-muted-foreground mb-6">
+                            Sign in using your PalSU Google account.
+                        </p>
+
+                        {% load socialaccount %}
+
+
+
+                        <!-- Google Sign-In Button -->
+                        <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg border bg-background hover:bg-accent transition-all shadow-sm">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            <span class="font-medium">Continue with Google</span>
+                        </a>
+
+
+                        <!-- Divider -->
+                        <div class="my-6 flex items-center gap-4">
+                            <div class="border-t border-border flex-1"></div>
+                            <span class="text-xs text-muted-foreground uppercase">or</span>
+                            <div class="border-t border-border flex-1"></div>
+                        </div>
+
+                        <!-- Guest Browsing -->
+                        <a href="{% url 'home' %}" 
+                           class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg border bg-background hover:bg-accent transition-all shadow-sm">
+                            <i data-lucide="eye" class="h-5 w-5"></i>
+                            <span class="font-medium">Browse as Guest</span>
+                        </a>
+
+                        <!-- Info Box -->
+                        <div class="mt-6 bg-muted/50 border border-border rounded-lg p-4">
+                            <div class="flex items-start gap-3">
+                                <img src="{% static 'lfapp/images/palsu-seal.png' %}"
+                                    alt="PalSU Logo"
+                                    class="h-8 w-8 mt-1 object-contain">
+                                <div>
+                                    <p class="font-semibold">PalSU accounts only!</p>
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        Only @psu.palawan.edu.ph email addresses may sign in to report items.
+                                        Guests may still browse listings.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="py-20 bg-card">
+    <section class="py-24 bg-card">
         <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold mb-4">How It Works</h2>
-                <p class="text-muted-foreground text-lg max-w-2xl mx-auto">
-                    Our platform makes it simple to report and find lost items our University.<br>
-                    Relay and Return or Retrieve and Recover
+
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-extrabold mb-4">How It Works?</h2>
+                <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+                    HanApp simplifies the lost and found process in our University.
+                    Relay and Return, Retrieve and Recover.
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center space-y-4">
-                    <div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <i data-lucide="search" class="h-8 w-8 text-primary"></i>
+            <div class="grid md:grid-cols-3 gap-12">
+
+                <div class="text-center p-6 hover:bg-muted/40 rounded-xl transition shadow-sm">
+                    <div class="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                        <i data-lucide="megaphone" class="h-10 w-10 text-primary"></i>
                     </div>
-                    <h3 class="text-xl font-semibold">1. Report an Item</h3>
-                    <p class="text-muted-foreground">
-                        Lost something? Found something? Create a listing with details and photos
-                    </p>
+                    <h3 class="text-xl font-semibold mb-2">1. Report an Item</h3>
+                    <p class="text-muted-foreground">Lost or found something? Create a listing in seconds.</p>
                 </div>
 
-                <div class="text-center space-y-4">
-                    <div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <i data-lucide="package" class="h-8 w-8 text-primary"></i>
+                <div class="text-center p-6 hover:bg-muted/40 rounded-xl transition shadow-sm">
+                    <div class="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                        <i data-lucide="search" class="h-10 w-10 text-primary"></i>
                     </div>
-                    <h3 class="text-xl font-semibold">2. Browse Listings</h3>
-                    <p class="text-muted-foreground">Search through recent lost and found items in your area</p>
+                    <h3 class="text-xl font-semibold mb-2">2. Browse Listings</h3>
+                    <p class="text-muted-foreground">Explore recent lost and found items around campus.</p>
                 </div>
 
-                <div class="text-center space-y-4">
-                    <div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <i data-lucide="check-circle" class="h-8 w-8 text-primary"></i>
+                <div class="text-center p-6 hover:bg-muted/40 rounded-xl transition shadow-sm">
+                    <div class="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                        <i data-lucide="handshake" class="h-10 w-10 text-primary"></i>
                     </div>
-                    <h3 class="text-xl font-semibold">3. Get Reunited</h3>
-                    <p class="text-muted-foreground">Connect with the person who found your item and arrange pickup</p>
+                    <h3 class="text-xl font-semibold mb-2">3. Get Reunited</h3>
+                    <p class="text-muted-foreground">Coordinate with the person who found your item.</p>
                 </div>
+
             </div>
         </div>
     </section>
 </div>
-
-<script>
-    lucide.createIcons();
-</script>
 {% endblock %}
-

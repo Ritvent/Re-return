@@ -1,57 +1,277 @@
 {% load static %}
-<div class="bg-card text-card-foreground rounded-xl border overflow-hidden hover:shadow-lg transition-shadow">
-    <div class="relative h-48 bg-muted">
-        {% if item.image %}
-            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
-        {% else %}
-            <img src="{% static 'lfapp/images/placeholder.svg' %}" alt="{{ item.title }}" class="w-full h-full object-cover" />
-        {% endif %}
-        <span class="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
-            {{ item.get_item_type_display }}
-        </span>
+<div class="group relative bg-white p-3 pb-4 shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 md:hover:-translate-y-1 md:hover:rotate-1 md:hover:shadow-2xl sm:rounded-sm flex flex-col h-full"
+    {% if request.user == item.posted_by and item.status not in 'claimed,found' %} data-item-menu="{{ item.id }}"
+    data-long-press="{{ item.id }}" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none;" {% endif %}>
+
+    <!-- Stretched Link for Card Clickability -->
+    <button type="button" onclick="openItemModal({{ item.id }})" class="absolute inset-0 z-10 w-full h-full rounded-sm focus:outline-none cursor-pointer text-left" aria-label="View details for {{ item.title }}"></button>
+
+    <!-- Pin Decoration -->
+    <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-4 rounded-full bg-orange-500 shadow-md border border-orange-600 flex items-center justify-center">
+        <div class="h-1 w-1 rounded-full bg-white/30"></div>
     </div>
 
-    <div class="p-4 space-y-3">
-        <div>
-            <h3 class="font-semibold text-lg mb-1 line-clamp-1">{{ item.title }}</h3>
-            <p class="text-sm text-muted-foreground line-clamp-2">{{ item.description }}</p>
-        </div>
-
-        <div class="space-y-2">
-            {% if item.location_found or item.location_lost %}
-            <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <i data-lucide="map-pin" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                <span class="line-clamp-1">
-                    {% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}
-                </span>
+    <!-- Image Container -->
+    <div class="relative aspect-square w-full overflow-hidden bg-gray-100 shadow-inner mb-4 flex-shrink-0">
+        {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-full w-full object-cover transition-transform duration-500 md:group-hover:scale-105 {% if not item.is_active and request.user == item.posted_by %}grayscale{% endif %}" />
+        {% else %}
+            <div class="flex h-full w-full items-center justify-center bg-gray-50 {% if not item.is_active and request.user == item.posted_by %}grayscale{% endif %}">
+                <i data-lucide="image-off" class="h-12 w-12 text-gray-300"></i>
             </div>
-            {% endif %}
+        {% endif %}
 
-            {% if item.date_found or item.date_lost %}
-            <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                <span>
-                    {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
+        {% if moderation %}
+        <span class="absolute top-3 left-3 px-3 py-1 rounded-md text-sm font-semibold bg-orange-500 text-white">
+            Pending Review
+        </span>
+        {% elif item.status == 'pending' and request.user == item.posted_by %}
+        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-yellow-500 text-white shadow-sm">
+            Pending Approval
+        </span>
+        {% elif not item.is_active and request.user == item.posted_by %}
+        <span class="absolute top-3 left-3 px-2 py-1 rounded-md text-xs font-medium bg-gray-500 text-white shadow-sm">
+            Delisted
+        </span>
+        {% endif %}
+
+        <!-- Three-dot menu button -->
+        {% if request.user == item.posted_by and item.status not in 'claimed,found' and not moderation %}
+        <button type="button" id="btn-menu-{{ item.id }}" onclick="event.stopPropagation(); window.toggleItemMenu({{ item.id }});"
+            class="hidden md:flex absolute top-3 right-3 w-8 h-8 items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+            <i data-lucide="more-vertical" class="h-4 w-4 text-slate-700"></i>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Details Section -->
+    <div class="px-1 flex flex-col flex-grow {% if not item.is_active and request.user == item.posted_by %}opacity-60{% endif %}">
+        <!-- Fixed height for all details at max (title, desc, location, date, updated) -->
+        <div class="h-52 overflow-hidden">
+            <div class="mb-3">
+                <span
+                    class="inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                    {{ item.get_item_type_display }}
                 </span>
+                <h3 class="font-semibold text-lg mb-1 line-clamp-1 break-all">{{ item.title }}</h3>
+                <!-- Fixed height for 2 lines of description to ensure consistent positioning -->
+                <p class="text-sm text-muted-foreground line-clamp-2 break-all" style="min-height: 2.5rem;">{{ item.description }}</p>
             </div>
-            {% endif %}
+
+            <div class="space-y-2">
+                {% if item.location_found or item.location_lost %}
+                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <i data-lucide="map-pin" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                    <span class="font-medium whitespace-nowrap flex-shrink-0">{% if item.item_type == 'found' %}Found At:{% else %}Last Seen:{% endif %}</span>
+                    <span class="line-clamp-1 break-all">
+                        {% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if item.date_found or item.date_lost %}
+                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                    <span class="font-medium">{% if item.item_type == 'found' %}Date Found:{% else %}Date Lost:{% endif %}</span>
+                    <span>
+                        {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if item.content_updated_at %}
+                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <i data-lucide="refresh-cw" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                    <span>Updated on: {{ item.content_updated_at|date:"M d, Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
         {% if item.posted_by %}
-        <div class="pt-2 border-t">
-            <p class="text-xs text-muted-foreground mb-1">Posted by:</p>
-            <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+        <!-- Polaroid Signature Strip -->
+        <div class="pt-2 border-t border-dashed border-gray-300">
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-muted-foreground italic truncate">
+                    {% if request.user == item.posted_by %}~ You{% elif item.display_name %}~ {{ item.posted_by.get_full_name|default:item.posted_by.username }}{% else %}~ {{ item.posted_by.email_username }}{% endif %}
+                </p>
+                {% if item.contact_number %}<p class="text-xs text-muted-foreground flex-shrink-0">{{ item.contact_number }}</p>{% endif %}
+            </div>
         </div>
         {% endif %}
     </div>
 
-    {% if item.posted_by.email %}
-    <div class="px-4 pb-4 pt-0">
-        <a href="mailto:{{ item.posted_by.email }}" class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm">
+    <div class="mt-4 pt-0">
+        {% if moderation %}
+        <!-- Moderation Actions -->
+        <div class="flex gap-2 pt-2">
+            <form method="post" action="{% url 'admin_quick_approve' item.id %}" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium transition-all relative z-20"
+                        onclick="return confirm('Approve this item? It will become publicly visible.')">
+                    <i data-lucide="check" class="h-4 w-4"></i>
+                    Approve
+                </button>
+            </form>
+            <form method="post" action="{% url 'admin_quick_reject' item.id %}" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-all relative z-20"
+                        onclick="return confirm('Reject this item? It will not be shown publicly.')">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                    Reject
+                </button>
+            </form>
+        </div>
+        {% elif request.user == item.posted_by %}
+        {% if item.status == 'claimed' %}
+        <!-- Claimed items -->
+        <div class="p-3 rounded-md bg-green-50 border border-green-200">
+            <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>
+                <span class="text-sm font-semibold text-green-800">✓ Successfully Claimed</span>
+            </div>
+            <p class="text-xs text-green-700">
+                This item remains visible as a success story. Thank you for using PalSU HanApp!
+            </p>
+            <p class="text-xs text-green-600 mt-1">
+                Need to remove for privacy? <a
+                    href="mailto:admin@psu.palawan.edu.ph?subject=Privacy Request: Item {{ item.id }}"
+                    class="underline relative z-20">Contact Admin</a>
+            </p>
+        </div>
+        {% else %}
+        <!-- Owner actions -->
+        <div>
+            <!-- Desktop Dropdown Menu -->
+            <div id="menu-{{ item.id }}"
+                class="hidden absolute top-0 right-0 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                {% if item.status != 'pending' %}
+                <a href="{% url 'edit_item' item.id %}"
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-sm text-slate-700">
+                    <i data-lucide="pencil" class="h-4 w-4 text-orange-500"></i>
+                    <span>Edit Item</span>
+                </a>
+                <a href="{% url 'toggle_listing' item.id %}"
+                    onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item? It will be hidden from public view.{% else %}Relist this item to make it publicly visible again?{% endif %}')"
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700">
+                    <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}"
+                        class="h-4 w-4 {% if item.is_active %}text-gray-600{% else %}text-green-600{% endif %}"></i>
+                    <span>{% if item.is_active %}Delist Item{% else %}Relist Item{% endif %}</span>
+                </a>
+                {% if item.status == 'approved' %}
+                <a href="{% url 'mark_complete' item.id %}"
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition-colors text-sm text-green-700">
+                    <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+                    <span>{% if item.item_type == 'lost' %}Mark as Found{% else %}Mark as Claimed{% endif %}</span>
+                </a>
+                {% endif %}
+                <div class="border-t border-slate-200 my-1"></div>
+                {% endif %}
+                <a href="{% url 'delete_item' item.id %}"
+                    class="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600">
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                    <span>Delete Permanently</span>
+                </a>
+            </div>
+
+            <!-- Mobile Bottom Sheet -->
+            <div id="sheet-{{ item.id }}" class="hidden fixed inset-0 z-50 md:hidden">
+                <!-- Backdrop -->
+                <div class="absolute inset-0 bg-black/50 animate-in fade-in duration-200"
+                    onclick="window.toggleItemMenu({{ item.id }})"></div>
+
+                <!-- Bottom Sheet -->
+                <div
+                    class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300">
+                    <div class="p-4 border-b border-slate-200">
+                        <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
+                        <h3 class="font-semibold text-lg">Manage Item</h3>
+                    </div>
+                    <div class="p-2">
+                        {% if item.status != 'pending' %}
+                        <a href="{% url 'edit_item' item.id %}"
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-orange-50 rounded-lg transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                <i data-lucide="pencil" class="h-5 w-5 text-orange-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-slate-900">Edit Item</div>
+                                <div class="text-xs text-slate-500">Update details and information</div>
+                            </div>
+                        </a>
+                        <a href="{% url 'toggle_listing' item.id %}"
+                            onclick="return confirm('{% if item.is_active %}Are you sure you want to delist this item?{% else %}Relist this item?{% endif %}')"
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-slate-50 rounded-lg transition-colors">
+                            <div
+                                class="w-10 h-10 rounded-full {% if item.is_active %}bg-gray-100{% else %}bg-green-100{% endif %} flex items-center justify-center">
+                                <i data-lucide="{% if item.is_active %}eye-off{% else %}eye{% endif %}"
+                                    class="h-5 w-5 {% if item.is_active %}text-gray-600{% else %}text-green-600{% endif %}"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-slate-900">{% if item.is_active %}Delist Item{% else %}Relist Item{% endif %}</div>
+                                <div class="text-xs text-slate-500">{% if item.is_active %}Hide from public view{% else %}Make publicly visible{% endif %}</div>
+                            </div>
+                        </a>
+                        {% if item.status == 'approved' %}
+                        <a href="{% url 'mark_complete' item.id %}"
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-green-50 rounded-lg transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-green-700">{% if item.item_type == 'lost' %}Mark as Found{% else %}Mark as Claimed{% endif %}</div>
+                                <div class="text-xs text-green-600">{% if item.item_type == 'lost' %}Item has been recovered{% else %}Item has been returned to owner{% endif %}</div>
+                            </div>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                        <a href="{% url 'delete_item' item.id %}"
+                            class="flex items-center gap-4 px-4 py-4 hover:bg-red-50 rounded-lg transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                <i data-lucide="trash-2" class="h-5 w-5 text-red-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-red-600">Delete Permanently</div>
+                                <div class="text-xs text-red-400">This action cannot be undone</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="p-4">
+                        <button onclick="window.toggleItemMenu({{ item.id }})"
+                            class="w-full px-4 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium text-slate-700 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% elif request.user.is_authenticated and request.user.is_psu_user %}
+        {% if item.existing_thread_id %}
+        <a href="{% url 'message_thread' item.existing_thread_id %}"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm relative z-20">
+            <i data-lucide="message-circle" class="h-4 w-4"></i>
+            View Chat
+        </a>
+        {% else %}
+        <button onclick="openContactModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{{ item.get_item_type_display|escapejs }}', '{% if item.image %}{{ item.image.url }}{% endif %}')"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border bg-transparent hover:bg-accent hover:text-accent-foreground transition-all text-sm relative z-20">
             <i data-lucide="mail" class="h-4 w-4"></i>
             Contact
-        </a>
+        </button>
+        {% endif %}
+        {% else %}
+        <button
+            onclick="alert('Only verified PSU users can contact posters. Please sign in with your @psu.palawan.edu.ph account and get verified.')"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-muted bg-muted/50 text-muted-foreground cursor-not-allowed text-sm relative z-20">
+            <i data-lucide="mail" class="h-4 w-4"></i>
+            {% if request.user.is_authenticated %}Verification Required{% else %}Sign In to Contact{% endif %}
+        </button>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
+{% include 'lfapp/includes/item_modal_click.html' %}
+{% include 'lfapp/includes/item_modal.html' %}

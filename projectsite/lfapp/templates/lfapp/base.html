@@ -1,4 +1,5 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,10 +8,10 @@
     <title>{% block title %}HanApp - Find What You Lost{% endblock %}</title>
     
     <!-- Favicons -->
-    <link rel="icon" type="image/png" href="{% static 'lfapp/images/icon-light-32x32.png' %}" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="{% static 'lfapp/images/icon-dark-32x32.png' %}" media="(prefers-color-scheme: dark)">
-    <link rel="icon" type="image/svg+xml" href="{% static 'lfapp/images/icon.svg' %}">
-    <link rel="apple-touch-icon" href="{% static 'lfapp/images/apple-icon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'lfapp/images/hanapp-logo.ico' %}" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="{% static 'lfapp/images/hanapp-logo.ico' %}" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/svg+xml" href="{% static 'lfapp/images/hanapp-logo.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'lfapp/images/hanapp-logo.png' %}">
     
     <!-- Tailwind CSS CDN with custom config -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,15 +58,25 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="font-sans antialiased bg-background text-foreground">
-    {% block content %}{% endblock %}
+<body class="font-sans antialiased bg-background text-foreground min-h-screen flex flex-col">
+    <div class="flex-1">
+        {% block content %}{% endblock %}
+    </div>
+    
+    {% include 'lfapp/includes/footer.html' %}
     
     <!-- Initialize Lucide Icons -->
     <script>
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     </script>
     
     {% block extra_js %}{% endblock %}
+    
+    {% include 'lfapp/includes/toast.html' %}
+    {% include 'lfapp/includes/contact_modal.html' %}
+    {% include 'lfapp/includes/archive_modal.html' %}
 </body>
 </html>
 

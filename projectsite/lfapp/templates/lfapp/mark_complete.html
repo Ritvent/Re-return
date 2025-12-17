@@ -1,0 +1,154 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ action_label }} - Lost & Found{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Card -->
+            <div class="bg-card border border-border rounded-lg shadow-sm">
+                <!-- Card Header -->
+                <div class="p-6 border-b border-border">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="{% if completion_type == 'found' %}check-circle{% else %}user-check{% endif %}" class="h-8 w-8 text-green-600"></i>
+                        <div>
+                            <h2 class="text-2xl font-bold text-card-foreground">{{ action_label }}</h2>
+                            <p class="text-muted-foreground mt-1">
+                                {% if completion_type == 'found' %}
+                                    Please provide the details of who returned your item
+                                {% else %}
+                                    Please provide the details of who claimed this item
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="p-6 space-y-6">
+                    <!-- Item Preview -->
+                    <div class="bg-muted/30 rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold text-lg mb-2">Item:</h3>
+                        <div class="flex gap-4">
+                            {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-24 h-24 object-cover rounded-md border border-border">
+                            {% else %}
+                            <div class="w-24 h-24 bg-muted rounded-md border border-border flex items-center justify-center">
+                                <i data-lucide="image-off" class="h-8 w-8 text-muted-foreground"></i>
+                            </div>
+                            {% endif %}
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-foreground break-words">{{ item.title }}</h4>
+                                <p class="text-sm text-muted-foreground mt-1 break-words">{{ item.description|truncatewords:20 }}</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="px-2 py-1 rounded text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive/10 text-destructive{% else %}bg-primary/10 text-primary{% endif %}">
+                                        {{ item.get_item_type_display }}
+                                    </span>
+                                    <span class="text-xs text-muted-foreground">
+                                        Posted {{ item.created_at|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Message -->
+                    <div class="bg-primary/10 border border-primary/20 rounded-md p-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="info" class="h-5 w-5 text-primary mt-0.5 flex-shrink-0"></i>
+                            <div>
+                                <p class="text-sm font-semibold text-primary">{{ person_label }} Information Required</p>
+                                <p class="text-sm text-primary/90 mt-1">
+                                    {% if completion_type == 'found' %}
+                                        Please provide the details of the person who returned the lost item. This information will be displayed publicly for transparency and success stories.
+                                    {% else %}
+                                        Please provide the details of the person who claimed this found item. This information will be displayed publicly for transparency and success stories.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Completion Form -->
+                    <form method="post" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <div class="space-y-4">
+                            <!-- Name Field -->
+                            <div>
+                                <label for="{{ form.completion_name.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                                    {{ form.completion_name.label }} <span class="text-destructive">*</span>
+                                </label>
+                                {{ form.completion_name }}
+                                {% if form.completion_name.errors %}
+                                    <p class="text-sm text-destructive mt-1">{{ form.completion_name.errors.0 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    {% if completion_type == 'found' %}
+                                        Full name of the person who returned the item
+                                    {% else %}
+                                        Full name of the person who claimed this item
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <!-- Email Field -->
+                            <div>
+                                <label for="{{ form.completion_email.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                                    {{ form.completion_email.label }} <span class="text-destructive">*</span>
+                                </label>
+                                {{ form.completion_email }}
+                                {% if form.completion_email.errors %}
+                                    <p class="text-sm text-destructive mt-1">{{ form.completion_email.errors.0 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    {% if completion_type == 'found' %}
+                                        Email address of the person who returned the item
+                                    {% else %}
+                                        Email address of the person who claimed this item
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Form Errors -->
+                        {% if form.non_field_errors %}
+                        <div class="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="alert-circle" class="h-5 w-5 text-destructive mt-0.5"></i>
+                                <div class="text-sm text-destructive">
+                                    {{ form.non_field_errors }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-4 pt-4">
+                            <button type="submit" 
+                                    class="flex-1 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="check" class="h-5 w-5"></i>
+                                {{ action_label }}
+                            </button>
+                            
+                            <a href="{% if item.item_type == 'lost' %}{% url 'lost_items' %}{% else %}{% url 'found_items' %}{% endif %}" 
+                               class="flex-1 px-6 py-3 rounded-md border border-input bg-background text-foreground font-medium hover:bg-accent hover:text-accent-foreground transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="x" class="h-5 w-5"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

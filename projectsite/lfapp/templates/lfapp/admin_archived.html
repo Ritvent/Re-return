@@ -1,0 +1,526 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Archived Items - HanApp Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="rounded-full bg-muted p-2">
+                        <i data-lucide="archive" class="h-5 w-5 text-muted-foreground"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold">Archived Items</h1>
+                </div>
+                <p class="text-muted-foreground">Items removed by administrators</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'admin_dashboard' %}">
+                    <button class="px-4 py-2 rounded-md border border-border hover:bg-accent transition-all flex items-center gap-2">
+                        <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                        Back to Dashboard
+                    </button>
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Total Archived</span>
+                    <i data-lucide="archive" class="h-4 w-4 text-muted-foreground"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ total_archived }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Spam</span>
+                    <i data-lucide="ban" class="h-4 w-4 text-red-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ spam_count }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Inappropriate</span>
+                    <i data-lucide="alert-triangle" class="h-4 w-4 text-amber-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ inappropriate_count }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Duplicate</span>
+                    <i data-lucide="copy" class="h-4 w-4 text-blue-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ duplicate_count }}</p>
+            </div>
+            <div class="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-muted-foreground">Resolved/Other</span>
+                    <i data-lucide="check-circle" class="h-4 w-4 text-green-500"></i>
+                </div>
+                <p class="text-2xl font-bold">{{ resolved_other_count }}</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-card border border-border rounded-xl p-4 mb-6 shadow-sm">
+            <form method="GET" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search by title or description..." 
+                           class="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                </div>
+                <div class="w-full md:w-40">
+                    <select name="type" class="w-full px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <option value="lost" {% if request.GET.type == 'lost' %}selected{% endif %}>Lost</option>
+                        <option value="found" {% if request.GET.type == 'found' %}selected{% endif %}>Found</option>
+                    </select>
+                </div>
+                <div class="w-full md:w-48">
+                    <select name="reason" class="w-full px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" onchange="this.form.submit()">
+                        <option value="">All Reasons</option>
+                        <option value="spam" {% if request.GET.reason == 'spam' %}selected{% endif %}>Spam</option>
+                        <option value="inappropriate" {% if request.GET.reason == 'inappropriate' %}selected{% endif %}>Inappropriate</option>
+                        <option value="duplicate" {% if request.GET.reason == 'duplicate' %}selected{% endif %}>Duplicate</option>
+                        <option value="resolved" {% if request.GET.reason == 'resolved' %}selected{% endif %}>Resolved</option>
+                        <option value="other" {% if request.GET.reason == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                    Filter
+                </button>
+                {% if request.GET.search or request.GET.type or request.GET.reason %}
+                    <a href="{% url 'admin_archived' %}" class="px-4 py-2 rounded-md border border-border hover:bg-accent transition-all text-center">
+                        Clear
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Archived Items Table -->
+        <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            {% if items %}
+            <!-- Desktop Table View -->
+            <div class="hidden xl:block overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-muted/50 border-b border-border">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Item</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Type</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Posted By</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Archived By</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Reason</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Date Archived</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        {% for item in items %}
+                        <tr class="hover:bg-muted/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3 max-w-xs">
+                                    {% if item.image %}
+                                        <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded-lg object-cover border border-border flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                                            <i data-lucide="image-off" class="h-5 w-5 text-muted-foreground"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="min-w-0">
+                                        <p class="font-medium truncate" title="{{ item.title }}">{{ item.title }}</p>
+                                        <p class="text-xs text-muted-foreground truncate">{{ item.category }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap
+                                    {% if item.item_type == 'lost' %}
+                                        bg-red-100 text-red-700
+                                    {% else %}
+                                        bg-blue-100 text-blue-700
+                                    {% endif %}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    {% if item.posted_by.google_profile_picture %}
+                                        <img src="{{ item.posted_by.google_profile_picture }}" alt="Profile" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                                            {{ item.posted_by.email|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="text-sm" title="{{ item.posted_by.email }}">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if item.archived_by %}
+                                <div class="flex items-center gap-2">
+                                    {% if item.archived_by.google_profile_picture %}
+                                        <img src="{{ item.archived_by.google_profile_picture }}" alt="Profile" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs flex-shrink-0">
+                                            {{ item.archived_by.email|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="text-sm" title="{{ item.archived_by.email }}">{{ item.archived_by.get_full_name|default:item.archived_by.email }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted-foreground">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap
+                                    {% if item.archive_reason == 'spam' %}
+                                        bg-red-100 text-red-700
+                                    {% elif item.archive_reason == 'inappropriate' %}
+                                        bg-amber-100 text-amber-700
+                                    {% elif item.archive_reason == 'duplicate' %}
+                                        bg-blue-100 text-blue-700
+                                    {% elif item.archive_reason == 'resolved' %}
+                                        bg-green-100 text-green-700
+                                    {% else %}
+                                        bg-gray-100 text-gray-700
+                                    {% endif %}">
+                                    {% if item.archive_reason == 'spam' %}
+                                        <i data-lucide="ban" class="h-3 w-3 flex-shrink-0"></i>
+                                    {% elif item.archive_reason == 'inappropriate' %}
+                                        <i data-lucide="alert-triangle" class="h-3 w-3 flex-shrink-0"></i>
+                                    {% elif item.archive_reason == 'duplicate' %}
+                                        <i data-lucide="copy" class="h-3 w-3 flex-shrink-0"></i>
+                                    {% elif item.archive_reason == 'resolved' %}
+                                        <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
+                                    {% else %}
+                                        <i data-lucide="more-horizontal" class="h-3 w-3 flex-shrink-0"></i>
+                                    {% endif %}
+                                    {{ item.get_archive_reason_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-muted-foreground text-sm">
+                                {% if item.archived_at %}
+                                    {{ item.archived_at|date:"M d, Y" }}<br>
+                                    <span class="text-xs">{{ item.archived_at|time:"g:i A" }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button type="button" onclick="openPermanentDeleteModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
+                                    class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
+                                    title="Permanently delete">
+                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile/Tablet Card View -->
+            <div class="xl:hidden divide-y divide-border">
+                {% for item in items %}
+                <div class="p-4 hover:bg-muted/30 transition-colors">
+                    <div class="flex items-start gap-3 mb-3">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-14 w-14 rounded-lg object-cover border border-border flex-shrink-0">
+                        {% else %}
+                            <div class="h-14 w-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                                <i data-lucide="image-off" class="h-6 w-6 text-muted-foreground"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium truncate">{{ item.title }}</p>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full
+                                    {% if item.item_type == 'lost' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full
+                                    {% if item.archive_reason == 'spam' %}bg-red-100 text-red-700
+                                    {% elif item.archive_reason == 'inappropriate' %}bg-amber-100 text-amber-700
+                                    {% elif item.archive_reason == 'duplicate' %}bg-blue-100 text-blue-700
+                                    {% elif item.archive_reason == 'resolved' %}bg-green-100 text-green-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ item.get_archive_reason_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <p class="text-muted-foreground">Posted by</p>
+                            <p class="font-medium truncate">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+                        </div>
+                        <div>
+                            <p class="text-muted-foreground">Archived by</p>
+                            <p class="font-medium truncate">{{ item.archived_by.get_full_name|default:item.archived_by.email }}</p>
+                        </div>
+                        <div class="col-span-2">
+                            <p class="text-muted-foreground">Archived on {{ item.archived_at|date:"M d, Y" }} at {{ item.archived_at|time:"g:i A" }}</p>
+                        </div>
+                        <div class="col-span-2 pt-2 border-t border-border mt-2">
+                            <button type="button" onclick="openPermanentDeleteModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
+                                class="w-full px-3 py-2 rounded-md text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                Permanently Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="p-12 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <i data-lucide="archive" class="h-8 w-8 text-muted-foreground"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">No Archived Items</h3>
+                <p class="text-muted-foreground mb-4">Items removed by administrators will appear here.</p>
+                <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Pagination -->
+        {% if items.has_other_pages %}
+        <div class="mt-6 flex justify-center">
+            <nav class="flex items-center gap-1">
+                {% if items.has_previous %}
+                    <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="First">
+                        <i data-lucide="chevrons-left" class="h-4 w-4"></i>
+                    </a>
+                    <a href="?page={{ items.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="Previous">
+                        <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                    </a>
+                {% endif %}
+                
+                <span class="px-4 py-2 text-sm">
+                    Page {{ items.number }} of {{ items.paginator.num_pages }}
+                </span>
+                
+                {% if items.has_next %}
+                    <a href="?page={{ items.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="Next">
+                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                    </a>
+                    <a href="?page={{ items.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.reason %}&reason={{ request.GET.reason }}{% endif %}" 
+                       class="p-2 rounded-md hover:bg-accent transition-colors" title="Last">
+                        <i data-lucide="chevrons-right" class="h-4 w-4"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </main>
+</div>
+
+<!-- Permanent Delete Modal -->
+<div id="permanentDeleteModal" class="fixed inset-0 z-[200] hidden" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="permanentDeleteBackdrop" onclick="closePermanentDeleteModal()"></div>
+
+    <!-- Modal Panel -->
+    <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+        <div class="w-full max-w-md bg-background rounded-2xl shadow-2xl transform transition-all scale-95 opacity-0 pointer-events-auto flex flex-col" id="permanentDeletePanel">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-full bg-destructive/10">
+                        <i data-lucide="trash-2" class="h-5 w-5 text-destructive"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-foreground">Permanent Delete</h3>
+                        <p class="text-xs text-muted-foreground">This action cannot be undone</p>
+                    </div>
+                </div>
+                <button onclick="closePermanentDeleteModal()" class="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6">
+                <!-- Item Info Preview -->
+                <div class="p-4 bg-destructive/5 rounded-lg mb-6 border border-destructive/20">
+                    <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">Deleting Item</p>
+                    <div class="flex gap-4">
+                        <!-- Item Image -->
+                        <div class="flex-shrink-0">
+                            <div class="h-20 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                                <i data-lucide="image" class="h-8 w-8 text-muted-foreground" id="permanentDeleteNoImage"></i>
+                                <img id="permanentDeleteImage" src="" alt="Item" class="h-full w-full object-cover hidden">
+                            </div>
+                        </div>
+                        <!-- Item & Poster Info -->
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-foreground line-clamp-2" id="permanentDeleteItemTitle">Loading...</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <i data-lucide="user" class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0"></i>
+                                <p class="text-xs text-muted-foreground truncate" id="permanentDeletePoster">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warning Notice -->
+                <div class="bg-muted/50 rounded-lg p-4 border border-border">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="alert-circle" class="h-5 w-5 text-destructive mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-sm font-medium text-foreground">Warning: Permanent Deletion</p>
+                            <p class="text-xs text-muted-foreground mt-1">This will permanently delete this item and all associated data (including images and messages). This action cannot be reversed.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-border flex items-center justify-end gap-3 bg-muted/30">
+                <button type="button" onclick="closePermanentDeleteModal()" class="px-4 py-2 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="confirmPermanentDelete()" id="permanentDeleteBtn" class="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors flex items-center gap-2">
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                    Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentDeleteItemId = null;
+    
+    function openPermanentDeleteModal(itemId, itemTitle, posterName, imageUrl) {
+        currentDeleteItemId = itemId;
+        const modal = document.getElementById('permanentDeleteModal');
+        const backdrop = document.getElementById('permanentDeleteBackdrop');
+        const panel = document.getElementById('permanentDeletePanel');
+        
+        // Set item info
+        document.getElementById('permanentDeleteItemTitle').textContent = itemTitle;
+        document.getElementById('permanentDeletePoster').textContent = posterName || 'Unknown';
+        
+        // Set item image
+        const imgEl = document.getElementById('permanentDeleteImage');
+        const noImgIcon = document.getElementById('permanentDeleteNoImage');
+        if (imageUrl) {
+            imgEl.src = imageUrl;
+            imgEl.classList.remove('hidden');
+            noImgIcon.classList.add('hidden');
+        } else {
+            imgEl.src = '';
+            imgEl.classList.add('hidden');
+            noImgIcon.classList.remove('hidden');
+        }
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('opacity-0');
+            backdrop.classList.add('opacity-100');
+            panel.classList.remove('scale-95', 'opacity-0');
+            panel.classList.add('scale-100', 'opacity-100');
+        });
+        
+        // Re-init Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    function closePermanentDeleteModal() {
+        const modal = document.getElementById('permanentDeleteModal');
+        const backdrop = document.getElementById('permanentDeleteBackdrop');
+        const panel = document.getElementById('permanentDeletePanel');
+        
+        // Animate out
+        backdrop.classList.remove('opacity-100');
+        backdrop.classList.add('opacity-0');
+        panel.classList.remove('scale-100', 'opacity-100');
+        panel.classList.add('scale-95', 'opacity-0');
+        
+        // Hide after animation
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            currentDeleteItemId = null;
+        }, 200);
+    }
+
+    async function confirmPermanentDelete() {
+        if (!currentDeleteItemId) return;
+        
+        const btn = document.getElementById('permanentDeleteBtn');
+        
+        // Disable button and show loading
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Deleting...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+        try {
+            const response = await fetch(`/dashboard/permanent-delete/${currentDeleteItemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                closePermanentDeleteModal();
+                // Show success message and reload
+                if (typeof showToast === 'function') {
+                    showToast('Item permanently deleted', 'success');
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Failed to delete item');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('Failed to delete item: ' + error.message);
+            
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="trash-2" class="h-4 w-4"></i> Delete Permanently';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('permanentDeleteModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closePermanentDeleteModal();
+            }
+        }
+    });
+</script>
+{% endblock %}
