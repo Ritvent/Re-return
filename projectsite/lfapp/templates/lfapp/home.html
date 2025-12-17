@@ -135,7 +135,17 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-3xl font-bold">Recent Activities</h2>
-                    <p class="text-muted-foreground">Recently completed items</p>
+                    <!-- Legend, mobile view only -->
+                    <div class="flex items-center gap-4 mt-2 md:hidden">
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-2.5 w-2.5 rounded-full bg-red-500"></div>
+                            <span class="text-xs text-muted-foreground">Lost</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                            <span class="text-xs text-muted-foreground">Found</span>
+                        </div>
+                    </div>
                 </div>
                 <a href="{% url 'claimed_items' %}">
                     <button class="px-4 py-2 rounded-md flex items-center gap-2
@@ -352,11 +362,12 @@
                                                     Posted
                                                 </span>
                                             {% endif %}
+                                        </div>
                                         
                                         <!-- User Info -->
                                         <div class="mt-2">
                                             {% if item.status == 'claimed' or item.status == 'found' %}
-                                                <p class="text-[10px] text-muted-foreground mb-0.5">
+                                                <p class="text-[10px] text-green-600 mt-0.5">
                                                     {% if item.item_type == 'found' %}Claimed by:{% else %}Returned by:{% endif %}
                                                 </p>
                                                 {% if item.completion_name and item.completion_email %}
