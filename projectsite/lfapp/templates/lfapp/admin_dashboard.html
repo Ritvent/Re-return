@@ -15,7 +15,7 @@
                     <div>
                         <div class="flex items-center gap-3 mb-3">
                             <div class="rounded-full bg-primary/10 p-2">
-                                <i data-lucide="users" class="h-6 w-6 text-primary"></i>
+                                <i data-lucide="shield-user" class="h-6 w-6 text-primary"></i>
                             </div>
                             <h1 class="text-4xl font-bold">Admin Dashboard</h1>
                         </div>
@@ -23,15 +23,27 @@
                             Manage and monitor all lost and found items in the system
                         </p>
                     </div>
-                    <div>
-                        <a href="{% url 'admin_moderation' %}" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg {% if pending_count > 0 %}bg-orange-600 hover:bg-orange-700 text-white animate-pulse{% else %}bg-primary hover:bg-primary/90 text-primary-foreground{% endif %} font-semibold transition-all shadow-md">
-                            <i data-lucide="shield-check" class="h-5 w-5"></i>
-                            <span>Moderation Queue</span>
-                            {% if pending_count > 0 %}
-                            <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-white text-orange-600">
-                                {{ pending_count }}
-                            </span>
-                            {% endif %}
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{% url 'admin_users' %}">
+                            <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
+                                <i data-lucide="users" class="h-4 w-4"></i>
+                                Manage Users
+                            </button>
+                        </a>
+                        <a href="{% url 'admin_moderation' %}">
+                            <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all flex items-center gap-2">
+                                <i data-lucide="check-square" class="h-4 w-4"></i>
+                                Moderation Queue
+                                {% if pending_count > 0 %}
+                                    <span class="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">{{ pending_count }}</span>
+                                {% endif %}
+                            </button>
+                        </a>
+                        <a href="{% url 'admin_archived' %}">
+                            <button class="px-4 py-2 rounded-md border border-border text-foreground font-medium hover:bg-accent transition-all flex items-center gap-2">
+                                <i data-lucide="archive" class="h-4 w-4"></i>
+                                Archived Items
+                            </button>
                         </a>
                     </div>
                 </div>
@@ -40,7 +52,7 @@
 
         <!-- Stats Grid -->
         <section class="mb-8">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
                     <div class="px-6 pb-2 flex items-center justify-between">
                         <h3 class="text-sm font-medium">Total Items</h3>
@@ -80,12 +92,12 @@
 
                 <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
                     <div class="px-6 pb-2 flex items-center justify-between">
-                        <h3 class="text-sm font-medium">Categories</h3>
-                        <i data-lucide="package" class="h-4 w-4 text-muted-foreground"></i>
+                        <h3 class="text-sm font-medium">Total Users</h3>
+                        <i data-lucide="users" class="h-4 w-4 text-muted-foreground"></i>
                     </div>
                     <div class="px-6">
-                        <div class="text-3xl font-bold">{{ category_count }}</div>
-                        <p class="text-xs text-muted-foreground mt-1">Unique categories</p>
+                        <div class="text-3xl font-bold">{{ user_count }}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Registered users</p>
                     </div>
                 </div>
             </div>
@@ -95,53 +107,355 @@
         <section>
             <div class="bg-card text-card-foreground rounded-xl border shadow-sm">
                 <div class="px-6 py-6 border-b">
-                    <h2 class="font-semibold text-lg">All Items</h2>
-                    <p class="text-sm text-muted-foreground">Complete list of all lost and found items</p>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h2 class="font-semibold text-lg">All Items</h2>
+                                <p class="text-sm text-muted-foreground">
+                                    {% if search_query or item_type_filter or status_filter or date_preset %}
+                                        Showing {{ filtered_count }} of {{ total_items }} items
+                                    {% else %}
+                                        Complete list of all lost and found items
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            {% if search_query or item_type_filter or status_filter or date_preset %}
+                            <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors inline-flex items-center gap-2 w-fit">
+                                <i data-lucide="x" class="h-4 w-4"></i>
+                                Clear All Filters
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Filters -->
+                        <form method="GET" id="filterForm" class="flex flex-wrap items-end gap-3">
+                            <!-- Search -->
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-muted-foreground">Search</label>
+                                <div class="relative">
+                                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                                    <input type="text" name="search" value="{{ search_query }}" placeholder="Items or users..." 
+                                        class="pl-9 pr-4 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-40">
+                                </div>
+                            </div>
+                            
+                            <!-- Type Filter -->
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-muted-foreground">Type</label>
+                                <select name="type" class="px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                    <option value="">All</option>
+                                    <option value="lost" {% if item_type_filter == 'lost' %}selected{% endif %}>Lost</option>
+                                    <option value="found" {% if item_type_filter == 'found' %}selected{% endif %}>Found</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Status Filter -->
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-muted-foreground">Status</label>
+                                <select name="status" class="px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                    <option value="">All</option>
+                                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Posted</option>
+                                    <option value="claimed" {% if status_filter == 'claimed' %}selected{% endif %}>Claimed</option>
+                                    <option value="found" {% if status_filter == 'found' %}selected{% endif %}>Returned</option>
+                                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Date Filter (Hybrid) -->
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-muted-foreground">Date Posted</label>
+                                <select name="date_preset" id="datePresetSelect" onchange="handleDatePresetChange()" 
+                                    class="px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                    <option value="" {% if not date_preset and not date_from and not date_to %}selected{% endif %}>All time</option>
+                                    <option value="today" {% if date_preset == 'today' %}selected{% endif %}>Today</option>
+                                    <option value="last-7-days" {% if date_preset == 'last-7-days' %}selected{% endif %}>Last 7 days</option>
+                                    <option value="last-30-days" {% if date_preset == 'last-30-days' %}selected{% endif %}>Last 30 days</option>
+                                    <option value="custom" {% if date_preset == 'custom' or date_from or date_to %}selected{% endif %}>Custom range</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Custom Date Range (shown when custom is selected) -->
+                            <div id="customDateRange" class="flex items-end gap-2 {% if not date_preset == 'custom' and not date_from and not date_to %}hidden{% endif %}">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs text-muted-foreground">From</label>
+                                    <input type="date" name="date_from" id="dateFromInput" value="{{ date_from }}" 
+                                        class="px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs text-muted-foreground">To</label>
+                                    <input type="date" name="date_to" id="dateToInput" value="{{ date_to }}" 
+                                        class="px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                                Apply
+                            </button>
+                        </form>
+                    </div>
                 </div>
                 <div class="px-6 py-6">
-                    <div class="rounded-md border overflow-x-auto">
-                        <table class="w-full">
+                    <!-- Desktop Table View -->
+                    <div class="hidden xl:block rounded-md border overflow-x-auto">
+                        <table class="w-full table-fixed">
                             <thead>
-                                <tr class="border-b">
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Title</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Status</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Category</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Location</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Date</th>
-                                    <th class="text-left px-4 py-3 text-sm font-medium">Contact</th>
+                                <tr class="border-b bg-muted/50">
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[23%]">Item</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[9%]">Type</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[10%]">Status</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[12%]">Category</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[10%]">Posted</th>
+                                    <th class="text-left px-4 py-3 text-sm font-medium w-[28%]">Posted By</th>
+                                    <th class="text-center px-4 py-3 text-sm font-medium w-[8%]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in all_items %}
-                                <tr class="border-b hover:bg-muted/50">
-                                    <td class="px-4 py-3 font-medium">{{ item.title }}</td>
+                                <tr class="border-b hover:bg-muted/50 cursor-pointer" onclick="openItemModal('admin-{{ item.id }}')">
                                     <td class="px-4 py-3">
-                                        <span class="px-2 py-1 rounded-md text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
+                                        <div class="flex items-center gap-3">
+                                            {% if item.image %}
+                                                <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-10 w-10 rounded object-cover aspect-square flex-shrink-0">
+                                            {% else %}
+                                                <div class="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                                    <i data-lucide="package" class="h-5 w-5 text-muted-foreground"></i>
+                                                </div>
+                                            {% endif %}
+                                            <span class="font-medium truncate" title="{{ item.title }}">{{ item.title }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap
+                                            {% if item.item_type == 'lost' %}
+                                                bg-destructive/10 text-destructive
+                                            {% else %}
+                                                bg-blue-100 text-blue-700
+                                            {% endif %}">
                                             {{ item.get_item_type_display }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3">{{ item.get_category_display }}</td>
-                                    <td class="px-4 py-3 max-w-[200px] truncate">
-                                        {% if item.item_type == 'found' %}{{ item.location_found|default:"—" }}{% else %}{{ item.location_lost|default:"—" }}{% endif %}
+                                    <td class="px-4 py-3">
+                                        {% if item.status == 'claimed' %}
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                                <i data-lucide="check-circle" class="h-3.5 w-3.5"></i>
+                                                Claimed
+                                            </span>
+                                        {% elif item.status == 'found' %}
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                                <i data-lucide="check-circle" class="h-3.5 w-3.5"></i>
+                                                Returned
+                                            </span>
+                                        {% elif item.status == 'approved' %}
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                                                <i data-lucide="pin" class="h-3.5 w-3.5"></i>
+                                                Posted
+                                            </span>
+                                        {% elif item.status == 'pending' %}
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                                                <i data-lucide="clock" class="h-3.5 w-3.5"></i>
+                                                Pending
+                                            </span>
+                                        {% elif item.status == 'rejected' %}
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-destructive/10 text-destructive">
+                                                <i data-lucide="x-circle" class="h-3.5 w-3.5"></i>
+                                                Rejected
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm truncate" title="{{ item.get_category_display }}">{{ item.get_category_display }}</td>
+                                    <td class="px-4 py-3 text-sm">
+                                        {{ item.created_at|date:"M d, Y" }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        {% if item.item_type == 'found' and item.date_found %}{{ item.date_found|date:"M d, Y" }}{% elif item.item_type == 'lost' and item.date_lost %}{{ item.date_lost|date:"M d, Y" }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="space-y-1">
-                                            <p class="text-sm font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                        <div class="flex items-center gap-2">
+                                            {% if item.posted_by.google_profile_picture %}
+                                                <img src="{{ item.posted_by.google_profile_picture }}" class="h-8 w-8 rounded-full object-cover">
+                                            {% else %}
+                                                <div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                                    <i data-lucide="user" class="h-4 w-4 text-muted-foreground"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div class="space-y-0.5">
+                                                <div class="flex items-center gap-1.5">
+                                                    <p class="text-sm font-medium whitespace-nowrap">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</p>
+                                                    {% if not item.display_name %}
+                                                        <div class="relative group flex items-center flex-shrink-0">
+                                                            <i data-lucide="eye-off" class="h-3.5 w-3.5 text-muted-foreground"></i>
+                                                            <!-- Custom Tooltip -->
+                                                            <div class="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                User opted not to display their name on this post
+                                                                <!-- Arrow -->
+                                                                <div class="absolute top-full right-1 -mt-1 border-4 border-transparent border-t-foreground"></div>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                            </div>
                                         </div>
+                                        <!-- Include Modal for this item -->
+                                        {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="admin-" %}
+                                    </td>
+                                    <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
+                                        {% if item.status != 'pending' %}
+                                        <button type="button" onclick="openArchiveModal('{{ item.id }}', '{{ item.title|escapejs }}', '{% if item.display_name %}{{ item.posted_by.get_full_name|default:item.posted_by.username|escapejs }}{% else %}{{ item.posted_by.email|escapejs }}{% endif %}', '{% if item.image %}{{ item.image.url }}{% endif %}')" 
+                                            class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" 
+                                            title="Archive item">
+                                            <i data-lucide="archive" class="h-4 w-4"></i>
+                                        </button>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">No items found</td>
+                                    <td colspan="7" class="px-4 py-8 text-center text-muted-foreground">No items found</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile/Tablet Card View -->
+                    <div class="xl:hidden space-y-4">
+                        {% for item in all_items %}
+                        <div class="bg-card border rounded-lg p-4 shadow-sm cursor-pointer" onclick="openItemModal('admin-{{ item.id }}')">
+                            <div class="flex gap-3 mb-3">
+                                <!-- Image -->
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded object-cover aspect-square flex-shrink-0">
+                                {% else %}
+                                    <div class="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="package" class="h-6 w-6 text-muted-foreground"></i>
+                                    </div>
+                                {% endif %}
+
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-start gap-2 mb-1">
+                                        <h4 class="font-semibold text-base truncate" title="{{ item.title }}">{{ item.title }}</h4>
+                                        <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full flex-shrink-0 whitespace-nowrap
+                                            {% if item.item_type == 'lost' %}
+                                                bg-destructive/10 text-destructive
+                                            {% else %}
+                                                bg-blue-100 text-blue-700
+                                            {% endif %}">
+                                            {{ item.get_item_type_display }}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-2">
+                                        <p class="text-xs text-muted-foreground truncate" title="{{ item.get_category_display }}">{{ item.get_category_display }}</p>
+                                        <!-- Status Badge -->
+                                        {% if item.status == 'claimed' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                                <i data-lucide="check-circle" class="h-2.5 w-2.5"></i>
+                                                Claimed
+                                            </span>
+                                        {% elif item.status == 'found' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                                <i data-lucide="check-circle" class="h-2.5 w-2.5"></i>
+                                                Returned
+                                            </span>
+                                        {% elif item.status == 'pending' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-yellow-100 text-yellow-700 flex-shrink-0">
+                                                <i data-lucide="clock" class="h-2.5 w-2.5"></i>
+                                                Pending
+                                            </span>
+                                        {% elif item.status == 'rejected' %}
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-destructive/10 text-destructive flex-shrink-0">
+                                                <i data-lucide="x-circle" class="h-2.5 w-2.5"></i>
+                                                Rejected
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="map-pin" class="h-4 w-4 text-primary mt-0.5 flex-shrink-0"></i>
+                                    <span class="text-muted-foreground truncate" title="{% if item.item_type == 'found' %}{{ item.location_found }}{% else %}{{ item.location_lost }}{% endif %}">
+                                        {% if item.item_type == 'found' %}{{ item.location_found|default:"Location not specified" }}{% else %}{{ item.location_lost|default:"Location not specified" }}{% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
+                                    <span class="text-muted-foreground">
+                                        {% if item.item_type == 'found' and item.date_found %}{{ item.date_found|date:"M d, Y" }}{% elif item.item_type == 'lost' and item.date_lost %}{{ item.date_lost|date:"M d, Y" }}{% else %}Date not specified{% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 pt-2 border-t mt-2">
+                                    {% if item.posted_by.google_profile_picture %}
+                                        <img src="{{ item.posted_by.google_profile_picture }}" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-6 w-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                            <i data-lucide="user" class="h-3 w-3 text-muted-foreground"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex flex-col min-w-0">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-medium text-xs whitespace-nowrap">{{ item.posted_by.get_full_name|default:item.posted_by.email }}</span>
+                                            {% if not item.display_name %}
+                                                <div class="relative group flex items-center flex-shrink-0">
+                                                    <i data-lucide="eye-off" class="h-3 w-3 text-muted-foreground"></i>
+                                                    <!-- Custom Tooltip -->
+                                                    <div class="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                        Name hidden on public site
+                                                        <!-- Arrow -->
+                                                        <div class="absolute top-full right-1 -mt-1 border-4 border-transparent border-t-foreground"></div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <span class="text-[10px] text-muted-foreground truncate">{{ item.posted_by.email }}</span>
+                                    </div>
+                                </div>
+                                <!-- No need to include modal here as it's already in the desktop loop which is always rendered -->
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-8 text-muted-foreground">
+                            No items found
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if all_items.has_other_pages %}
+                    <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-sm text-muted-foreground">
+                            Showing {{ all_items.start_index }} to {{ all_items.end_index }} of {{ all_items.paginator.count }} items
+                        </p>
+                        <nav class="flex items-center gap-1">
+                            {% if all_items.has_previous %}
+                                <a href="?page=1{% if item_type_filter %}&type={{ item_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" 
+                                   class="px-3 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors">
+                                    <i data-lucide="chevrons-left" class="h-4 w-4"></i>
+                                </a>
+                                <a href="?page={{ all_items.previous_page_number }}{% if item_type_filter %}&type={{ item_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" 
+                                   class="px-3 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors">
+                                    <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                                </a>
+                            {% endif %}
+                            
+                            <span class="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md">
+                                {{ all_items.number }}
+                            </span>
+                            <span class="text-sm text-muted-foreground">of {{ all_items.paginator.num_pages }}</span>
+                            
+                            {% if all_items.has_next %}
+                                <a href="?page={{ all_items.next_page_number }}{% if item_type_filter %}&type={{ item_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" 
+                                   class="px-3 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors">
+                                    <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                                </a>
+                                <a href="?page={{ all_items.paginator.num_pages }}{% if item_type_filter %}&type={{ item_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" 
+                                   class="px-3 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors">
+                                    <i data-lucide="chevrons-right" class="h-4 w-4"></i>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </section>
@@ -150,6 +464,37 @@
 
 <script>
     lucide.createIcons();
+    
+    // Handle date preset dropdown change
+    function handleDatePresetChange() {
+        const presetSelect = document.getElementById('datePresetSelect');
+        const customDateRange = document.getElementById('customDateRange');
+        const dateFromInput = document.getElementById('dateFromInput');
+        const dateToInput = document.getElementById('dateToInput');
+        
+        if (presetSelect.value === 'custom') {
+            customDateRange.classList.remove('hidden');
+        } else {
+            customDateRange.classList.add('hidden');
+            // Clear custom date inputs when not using custom
+            dateFromInput.value = '';
+            dateToInput.value = '';
+        }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const presetSelect = document.getElementById('datePresetSelect');
+        const customDateRange = document.getElementById('customDateRange');
+        
+        // Show custom range if custom is selected or if there are custom dates
+        if (presetSelect.value === 'custom' || document.getElementById('dateFromInput').value || document.getElementById('dateToInput').value) {
+            customDateRange.classList.remove('hidden');
+            if (document.getElementById('dateFromInput').value || document.getElementById('dateToInput').value) {
+                presetSelect.value = 'custom';
+            }
+        }
+    });
 </script>
+{% include 'lfapp/includes/item_modal_click.html' %}
 {% endblock %}
-

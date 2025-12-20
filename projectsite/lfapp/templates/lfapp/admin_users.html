@@ -1,0 +1,283 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}User Management - HanApp Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">User Management</h1>
+                <p class="text-muted-foreground">Manage user roles and permissions</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'admin_dashboard' %}">
+                    <button class="px-4 py-2 rounded-md border border-border hover:bg-accent transition-all flex items-center gap-2">
+                        <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                        Back to Admin Dashboard
+                    </button>
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-card border border-border rounded-xl p-4 mb-6 shadow-sm">
+            <form method="GET" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search by name or email..." 
+                           class="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50">
+                </div>
+                <div class="w-full md:w-48">
+                    <select name="role" class="w-full px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" onchange="this.form.submit()">
+                        <option value="">All Roles</option>
+                        {% for value, label in role_choices %}
+                            <option value="{{ value }}" {% if request.GET.role == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                    Filter
+                </button>
+                {% if request.GET.search or request.GET.role %}
+                    <a href="{% url 'admin_users' %}" class="px-4 py-2 rounded-md border border-border hover:bg-accent transition-all text-center">
+                        Clear
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Users Table/Cards -->
+        <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            <!-- Desktop Table View -->
+            <div class="hidden xl:block overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-muted/50 border-b border-border">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">User</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Role</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Status</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground">Joined</th>
+                            <th class="px-6 py-4 font-semibold text-muted-foreground text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        {% for user_obj in users %}
+                        <tr class="hover:bg-muted/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    {% if user_obj.google_profile_picture %}
+                                        <img src="{{ user_obj.google_profile_picture }}" alt="Profile" class="h-10 w-10 rounded-full object-cover border border-border">
+                                    {% else %}
+                                        <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border border-border">
+                                            {{ user_obj.email|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <p class="font-medium">{{ user_obj.get_full_name|default:user_obj.username }}</p>
+                                        <p class="text-xs text-muted-foreground">{{ user_obj.email }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full
+                                    {% if user_obj.role == 'admin' %}
+                                        bg-purple-100 text-purple-700
+                                    {% elif user_obj.role == 'verified' %}
+                                        bg-blue-100 text-blue-700
+                                    {% else %}
+                                        bg-gray-100 text-gray-700
+                                    {% endif %}">
+                                    {{ user_obj.get_role_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if user_obj.is_verified %}
+                                    <span class="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                                        <i data-lucide="check-circle" class="h-3 w-3"></i> Verified
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                                        <i data-lucide="circle" class="h-3 w-3"></i> Unverified
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-muted-foreground">
+                                {{ user_obj.date_joined|date:"M d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                {% if user_obj.id == request.user.id %}
+                                    <!-- Self Actions -->
+                                    {% if user_obj.role == 'admin' and not user_obj.is_superuser %}
+                                        <form method="POST" action="{% url 'admin_promote_user' user_obj.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="role" value="verified">
+                                            <button type="submit" 
+                                                    onclick="return confirm('⚠️ WARNING: You are about to step down from Admin.\n\nYou will immediately lose access to the Admin Dashboard and all admin privileges.\n\nAre you sure you want to continue?')"
+                                                    class="text-xs bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md hover:bg-destructive/90 transition-colors font-medium flex items-center gap-1">
+                                                <i data-lucide="log-out" class="h-3 w-3"></i>
+                                                Step Down
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-xs text-muted-foreground italic">Current User</span>
+                                    {% endif %}
+                                
+                                {% elif user_obj.is_superuser %}
+                                    <!-- Superuser (Protected) -->
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        Super Admin
+                                    </span>
+                                
+                                {% elif request.user.role == 'admin' and not request.user.is_superuser and user_obj.role == 'admin' %}
+                                    <!-- Admin viewing another Admin (Protected) -->
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        Admin
+                                    </span>
+
+                                {% else %}
+                                    <!-- Standard Role Management -->
+                                    <form method="POST" action="{% url 'admin_promote_user' user_obj.id %}">
+                                        {% csrf_token %}
+                                        <select name="role" onchange="if(confirm('Are you sure you want to change this user\'s role?')) this.form.submit()" 
+                                                class="text-xs border border-input rounded px-2 py-1 bg-background hover:bg-accent cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                            {% for value, label in role_choices %}
+                                                <option value="{{ value }}" 
+                                                    {% if user_obj.role == value %}selected{% endif %}
+                                                    {% if value == 'public' and user_obj.has_psu_email %}disabled{% endif %}
+                                                    {% if request.user.role == 'admin' and not request.user.is_superuser and value == 'public' %}disabled{% endif %}
+                                                >
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-muted-foreground">
+                                No users found matching your criteria.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile/Tablet Card View -->
+            <div class="xl:hidden divide-y divide-border">
+                {% for user_obj in users %}
+                <div class="p-4 hover:bg-muted/30 transition-colors">
+                    <div class="flex items-start gap-3 mb-3">
+                        <!-- Avatar -->
+                        {% if user_obj.google_profile_picture %}
+                            <img src="{{ user_obj.google_profile_picture }}" alt="Profile" class="h-12 w-12 rounded-full object-cover border border-border flex-shrink-0">
+                        {% else %}
+                            <div class="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border border-border flex-shrink-0 text-lg">
+                                {{ user_obj.email|make_list|first|upper }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- User Info -->
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-base truncate">{{ user_obj.get_full_name|default:user_obj.username }}</h3>
+                            <p class="text-xs text-muted-foreground truncate">{{ user_obj.email }}</p>
+                            
+                            <!-- Role & Status -->
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full
+                                    {% if user_obj.role == 'admin' %}
+                                        bg-purple-100 text-purple-700
+                                    {% elif user_obj.role == 'verified' %}
+                                        bg-blue-100 text-blue-700
+                                    {% else %}
+                                        bg-gray-100 text-gray-700
+                                    {% endif %}">
+                                    {{ user_obj.get_role_display }}
+                                </span>
+                                {% if user_obj.is_verified %}
+                                    <span class="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                                        <i data-lucide="check-circle" class="h-3 w-3"></i> Verified
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Joined Date -->
+                            <p class="text-xs text-muted-foreground mt-2">
+                                <span class="font-medium">Joined:</span> {{ user_obj.date_joined|date:"M d, Y" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="mt-3 pt-3 border-t border-border">
+                        {% if user_obj.id == request.user.id %}
+                            <!-- Self Actions -->
+                            {% if user_obj.role == 'admin' and not user_obj.is_superuser %}
+                                <form method="POST" action="{% url 'admin_promote_user' user_obj.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="role" value="verified">
+                                    <button type="submit" 
+                                            onclick="return confirm('⚠️ WARNING: You are about to step down from Admin.\n\nYou will immediately lose access to the Admin Dashboard and all admin privileges.\n\nAre you sure you want to continue?')"
+                                            class="w-full text-sm bg-destructive text-destructive-foreground px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors font-medium flex items-center justify-center gap-2">
+                                        <i data-lucide="log-out" class="h-4 w-4"></i>
+                                        Step Down
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-sm text-muted-foreground italic block text-center">Current User</span>
+                            {% endif %}
+                        
+                        {% elif user_obj.is_superuser %}
+                            <!-- Superuser (Protected) -->
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-purple-100 text-purple-800 w-full justify-center">
+                                Super Admin
+                            </span>
+                        
+                        {% elif request.user.role == 'admin' and not request.user.is_superuser and user_obj.role == 'admin' %}
+                            <!-- Admin viewing another Admin (Protected) -->
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 w-full justify-center">
+                                Admin
+                            </span>
+
+                        {% else %}
+                            <!-- Standard Role Management -->
+                            <form method="POST" action="{% url 'admin_promote_user' user_obj.id %}">
+                                {% csrf_token %}
+                                <select name="role" onchange="if(confirm('Are you sure you want to change this user\'s role?')) this.form.submit()" 
+                                        class="w-full text-sm border border-input rounded-md px-3 py-2 bg-background hover:bg-accent cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                    {% for value, label in role_choices %}
+                                        <option value="{{ value }}" 
+                                            {% if user_obj.role == value %}selected{% endif %}
+                                            {% if value == 'public' and user_obj.has_psu_email %}disabled{% endif %}
+                                            {% if request.user.role == 'admin' and not request.user.is_superuser and value == 'public' %}disabled{% endif %}
+                                        >
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-8 text-center text-muted-foreground">
+                    No users found matching your criteria.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

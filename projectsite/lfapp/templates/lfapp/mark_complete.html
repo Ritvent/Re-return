@@ -41,9 +41,9 @@
                                 <i data-lucide="image-off" class="h-8 w-8 text-muted-foreground"></i>
                             </div>
                             {% endif %}
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-foreground">{{ item.title }}</h4>
-                                <p class="text-sm text-muted-foreground mt-1">{{ item.description|truncatewords:20 }}</p>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-foreground break-words">{{ item.title }}</h4>
+                                <p class="text-sm text-muted-foreground mt-1 break-words">{{ item.description|truncatewords:20 }}</p>
                                 <div class="flex items-center gap-2 mt-2">
                                     <span class="px-2 py-1 rounded text-xs font-medium {% if item.item_type == 'lost' %}bg-destructive/10 text-destructive{% else %}bg-primary/10 text-primary{% endif %}">
                                         {{ item.get_item_type_display }}
@@ -64,9 +64,9 @@
                                 <p class="text-sm font-semibold text-primary">{{ person_label }} Information Required</p>
                                 <p class="text-sm text-primary/90 mt-1">
                                     {% if completion_type == 'found' %}
-                                        Please provide the details of the person who returned your lost item. This information will be displayed publicly for transparency and success story.
+                                        Please provide the details of the person who returned the lost item. This information will be displayed publicly for transparency and success stories.
                                     {% else %}
-                                        Please provide the details of the person who claimed this found item. This information will be displayed publicly for transparency and success story.
+                                        Please provide the details of the person who claimed this found item. This information will be displayed publicly for transparency and success stories.
                                     {% endif %}
                                 </p>
                             </div>
@@ -89,7 +89,7 @@
                                 {% endif %}
                                 <p class="text-xs text-muted-foreground mt-1">
                                     {% if completion_type == 'found' %}
-                                        Full name of the person who returned your item
+                                        Full name of the person who returned the item
                                     {% else %}
                                         Full name of the person who claimed this item
                                     {% endif %}
@@ -107,7 +107,7 @@
                                 {% endif %}
                                 <p class="text-xs text-muted-foreground mt-1">
                                     {% if completion_type == 'found' %}
-                                        Email address of the person who returned your item
+                                        Email address of the person who returned the item
                                     {% else %}
                                         Email address of the person who claimed this item
                                     {% endif %}

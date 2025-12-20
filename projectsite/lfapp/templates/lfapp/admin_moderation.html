@@ -11,18 +11,27 @@
         <!-- Header -->
         <section class="mb-8">
             <div class="bg-gradient-to-br from-orange-500/10 via-background to-yellow-500/20 rounded-xl p-8 md:p-12">
+                <!-- Back button - mobile friendly at top -->
+                <div class="mb-4">
+                    <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border hover:bg-accent transition-all text-sm">
+                        <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                        <span>Back to Admin Dashboard</span>
+                    </a>
+                </div>
+                
                 <div class="flex items-center gap-3 mb-3">
                     <div class="rounded-full bg-orange-500/10 p-2">
                         <i data-lucide="shield-check" class="h-6 w-6 text-orange-600"></i>
                     </div>
-                    <h1 class="text-4xl font-bold">Moderation Queue</h1>
+                    <h1 class="text-2xl md:text-4xl font-bold">Moderation Queue</h1>
                     {% if pending_count > 0 %}
                     <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-orange-500 text-white">
                         {{ pending_count }}
                     </span>
                     {% endif %}
                 </div>
-                <p class="text-xl text-muted-foreground text-pretty">
+
+                <p class="text-lg md:text-xl text-muted-foreground text-pretty">
                     Review and approve pending items before they go live
                 </p>
             </div>
@@ -30,7 +39,7 @@
 
         <!-- Stats Grid -->
         <section class="mb-8">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <div class="bg-card text-card-foreground rounded-xl border py-6 shadow-sm">
                     <div class="px-6 pb-2 flex items-center justify-between">
                         <h3 class="text-sm font-medium">Pending Review</h3>
@@ -86,91 +95,9 @@
                 </div>
                 <div class="p-6">
                     {% if pending_items %}
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                         {% for item in pending_items %}
-                        <div class="bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all">
-                            <!-- Item Image -->
-                            <div class="relative h-56 bg-muted">
-                                {% if item.image %}
-                                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
-                                {% else %}
-                                    <img src="{% static 'lfapp/images/placeholder.svg' %}" alt="{{ item.title }}" class="w-full h-full object-cover" />
-                                {% endif %}
-                                <span class="absolute top-3 right-3 px-3 py-1 rounded-md text-sm font-semibold {% if item.item_type == 'lost' %}bg-destructive text-white{% else %}bg-primary text-primary-foreground{% endif %}">
-                                    {{ item.get_item_type_display }}
-                                </span>
-                                <span class="absolute top-3 left-3 px-3 py-1 rounded-md text-sm font-semibold bg-orange-500 text-white">
-                                    Pending Review
-                                </span>
-                            </div>
-
-                            <!-- Item Details -->
-                            <div class="p-5 space-y-4">
-                                <div>
-                                    <h3 class="font-semibold text-xl mb-2">{{ item.title }}</h3>
-                                    <p class="text-sm text-muted-foreground line-clamp-3">{{ item.description }}</p>
-                                </div>
-
-                                <div class="space-y-2 pt-2 border-t">
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <i data-lucide="tag" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                                        <span class="font-medium">{{ item.get_category_display }}</span>
-                                    </div>
-
-                                    {% if item.location_found or item.location_lost %}
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <i data-lucide="map-pin" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                                        <span class="line-clamp-1">
-                                            {% if item.item_type == 'found' %}{{ item.location_found|default:"Not specified" }}{% else %}{{ item.location_lost|default:"Not specified" }}{% endif %}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-
-                                    {% if item.date_found or item.date_lost %}
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <i data-lucide="calendar" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                                        <span>
-                                            {% if item.item_type == 'found' %}{{ item.date_found|date:"M d, Y" }}{% else %}{{ item.date_lost|date:"M d, Y" }}{% endif %}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <i data-lucide="clock" class="h-4 w-4 text-primary flex-shrink-0"></i>
-                                        <span>Posted {{ item.created_at|timesince }} ago</span>
-                                    </div>
-                                </div>
-
-                                <!-- Posted By -->
-                                <div class="pt-3 border-t space-y-1">
-                                    <p class="text-xs text-muted-foreground">Posted by:</p>
-                                    <p class="text-sm font-semibold">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
-                                    <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="flex gap-2 pt-2">
-                                    <form method="post" action="{% url 'admin_quick_approve' item.id %}" class="flex-1">
-                                        {% csrf_token %}
-                                        <button type="submit" 
-                                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium transition-all"
-                                                onclick="return confirm('Approve this item? It will become publicly visible.')">
-                                            <i data-lucide="check" class="h-4 w-4"></i>
-                                            Approve
-                                        </button>
-                                    </form>
-                                    <form method="post" action="{% url 'admin_quick_reject' item.id %}" class="flex-1">
-                                        {% csrf_token %}
-                                        <button type="submit" 
-                                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-all"
-                                                onclick="return confirm('Reject this item? It will not be shown publicly.')">
-                                            <i data-lucide="x" class="h-4 w-4"></i>
-                                            Reject
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+                            {% include 'lfapp/item_card.html' with item=item moderation=True %}
                         {% endfor %}
                     </div>
                     {% else %}

@@ -30,7 +30,10 @@ SECRET_KEY = 'django-insecure-bz8n$f=yw$5sr72nio(#-!bhv2-7@*iwr7ia5(b(8$$orjczio
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'hypaesthesic-dagmar-mordaciously.ngrok-free.dev']
+CSRF_TRUSTED_ORIGINS = [
+    'https://hypaesthesic-dagmar-mordaciously.ngrok-free.dev',
+]
 
 
 # Application definition
@@ -49,6 +52,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    
+    # Email backend
+    'anymail',
     
     # Local apps
     'lfapp',
@@ -78,6 +84,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'lfapp.context_processors.unread_messages',
+                'lfapp.context_processors.pending_items_count',
             ],
         },
     },
@@ -149,14 +156,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'lfapp.CustomUser'
 
-# Email Configuration (SendGrid)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY')
+# Email Configuration (SendGrid via API - PythonAnywhere compatible)
+# Using django-anymail to send via API (port 443) instead of SMTP (port 587)
+EMAIL_BACKEND = 'anymail.backends.sendgrid.EmailBackend'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+
+# Anymail configuration
+ANYMAIL = {
+    'SENDGRID_API_KEY': os.getenv('SENDGRID_API_KEY'),
+}
+
+# SendGrid tracking settings - prevents long URLs
+SENDGRID_TRACK_CLICKS_HTML = False
+SENDGRID_TRACK_CLICKS_PLAIN = False
+SENDGRID_TRACK_EMAIL_OPENS = False
+SENDGRID_TRACK_EMAIL_CLICKS = False
 
 # Django-allauth Configuration
 SITE_ID = 2
@@ -201,28 +215,10 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
         'AUTH_PARAMS': {
             'access_type': 'online',
+            'prompt': 'select_account',
             'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
         },
         'VERIFIED_EMAIL': True,
     }
 }
 
-# Google OAuth settings (will be configured via admin panel)
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-            'hd': 'psu.palawan.edu.ph',  # Restrict to PSU domain
-        },
-        'APP': {
-            'client_id': '',  # Will be set via admin
-            'secret': '',     # Will be set via admin
-            'key': ''
-        },
-        'VERIFIED_EMAIL': True,
-    }
-}

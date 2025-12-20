@@ -43,6 +43,13 @@ class CustomUser(AbstractUser):
         blank=True, 
         null=True
     )
+    google_profile_picture = models.URLField(
+        max_length=500, 
+        blank=True, 
+        default='',
+        help_text='Profile picture URL from Google'
+    )
+    
 
     USERNAME_FIELD = 'email' # unique id 
     REQUIRED_FIELDS = ['username']  # username is still required
@@ -61,6 +68,11 @@ class CustomUser(AbstractUser):
             self.email.endswith('@psu.palawan.edu.ph')
         )
     
+    @property
+    def has_psu_email(self):
+        """Check if user has a psu email (regardless of verification)"""
+        return self.email.endswith('@psu.palawan.edu.ph')
+    
     def can_post_items(self):
         """Check if user can post items"""
         return self.is_verified and self.role in ['verified', 'admin']
@@ -74,6 +86,13 @@ class CustomUser(AbstractUser):
         super().clean()
         if self.role in ['verified', 'admin']:
             validate_psu_email(self.email)
+
+    @property
+    def email_username(self):
+        """number only before the @"""
+        if self.email:
+            return self.email.split('@')[0]
+        return self.username
 
 """Items"""
 
@@ -182,6 +201,50 @@ class Item(TimeStampedModel):
         default=True,
         help_text='Whether the item is listed publicly (users can delist their posts)'
     )
+    content_updated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the item content was last edited by the poster'
+    )
+    
+    # Admin archive fields
+    ARCHIVE_REASON_CHOICES = [
+        ('spam', 'Spam'),
+        ('inappropriate', 'Inappropriate content'),
+        ('duplicate', 'Duplicate post'),
+        ('resolved', 'Resolved/No longer needed'),
+        ('other', 'Other'),
+    ]
+    
+    is_archived = models.BooleanField(
+        default=False,
+        help_text='Whether the item was archived/deleted by admin'
+    )
+    archived_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='archived_items',
+        help_text='Admin who archived this item'
+    )
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the item was archived by admin'
+    )
+    archive_reason = models.CharField(
+        max_length=20,
+        choices=ARCHIVE_REASON_CHOICES,
+        blank=True,
+        default='',
+        help_text='Reason for archiving'
+    )
+    archive_notes = models.TextField(
+        blank=True,
+        default='',
+        help_text='Additional notes about why item was archived'
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -198,6 +261,26 @@ class Item(TimeStampedModel):
     def can_be_delisted(self):
         """Only non-completed items can be delisted - completed items must remain visible"""
         return self.status not in ['claimed', 'found']
+
+    def get_claimant_picture(self):
+        """
+        Get the profile picture of the person who claimed/returned the item.
+        Prioritizes claimed_by relationship, then falls back to looking up user by completion_email.
+        """
+        # 1. Check claimed_by relationship
+        if self.claimed_by and self.claimed_by.google_profile_picture:
+            return self.claimed_by.google_profile_picture
+        
+        # 2. Check completion_email
+        if self.completion_email:
+            try:
+                user = CustomUser.objects.get(email=self.completion_email)
+                if user.google_profile_picture:
+                    return user.google_profile_picture
+            except CustomUser.DoesNotExist:
+                pass
+        
+        return None
     
 """Reclaim, Recover"""
 class Claim(TimeStampedModel):
@@ -329,6 +412,17 @@ class ContactMessage(TimeStampedModel):
         help_text='Parent message if this is a reply'
     )
     is_read = models.BooleanField(default=False, help_text='Has recipient read this message')
+    is_deleted = models.BooleanField(default=False, help_text='Has sender deleted this message')
+    
+    # Soft delete tracking - per-user deletion
+    deleted_by_sender = models.BooleanField(
+        default=False,
+        help_text='Has sender deleted this thread from their view'
+    )
+    deleted_by_recipient = models.BooleanField(
+        default=False,
+        help_text='Has recipient deleted this thread from their view'
+    )
     
     class Meta:
         ordering = ['-created_at']

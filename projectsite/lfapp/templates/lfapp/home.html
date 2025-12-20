@@ -34,10 +34,10 @@
 
                 {% else %}
                     <h1 class="text-4xl md:text-5xl font-bold leading-snug mb-4">
-                        Welcome to <span class="text-primary">HanApp</span>!
+                        Welcome to <b>Han<span class="text-primary">App</span></b>!
                     </h1>
                     <p class="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
-                        Browse lost and found items. Sign in with your PSU email to report new items.
+                        Browse lost and found items. Sign in with your PalSU email to report new items.
                     </p>
                 {% endif %}
 
@@ -63,7 +63,7 @@
                     <a href="{% url 'landing' %}">
                         <button class="px-6 py-3 rounded-lg text-lg border-2 border-primary 
                                        text-primary font-medium flex items-center gap-2
-                                       hover:bg-primary hover:text-primary-foreground 
+                                       hover:bg-primary hover:!text-white 
                                        transition-all">
                             <i data-lucide="log-in" class="h-5 w-5"></i>
                             Sign In to Report
@@ -89,7 +89,7 @@
                 </a>
             </div>
 
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% if recent_lost %}
                     {% for item in recent_lost %}
                         {% include 'lfapp/item_card.html' with item=item %}
@@ -117,7 +117,7 @@
                 </a>
             </div>
 
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% if recent_found %}
                     {% for item in recent_found %}
                         {% include 'lfapp/item_card.html' with item=item %}
@@ -135,7 +135,17 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-3xl font-bold">Recent Activities</h2>
-                    <p class="text-muted-foreground">Recently completed items</p>
+                    <!-- Legend, mobile view only -->
+                    <div class="flex items-center gap-4 mt-2 md:hidden">
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-2.5 w-2.5 rounded-full bg-red-500"></div>
+                            <span class="text-xs text-muted-foreground">Lost</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                            <span class="text-xs text-muted-foreground">Found</span>
+                        </div>
+                    </div>
                 </div>
                 <a href="{% url 'claimed_items' %}">
                     <button class="px-4 py-2 rounded-md flex items-center gap-2
@@ -147,134 +157,270 @@
 
 
             {% if recent_activities %}
-                <div class="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-muted/50 border-b border-border">
-                                <tr>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Item</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Type</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Status</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Activity Details</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Date</th>
-                                    <th class="px-6 py-4 text-left font-semibold text-muted-foreground">Category</th>
-                                </tr>
-                            </thead>
+            <!-- Desktop Table View -->
+            <div class="hidden md:block bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm table-fixed">
+                        <thead class="bg-muted/50 border-b border-border">
+                            <tr>
+                                <th class="w-[30%] px-6 py-4 text-left font-semibold text-muted-foreground">Item</th>
+                                <th class="w-[10%] px-6 py-4 text-left font-semibold text-muted-foreground">Type</th>
+                                <th class="w-[10%] px-6 py-4 text-left font-semibold text-muted-foreground">Status</th>
+                                <th class="w-[25%] px-6 py-4 text-left font-semibold text-muted-foreground">Activity Details</th>
+                                <th class="w-[15%] px-6 py-4 text-left font-semibold text-muted-foreground">Date</th>
+                                <th class="w-[10%] px-6 py-4 text-left font-semibold text-muted-foreground">Category</th>
+                            </tr>
+                        </thead>
 
-                            <tbody class="divide-y divide-border">
-                                {% for item in recent_activities %}
-                                <tr class="hover:bg-muted/30 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            {% if item.image %}
-                                                <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded object-cover">
-                                            {% else %}
-                                                <div class="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                                                    <i data-lucide="package" class="h-6 w-6 text-muted-foreground"></i>
+                        <tbody class="divide-y divide-border">
+                            {% for item in recent_activities %}
+                            <tr class="hover:bg-muted/30 transition-colors cursor-pointer" onclick="openItemModal('activity-{{ item.id }}')">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        {% if item.image %}
+                                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-12 w-12 rounded object-cover aspect-square">
+                                        {% else %}
+                                            <div class="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                                                <i data-lucide="package" class="h-6 w-6 text-muted-foreground"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="min-w-0">
+                                            <p class="font-medium truncate" title="{{ item.title }}">{{ item.title }}</p>
+                                            <p class="text-muted-foreground text-xs truncate" title="{{ item.description }}">
+                                                {{ item.description }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap
+                                        {% if item.item_type == 'lost' %}
+                                            bg-destructive/10 text-destructive
+                                        {% else %}
+                                            bg-blue-100 text-blue-700
+                                        {% endif %}">
+                                        {{ item.get_item_type_display }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    {% if item.status == 'claimed' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                                            <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
+                                            Claimed
+                                        </span>
+                                    {% elif item.status == 'found' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                                            <i data-lucide="check-circle" class="h-3 w-3 flex-shrink-0"></i>
+                                            Returned
+                                        </span>
+                                    {% elif item.status == 'approved' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary whitespace-nowrap">
+                                            <i data-lucide="pin" class="h-3 w-3 flex-shrink-0"></i>
+                                            Posted
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    {% if item.status == 'claimed' or item.status == 'found' %}
+                                        {% if item.completion_name and item.completion_email %}
+                                            <div class="flex items-start gap-2">
+                                            <div class="flex items-start gap-2">
+                                                {% with profile_pic=item.get_claimant_picture %}
+                                                    {% if profile_pic %}
+                                                        <img src="{{ profile_pic }}" class="h-6 w-6 rounded-full object-cover mt-0.5">
+                                                    {% else %}
+                                                        <div class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700 mt-0.5">
+                                                            {{ item.completion_name|make_list|first|upper }}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                                <div>
+                                                    <p class="font-medium">{{ item.completion_name }}</p>
+                                                    <p class="text-xs text-muted-foreground">{{ item.completion_email }}</p>
+                                                    <p class="text-xs text-green-600 mt-0.5">
+                                                        {% if item.item_type == 'found' and item.status == 'claimed' %}
+                                                            Claimed this item
+                                                        {% elif item.item_type == 'lost' and item.status == 'found' %}
+                                                            Returned this item
+                                                        {% endif %}
+                                                    </p>
                                                 </div>
+                                            </div>
+                                        {% elif item.claimed_by %}
+                                            <p class="font-medium">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
+                                        {% else %}
+                                            <p class="italic text-muted-foreground">Not specified</p>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="flex items-start gap-2">
+                                            {% if item.display_name and item.posted_by.google_profile_picture %}
+                                                <img src="{{ item.posted_by.google_profile_picture }}" class="h-6 w-6 rounded-full object-cover mt-0.5">
+                                            {% else %}
+                                                <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
                                             {% endif %}
                                             <div>
-                                                <p class="font-medium">{{ item.title }}</p>
-                                                <p class="text-muted-foreground text-xs">
-                                                    {{ item.description|truncatewords:8 }}
-                                                </p>
+                                                <p class="text-sm text-muted-foreground">Posted by</p>
+                                                {% if item.display_name %}
+                                                    <p class="font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
+                                                    <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                                {% else %}
+                                                    <p class="font-medium">{{ item.posted_by.email }}</p>
+                                                {% endif %}
                                             </div>
                                         </div>
-                                    </td>
+                                    {% endif %}
+                                </td>
 
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full
-                                            {% if item.item_type == 'lost' %}
-                                                bg-destructive/10 text-destructive
-                                            {% else %}
-                                                bg-primary/10 text-primary
-                                            {% endif %}">
-                                            {{ item.get_item_type_display }}
-                                        </span>
-                                    </td>
-
-                                    <td class="px-6 py-4">
-                                        {% if item.status == 'claimed' %}
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                                <i data-lucide="check-circle" class="h-3 w-3"></i>
-                                                Claimed
-                                            </span>
-                                        {% elif item.status == 'found' %}
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                                <i data-lucide="check-circle" class="h-3 w-3"></i>
-                                                Returned
-                                            </span>
-                                        {% elif item.status == 'approved' %}
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                                                <i data-lucide="file-text" class="h-3 w-3"></i>
-                                                Posted
-                                            </span>
+                                <td class="px-6 py-4">
+                                    {% if item.status == 'claimed' or item.status == 'found' %}
+                                        {% if item.completed_at %}
+                                            <p>{{ item.completed_at|date:"M d, Y" }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.completed_at|time:"g:i A" }}</p>
+                                        {% elif item.claimed_at %}
+                                            <p>{{ item.claimed_at|date:"M d, Y" }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
                                         {% endif %}
-                                    </td>
+                                    {% else %}
+                                        <p>{{ item.created_at|date:"M d, Y" }}</p>
+                                        <p class="text-xs text-muted-foreground">{{ item.created_at|time:"g:i A" }}</p>
+                                    {% endif %}
+                                </td>
 
-                                    <td class="px-6 py-4">
-                                        {% if item.status == 'claimed' or item.status == 'found' %}
-                                            {% if item.completion_name and item.completion_email %}
-                                                <div class="flex items-start gap-2">
-                                                    <i data-lucide="user-check" class="h-4 w-4 text-green-600 mt-0.5"></i>
-                                                    <div>
-                                                        <p class="font-medium">{{ item.completion_name }}</p>
-                                                        <p class="text-xs text-muted-foreground">{{ item.completion_email }}</p>
-                                                        <p class="text-xs text-green-600 mt-0.5">
-                                                            {% if item.item_type == 'found' and item.status == 'claimed' %}
-                                                                Claimed this item
-                                                            {% elif item.item_type == 'lost' and item.status == 'found' %}
-                                                                Returned this item
-                                                            {% endif %}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            {% elif item.claimed_by %}
-                                                <p class="font-medium">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</p>
-                                                <p class="text-xs text-muted-foreground">{{ item.claimed_by.email }}</p>
-                                            {% else %}
-                                                <p class="italic text-muted-foreground">Not specified</p>
+                                <td class="px-6 py-4">
+                                    <span class="text-muted-foreground text-sm">{{ item.get_category_display }}</span>
+                                    <!-- Include Modal for this item -->
+                                    {% include 'lfapp/includes/item_modal.html' with modal_id_prefix="activity-" %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mobile Timeline View -->
+            <div class="md:hidden">
+                {% now "Y-m-d" as current_date %}
+                {% for item in recent_activities %}
+                    {% with activity_date=item.completed_at|default:item.created_at %}
+                        
+                        <!-- Date Header -->
+                        {% ifchanged activity_date|date:"Y-m-d" %}
+                            <div class="sticky top-0 z-10 bg-background/95 backdrop-blur py-2 mb-4 border-b border-border/50">
+                                <h3 class="font-bold text-lg">
+                                    {% if activity_date|date:"Y-m-d" == current_date %}
+                                        Today
+                                    {% else %}
+                                        {{ activity_date|date:"F d, Y" }}
+                                    {% endif %}
+                                </h3>
+                            </div>
+                        {% endifchanged %}
+            
+                        <!-- Mobile Timeline Item View -->
+                        <div class="relative pl-6 pb-6 border-l-2 border-border last:border-0 ml-2">
+                            <!-- Dot Pin -->
+                            <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-background
+                                {% if item.item_type == 'lost' %}bg-red-500{% else %}bg-blue-500{% endif %}">
+                            </div>
+            
+                            <!-- Time -->
+                            <div class="text-xs font-medium text-muted-foreground mb-1">
+                                {{ activity_date|time:"g:i A" }}
+                            </div>
+            
+                            <!-- Card -->
+                            <div class="bg-card border border-border rounded-lg p-3 shadow-sm cursor-pointer" onclick="openItemModal('activity-{{ item.id }}')">
+                                <div class="flex gap-3">
+                                    <!-- Image -->
+                                    {% if item.image %}
+                                        <img src="{{ item.image.url }}" class="h-12 w-12 rounded-md object-cover bg-muted flex-shrink-0">
+                                    {% else %}
+                                        <div class="h-12 w-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                            <i data-lucide="package" class="h-5 w-5 text-muted-foreground"></i>
+                                        </div>
+                                    {% endif %}
+            
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-start gap-2">
+                                            <h4 class="font-semibold text-sm truncate">{{ item.title }}</h4>
+                                            <!-- Status Badge -->
+                                            {% if item.status == 'claimed' %}
+                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                                    Claimed
+                                                </span>
+                                            {% elif item.status == 'found' %}
+                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                                    Returned
+                                                </span>
+                                            {% elif item.status == 'approved' %}
+                                                <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-orange-100 text-primary flex-shrink-0">
+                                                    Posted
+                                                </span>
                                             {% endif %}
-                                        {% else %}
-                                            <div class="flex items-start gap-2">
-                                                <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
-                                                <div>
-                                                    <p class="text-sm text-muted-foreground">Posted by</p>
-                                                    {% if item.display_name %}
-                                                        <p class="font-medium">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</p>
-                                                        <p class="text-xs text-muted-foreground">{{ item.posted_by.email }}</p>
+                                        </div>
+                                        
+                                        <!-- User Info -->
+                                        <div class="mt-2">
+                                            {% if item.status == 'claimed' or item.status == 'found' %}
+                                                <p class="text-[10px] text-green-600 mt-0.5">
+                                                    {% if item.item_type == 'found' %}Claimed by:{% else %}Returned by:{% endif %}
+                                                </p>
+                                                {% if item.completion_name and item.completion_email %}
+                                                     <div class="flex items-start gap-2">
+                                                        {% with profile_pic=item.get_claimant_picture %}
+                                                            {% if profile_pic %}
+                                                                <img src="{{ profile_pic }}" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
+                                                            {% else %}
+                                                                <div class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700 flex-shrink-0">
+                                                                    {{ item.completion_name|make_list|first|upper }}
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                        <div class="flex flex-col">
+                                                            <span class="text-xs font-medium text-foreground">{{ item.completion_name }}</span>
+                                                            <span class="text-[10px] text-muted-foreground">{{ item.completion_email }}</span>
+                                                        </div>
+                                                     </div>
+                                                {% elif item.claimed_by %}
+                                                     <div class="flex flex-col">
+                                                        <span class="text-xs font-medium text-foreground">{{ item.claimed_by.get_full_name|default:item.claimed_by.username }}</span>
+                                                        <span class="text-[10px] text-muted-foreground">{{ item.claimed_by.email }}</span>
+                                                     </div>
+                                                {% else %}
+                                                     <span class="text-xs italic text-muted-foreground">Not specified</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <p class="text-[10px] text-muted-foreground mb-0.5">Posted by:</p>
+                                                <div class="flex items-start gap-2">
+                                                    {% if item.display_name and item.posted_by.google_profile_picture %}
+                                                        <img src="{{ item.posted_by.google_profile_picture }}" class="h-6 w-6 rounded-full object-cover flex-shrink-0">
                                                     {% else %}
-                                                        <p class="font-medium">{{ item.posted_by.email }}</p>
+                                                        <i data-lucide="user" class="h-4 w-4 text-muted-foreground mt-0.5"></i>
+                                                    {% endif %}
+                                                    {% if item.display_name %}
+                                                         <div class="flex flex-col">
+                                                            <span class="text-xs font-medium text-foreground">{{ item.posted_by.get_full_name|default:item.posted_by.username }}</span>
+                                                            <span class="text-[10px] text-muted-foreground">{{ item.posted_by.email }}</span>
+                                                         </div>
+                                                    {% else %}
+                                                         <span class="text-xs font-medium text-foreground">{{ item.posted_by.email }}</span>
                                                     {% endif %}
                                                 </div>
-                                            </div>
-                                        {% endif %}
-                                    </td>
-
-                                    <td class="px-6 py-4">
-                                        {% if item.status == 'claimed' or item.status == 'found' %}
-                                            {% if item.completed_at %}
-                                                <p>{{ item.completed_at|date:"M d, Y" }}</p>
-                                                <p class="text-xs text-muted-foreground">{{ item.completed_at|time:"g:i A" }}</p>
-                                            {% elif item.claimed_at %}
-                                                <p>{{ item.claimed_at|date:"M d, Y" }}</p>
-                                                <p class="text-xs text-muted-foreground">{{ item.claimed_at|time:"g:i A" }}</p>
                                             {% endif %}
-                                        {% else %}
-                                            <p>{{ item.created_at|date:"M d, Y" }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ item.created_at|time:"g:i A" }}</p>
-                                        {% endif %}
-                                    </td>
-
-                                    <td class="px-6 py-4">
-                                        <span class="text-muted-foreground text-sm">{{ item.get_category_display }}</span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            
+                    {% endwith %}
+                {% endfor %}
+            </div>
 
             {% else %}
                 <div class="text-center bg-card border border-border rounded-xl py-16 shadow-sm">
@@ -290,4 +436,5 @@
 <script>
     lucide.createIcons();
 </script>
+{% include 'lfapp/includes/item_modal_click.html' %}
 {% endblock %}

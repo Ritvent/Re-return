@@ -1,7 +1,10 @@
 from django import forms
-from .models import Item
 from datetime import date
 import re
+
+from .models import Item
+from .utils import validate_image_file
+from django.core.exceptions import ValidationError
 
 
 class ItemForm(forms.ModelForm):
@@ -48,7 +51,7 @@ class ItemForm(forms.ModelForm):
             }),
             'image': forms.FileInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring',
-                'accept': 'image/*'
+                'accept': '.jpg, .jpeg, .jpe, .jfif, .png, .webp, .avif, .avifs'
             }),
             'contact_number': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
@@ -135,6 +138,14 @@ class ItemForm(forms.ModelForm):
         # Validate display_name is checked for found items
         if self.item_type == 'found' and not cleaned_data.get('display_name'):
             self.add_error('display_name', 'You must agree to display your name for found items')
+
+        # Validate image extension and content
+        image = cleaned_data.get('image')
+        if image:
+            try:
+                validate_image_file(image)
+            except ValidationError as e:
+                self.add_error('image', e.message)
         
         return cleaned_data
 

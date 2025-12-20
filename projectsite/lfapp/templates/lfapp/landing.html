@@ -19,8 +19,9 @@
 
                 <!-- LEFT CONTENT -->
                 <div class="space-y-8 animate-in fade-in slide-in-from-left duration-700">
-                    <h1 class="text-5xl lg:text-6xl font-extrabold leading-tight text-balance tracking-tight">
-                        Han<span class="text-primary">App</span>
+                    <h1 class="text-5xl lg:text-6xl font-extrabold leading-tight text-balance tracking-tight flex items-center gap-4">
+                                            <img src="{% static 'lfapp/images/hanapp-logo.png' %}" alt="HanApp Logo" class="h-28 w-28 object-contain" style="margin-right: -12px;">
+                        <b>Han<span class="text-primary">App</span></b>
                     </h1>
 
                     <p class="text-xl text-muted-foreground leading-relaxed max-w-xl">
@@ -29,27 +30,39 @@
                     </p>
 
                     <!-- Feature icons -->
-                    <div class="flex flex-wrap gap-8 pt-6">
-                        <div class="flex items-start gap-4">
-                            <div class="rounded-full bg-primary/10 p-3">
-                                <i data-lucide="package" class="h-6 w-6 text-primary"></i>
+                    <div class="flex flex-col md:flex-row md:flex-wrap gap-6 md:gap-8 pt-6">
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="rounded-full bg-primary/10 p-2.5 md:p-3 flex-shrink-0">
+                                <i data-lucide="package" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-lg">Easy Reporting</h3>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-base md:text-lg">Easy Reporting</h3>
                                 <p class="text-sm text-muted-foreground">
-                                    Add lost or found items in under a minute.
+                                    Post lost or found items in under a minute.
                                 </p>
                             </div>
                         </div>
 
-                        <div class="flex items-start gap-4">
-                            <div class="rounded-full bg-primary/10 p-3">
-                                <i data-lucide="check-circle" class="h-6 w-6 text-primary"></i>
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="rounded-full bg-primary/10 p-2.5 md:p-3 flex-shrink-0">
+                                <i data-lucide="bell" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-lg">Fast Matches</h3>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-base md:text-lg">Real-Time Updates</h3>
                                 <p class="text-sm text-muted-foreground">
-                                    Find your items quickly with smart browsing.
+                                    Get instant notification when someone wants to help or connect.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="rounded-full bg-primary/10 p-2.5 md:p-3 flex-shrink-0">
+                                <i data-lucide="badge-check" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-base md:text-lg">Verified Returns</h3>
+                                <p class="text-sm text-muted-foreground">
+                                    Real people, real returns, real results.
                                 </p>
                             </div>
                         </div>
@@ -60,20 +73,14 @@
                 <div class="flex justify-center lg:justify-end animate-in fade-in slide-in-from-right duration-700">
                     <div class="w-full max-w-md bg-card border rounded-xl p-8 shadow-2xl backdrop-blur-sm">
 
-                        <h2 class="text-3xl font-bold mb-2">Welcome Back</h2>
+                        <h2 class="text-3xl font-bold mb-2">Welcome</h2>
                         <p class="text-sm text-muted-foreground mb-6">
-                            Sign in using your PSU Google account.
+                            Sign in using your PalSU Google account.
                         </p>
 
                         {% load socialaccount %}
 
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
+
 
                         <!-- Google Sign-In Button -->
                         <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg border bg-background hover:bg-accent transition-all shadow-sm">
@@ -104,7 +111,9 @@
                         <!-- Info Box -->
                         <div class="mt-6 bg-muted/50 border border-border rounded-lg p-4">
                             <div class="flex items-start gap-3">
-                                <i data-lucide="shield-check" class="h-5 w-5 text-primary mt-1"></i>
+                                <img src="{% static 'lfapp/images/palsu-seal.png' %}"
+                                    alt="PalSU Logo"
+                                    class="h-8 w-8 mt-1 object-contain">
                                 <div>
                                     <p class="font-semibold">PalSU accounts only!</p>
                                     <p class="text-xs text-muted-foreground mt-1">
@@ -138,7 +147,7 @@
 
                 <div class="text-center p-6 hover:bg-muted/40 rounded-xl transition shadow-sm">
                     <div class="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                        <i data-lucide="search" class="h-10 w-10 text-primary"></i>
+                        <i data-lucide="megaphone" class="h-10 w-10 text-primary"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">1. Report an Item</h3>
                     <p class="text-muted-foreground">Lost or found something? Create a listing in seconds.</p>
@@ -146,7 +155,7 @@
 
                 <div class="text-center p-6 hover:bg-muted/40 rounded-xl transition shadow-sm">
                     <div class="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                        <i data-lucide="package" class="h-10 w-10 text-primary"></i>
+                        <i data-lucide="search" class="h-10 w-10 text-primary"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">2. Browse Listings</h3>
                     <p class="text-muted-foreground">Explore recent lost and found items around campus.</p>
@@ -154,7 +163,7 @@
 
                 <div class="text-center p-6 hover:bg-muted/40 rounded-xl transition shadow-sm">
                     <div class="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                        <i data-lucide="check-circle" class="h-10 w-10 text-primary"></i>
+                        <i data-lucide="handshake" class="h-10 w-10 text-primary"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">3. Get Reunited</h3>
                     <p class="text-muted-foreground">Coordinate with the person who found your item.</p>

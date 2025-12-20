@@ -18,10 +18,18 @@ urlpatterns = [
     path('messages/inbox/', views.messages_inbox_view, name='messages_inbox'),
     path('messages/sent/', views.messages_sent_view, name='messages_sent'),
     path('messages/thread/<int:message_id>/', views.message_thread_view, name='message_thread'),
+    path('messages/get-new/<int:thread_id>/', views.get_thread_messages_view, name='get_thread_messages'), # where new messages are fetched
+    path('messages/delete/<int:message_id>/', views.delete_message_view, name='delete_message'),
+    path('messages/delete-thread/<int:message_id>/', views.delete_thread_view, name='delete_thread'),
     path('dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
+    path('dashboard/archived/', views.admin_archived_items_view, name='admin_archived'),
+    path('dashboard/archive/<int:item_id>/', views.admin_archive_item_view, name='admin_archive_item'),
+    path('dashboard/permanent-delete/<int:item_id>/', views.admin_permanent_delete_view, name='admin_permanent_delete'),
     path('moderation/', views.admin_moderation_queue_view, name='admin_moderation'),
     path('moderation/approve/<int:item_id>/', views.admin_quick_approve_view, name='admin_quick_approve'),
     path('moderation/reject/<int:item_id>/', views.admin_quick_reject_view, name='admin_quick_reject'),
     path('complete/<int:item_id>/', views.mark_item_complete_view, name='mark_complete'),
+    path('dashboard/users/', views.admin_user_management_view, name='admin_users'),
+    path('dashboard/users/promote/<int:user_id>/', views.admin_promote_user_view, name='admin_promote_user'),
 ]
 
