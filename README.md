@@ -1,140 +1,150 @@
-#  HanApp 
-A comprehensive Lost & Found management system designed specifically for **Palawan State University**. The platform connects students, faculty, and staff to help reunite lost items with their rightful owners.
+# HanApp: Find What You Lost  
 
-### Why HanApp?
-
-- **Transparent & Verified** - All users authenticated with PalSU credentials
--  **Direct Messaging** - In-app communication between finders and owners
--  **Moderation System** - Admin oversight to prevent spam and ensure quality
--  **Email Notifications** - Automated alerts for item approvals, status updates, and new messages 
+**HanApp** is a comprehensive **Lost & Found Management System** designed exclusively for **Palawan State University (PalSU)**. It connects students, faculty, and staffs through a secure, moderated platform that helps lost items find their way back to their rightful owners, faster and safer.
 
 ---
 
-##  Features
+## ✨ Why HanApp?
+
+
+🔐 **Verified & Secure** - Access limited to authenticated PalSU accounts  
+💬 **Direct Messaging** - In-app communication between finders and owners  
+🛡️ **Moderated Content** - Admin review prevents spam and misuse  
+📧 **Smart Notifications** - Email alerts for approvals, updates, and messages
+
+---
+
+## 🚀 Features
 
 ### Core Features
 
-| Feature | Description |
-|---------|-------------|
-|  **Item Posting** | Post lost or found items with detailed descriptions, images, and location |
-|  **Item Browsing** | Search and filter items by category, date, and status |
-|  **Messaging System** | Thread-based messaging with image attachments |
-|  **Claim System** | Mark items as claimed/found with completion tracking |
-|  **Success Stories** | View reunited items filtered by claimed or found status |
-|  **Archive System** | Archive items with reasons (spam, duplicate, resolved, etc.) |
-
-
-### Admin Features
-
-- **Dashboard Analytics** - Statistics on items, users, and claims
-- **Moderation Queue** - Review pending items before approval
--  **User Management** - Manage user roles and permissions
-- **Archive Management** - View and restore archived items
-- **Item Editing** - Delete/Delist any item
+| Feature                 | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+|  **Item Posting**     | Post lost or found items with descriptions, images, and locations |
+|  **Item Browsing**    | Search and filter items by category, date, and status             |
+|  **Messaging System** | Thread-based messaging with optional image attachments            |
+|  **Claim System**      | Mark items as claimed or found with completion tracking           |
+|  **Success Stories**  | View successfully reunited items                                  |
+|  **Archive System**  | Archive items with reasons (spam, duplicate, resolved, etc.)      |
 
 ---
 
-##  Tech Stack
+### 🛠️ Admin Features
 
-- **Python** (3.11+) 
-- **Django** (5.2.8) 
-- **Django REST Framework** (3.15.2)
-- **django-allauth** (65.3.0) - Authentication & OAuth
-- **Pillow** (12.0.0) - Image processing
+*  **Dashboard Analytics** — Insights on items, users, and claims
+*  **Moderation Queue** — Review and approve pending posts
+*  **User Management** — Assign roles and manage permissions
+*  **Archive Management** — Restore or permanently remove archived items
+*  **Item Control** — Edit, delist, or delete any item
 
-- **Tailwind CSS** - Utility-first CSS framework
-- **SQLite** - Development database
-- **PostgreSQL** - Production database 
 ---
 
-## User Roles & Permissions
+## 🧱 Tech Stack
 
-HanApp implements a three-tier role system to manage access and permissions:
+### Backend
+
+* **Python** 3.11+
+* **Django** 5.2.8
+* **Django REST Framework** 3.15.2
+* **django-allauth** 65.3.0 (Authentication & OAuth)
+* **Pillow** 12.0.0 (Image processing)
+
+### Frontend
+
+* **Tailwind CSS** — Utility-first styling
+
+### Database
+
+* **SQLite** — Development
+* **PostgreSQL** — Production
+
+---
+
+## 👥 User Roles & Permissions
+
+HanApp follows a **three-tier access model** to ensure security and proper moderation.
 
 ### 🌐 Public Users (Non-authenticated)
 
-| Permission | Access |
-|------------|--------|
-| View landing page | ✅ |
-| Browse approved items | ✅ |
-| View item details | ✅ |
-| View success stories | ✅ |
-| Post items | ❌ |
-| Send messages | ❌ |
-| Access dashboard | ❌ |
-
-### ✅ Verified PalSU Users
-
-| Permission | Access |
-|------------|--------|
-| All public permissions | ✅ |
-| Post lost/found items | ✅ |
-| Send/receive messages | ✅ |
-| Mark own items as complete | ✅ |
-| Edit own items | ✅ |
-| Delete own items | ✅ |
-| View own message threads | ✅ |
-
-
-### 👑 Admin Users
-
-| Permission | Access |
-|------------|--------|
-| All verified user permissions | ✅ |
-| Post items without approval | ✅ |
-| Access admin dashboard | ✅ |
-| View moderation queue | ✅ |
-| Approve/reject items | ✅ |
-| Archive items with reasons | ✅ |
-| Delete any archived item | ✅ |
-| Restore archived items | ✅ |
-| Manage user roles | ✅ |
-| View all statistics | ✅ |
-
+| Permission            | Access |
+| --------------------- | ------ |
+| View landing page     | ✅      |
+| Browse approved items | ✅      |
+| View item details     | ✅      |
+| View success stories  | ✅      |
+| Post items            | ❌      |
+| Send messages         | ❌      |
+| Access dashboard      | ❌      |
 
 ---
 
-## Installation
+### ✅ Verified PalSU Users
 
-### Step 1: Clone the Repository
+| Permission               | Access |
+| ------------------------ | ------ |
+| All public permissions   | ✅      |
+| Post lost/found items    | ✅      |
+| Send & receive messages  | ✅      |
+| Edit/delete own items    | ✅      |
+| Mark items as complete   | ✅      |
+| View own message threads | ✅      |
+
+---
+
+### 👑 Admin Users
+
+| Permission                    | Access |
+| ----------------------------- | ------ |
+| All verified user permissions | ✅      |
+| Skip moderation approval      | ✅      |
+| Access admin dashboard        | ✅      |
+| Approve/reject items          | ✅      |
+| Archive & restore items       | ✅      |
+| Manage user roles             | ✅      |
+| View system analytics         | ✅      |
+
+---
+
+## ⚙️ Installation
+
+### 1️. Clone the Repository
 
 ```bash
 git clone https://github.com/Ritvent/Re-return.git
 cd Re-return
 ```
 
-### Step 2: Create Virtual Environment
+### 2️. Create a Virtual Environment
 
 ```bash
 # Windows
 python -m venv venv
 venv\Scripts\activate
 
-# macOS/Linux
+# macOS / Linux
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### Step 3: Install Dependencies
+### 3️. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 4: Environment Setup
+### 4️. Environment Setup
 
-Create a `.env` file in the `projectsite` directory:
+Create a `.env` file inside the `projectsite` directory:
 
 ```env
-# Django Settings
-SECRET_KEY=your-super-secret-key-here
+SECRET_KEY=your-super-secret-key
 DEBUG=True
 
-# Google OAuth (Required for authentication)
+# Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# Email Configuration (Optional - for notifications)
+# Email (Optional)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_HOST_USER=your-email@gmail.com
@@ -142,52 +152,49 @@ EMAIL_HOST_PASSWORD=your-app-password
 EMAIL_USE_TLS=True
 ```
 
-### Step 5: Migrate
+### 5️. Apply Migrations
 
 ```bash
 cd projectsite
 python manage.py migrate
 ```
 
-### Step 6: Create Superuser
+### 6️. Create Superuser
 
 ```bash
 python manage.py createsuperuser
 ```
 
-
-### Step 7: Run Development Server
+### 7️. Run Development Server
 
 ```bash
 python manage.py runserver
 ```
 
-
-
 ---
 
-##  Configuration
+## 🔐 Configuration
 
 ### Google OAuth Setup
 
-HanApp uses Google OAuth for authentication, restricted to PalSU email addresses (`@psu.palawan.edu.ph`).
+Authentication is restricted to **@psu.palawan.edu.ph** accounts.
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable the Google+ API
+1. Open **Google Cloud Console**
+2. Create or select a project
+3. Enable Google+ API
 4. Configure OAuth consent screen
 5. Create OAuth 2.0 credentials
-6. Add authorized redirect URIs:
-   - `http://127.0.0.1:8000/accounts/google/login/callback/` (development)
-   - `https://yourdomain.com/accounts/google/login/callback/` (production)
+6. Add redirect URIs:
 
-- - -
-### Email Notifications
+   * `http://127.0.0.1:8000/accounts/google/login/callback/`
+   * `https://yourdomain.com/accounts/google/login/callback/`
 
-Configure SMTP settings for email notifications:
+---
+
+### 📧 Email Notifications  
+*Configure SMTP settings for email notifications:*
 
 ```python
-# settings.py
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -196,100 +203,42 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 ```
 
+---
 
+## 📖 Usage Guide
 
-##  Usage Guide
+### Public Users
 
-### For Public Users
+* Browse approved lost & found items
+* Search and filter listings
+* View success stories
 
-1. **Browse Items** - Visit the homepage to see all approved lost and found items
-2. **Search & Filter** - Use the search bar and category filters to find specific items
-3. **View Details** - Click on any item card to see full details
-4. **Success Stories** - Visit the "Success Stories" page to see reunited items
+### Verified PalSU Users
 
-### For Verified PalSU Users
+* Post lost or found items
+* Message item owners or finders
+* Mark items as claimed or found
 
-#### Posting an Item
+### Admin Users
 
-1. Click "Post an Item" in the navigation
-2. Select item type (Lost or Found)
-3. Fill in item details:
-   - **Title** - Brief, descriptive title
-   - **Category** - Select from the list of categories
-   - **Description** - Detailed description of the item
-   - **Location** - Where the item was lost/found
-   - **Date** - When it was lost/found
-   - **Contact Number** - Your phone number (optional)
-   - **Image** - Upload an image (optional but recommended)
-   - **Hide name** - Option to post anonymously without showing your name (Lost items only)
-4. Submit for moderation review
-
-#### Messaging
-
-1. Click "Contact" on any item 
-2. Fill in the subject and message
-3. Optionally attach an image
-4. Send the message
-5. View replies in "Inbox" or "Sent Messages"
-
-#### Completing an Item
-
-1. Navigate to "Lost Items" or "Found Items"
-2. Find your posted item
-3. Click "Mark as Complete"
-4. Select completion status:
-   - **Claimed** - Owner found and claimed the item
-   - **Found** - Item was found by the owner
-5. Add optional notes and submit
-
-### For Admin Users
-
-#### Admin Dashboard
-
-Access via the admin icon in the navigation bar:
-
-- **Statistics** - Total items, pending items, users, claimed/found items
-- **Recent Activity** - Latest posted items
-- **Quick Actions** - Navigate to moderation, users, or archives
-
-#### Moderation Queue
-
-1. Go to Admin Dashboard → Moderation
-2. Review pending items
-3. For each item, choose:
-   - ✅ **Approve** - Make item visible to all users
-   - ❌ **Reject** - Hide item with optional reason
-   - 🗑️ **Archive** - Archive with reason
-
-#### User Management
-
-1. Go to Admin Dashboard → Users
-2. View all registered users
-3. Change user roles
-4. View user statistics
-
-#### Archive Management
-
-1. Go to Admin Dashboard → Archives
-2. View all archived items
-3. Filter by archive reason
-4. Restore items if needed
+* Moderate submissions
+* Manage users and roles
+* View analytics and archives
 
 ---
 
-## Contributing
-
-
-### Getting Started
+## 🤝 How to Contribute?
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes
-4. Commit with clear messages: `git commit -m "Add: description of changes"`
-5. Push to your fork: `git push origin feature/your-feature-name`
-6. Open a Pull Request
+2. Create a feature branch
+3. Commit with clear messages
+4. Push to your fork
+5. Open a Pull Request
 
+---
 
-##  License
+## 📜 License
 
-This project was developed as an academic project for Palawan State University. All rights reserved.
+Developed as an academic project for **Palawan State University**. All rights reserved.  
+
+Developed by: **Lumora**
