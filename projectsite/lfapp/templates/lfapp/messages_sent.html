@@ -1,0 +1,127 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Sent Messages - HanApp{% endblock %}
+
+{% block content %}
+<div class="h-screen bg-slate-50/50 flex flex-col overflow-hidden">
+    <!-- Navbar -->
+    <div class="flex-none">
+        {% include 'lfapp/navbar.html' %}
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-1 container mx-auto px-0 md:px-4 py-0 md:py-6 overflow-hidden flex flex-col">
+        <div class="w-full max-w-5xl mx-auto h-full bg-background md:rounded-2xl shadow-2xl border-x md:border border-border/50 flex flex-col overflow-hidden relative">
+            
+            <!-- Header & Tabs -->
+            <div class="flex-none px-4 md:px-6 py-3 md:py-4 border-b border-border/40 bg-background/80 backdrop-blur-md z-20">
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-xl md:text-2xl font-bold text-foreground">Messages</h1>
+                    <div class="text-xs text-muted-foreground font-medium bg-muted/50 px-2 py-1 rounded-md">
+                        {{ messages|length }} Conversation{{ messages|length|pluralize }}
+                    </div>
+                </div>
+
+                <!-- Custom Tab Navigation -->
+                <div class="flex p-1 bg-muted/50 rounded-xl">
+                    <a href="{% url 'messages_inbox' %}" class="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
+                        <i data-lucide="inbox" class="h-4 w-4"></i>
+                        Inbox
+                    </a>
+                    <a href="{% url 'messages_sent' %}" class="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg bg-background text-foreground shadow-sm transition-all">
+                        <i data-lucide="send" class="h-4 w-4"></i>
+                        Sent
+                    </a>
+                </div>
+            </div>
+
+            <!-- Messages List -->
+            <div class="flex-1 overflow-y-auto scroll-smooth bg-slate-50/30">
+                {% if messages %}
+                    <div class="divide-y divide-border/50">
+                        {% for msg in messages %}
+                        <a href="{% url 'message_thread' msg.id %}" class="block group hover:bg-muted/30 transition-colors duration-200">
+                            <div class="px-4 md:px-6 py-4 flex items-start gap-3 md:gap-4">
+                                <!-- Recipient Avatar -->
+                                <div class="flex-shrink-0 mt-1">
+                                    {% if msg.recipient.google_profile_picture %}
+                                        <img src="{{ msg.recipient.google_profile_picture }}" alt="Profile" class="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border border-border shadow-sm group-hover:border-primary/30 transition-colors">
+                                    {% else %}
+                                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-border shadow-sm text-white font-bold text-sm md:text-base">
+                                            {{ msg.recipient.get_full_name|default:msg.recipient.username|make_list|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Content -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <span class="text-xs text-muted-foreground">To:</span>
+                                            <h3 class="font-semibold text-sm md:text-base text-foreground truncate pr-2 group-hover:text-primary transition-colors">
+                                                {{ msg.recipient.get_full_name|default:msg.recipient.username }}
+                                            </h3>
+                                        </div>
+                                        <span class="text-[10px] md:text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">
+                                            {{ msg.created_at|date:"M d" }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Item Context Badge (Inline) -->
+                                    <div class="flex items-center gap-2 mb-1.5">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/50 max-w-full truncate">
+                                            <i data-lucide="package" class="h-3 w-3 mr-1"></i>
+                                            {{ msg.item.title }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between gap-4">
+                                        <p class="text-xs md:text-sm text-muted-foreground truncate flex-1">
+                                            <span class="font-medium text-foreground/80">{{ msg.subject }}</span>
+                                            <span class="mx-1">&middot;</span>
+                                            {{ msg.message }}
+                                        </p>
+                                        
+                                        <!-- Read Status -->
+                                        {% if msg.is_read %}
+                                            <div class="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                                <i data-lucide="check-check" class="h-3 w-3"></i>
+                                                <span class="hidden md:inline">Read</span>
+                                            </div>
+                                        {% else %}
+                                            <div class="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded-full">
+                                                <i data-lucide="check" class="h-3 w-3"></i>
+                                                <span class="hidden md:inline">Sent</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="h-full flex flex-col items-center justify-center p-8 text-center">
+                        <div class="w-16 h-16 md:w-20 md:h-20 bg-muted/50 rounded-full flex items-center justify-center mb-4 animate-in zoom-in-50 duration-500">
+                            <i data-lucide="send" class="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/50"></i>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-semibold text-foreground mb-2">No sent messages</h3>
+                        <p class="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
+                            Messages you send to item posters will appear here.
+                        </p>
+                        <a href="{% url 'lost_items' %}" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm font-medium shadow-sm hover:shadow-md">
+                            Browse Items
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

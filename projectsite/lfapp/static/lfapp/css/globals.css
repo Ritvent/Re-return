@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap');
+
+/* CSS Reset for cross-browser consistency */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+li {
+  margin: 0;
+  padding: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: inherit;
+  margin: 0;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+:root {
+  /* Light orange theme colors */
+  --background: oklch(0.99 0.01 70);
+  --foreground: oklch(0.25 0.02 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.02 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.02 60);
+  --primary: oklch(0.68 0.15 55);
+  --primary-foreground: oklch(0.98 0.01 55);
+  --secondary: oklch(0.96 0.03 60);
+  --secondary-foreground: oklch(0.3 0.02 60);
+  --muted: oklch(0.95 0.02 65);
+  --muted-foreground: oklch(0.5 0.01 60);
+  --accent: oklch(0.92 0.06 50);
+  --accent-foreground: oklch(0.3 0.02 55);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 25);
+  --border: oklch(0.88 0.02 60);
+  --input: oklch(0.88 0.02 60);
+  --ring: oklch(0.68 0.15 55);
+  --chart-1: oklch(0.68 0.15 55);
+  --chart-2: oklch(0.75 0.12 45);
+  --chart-3: oklch(0.82 0.08 35);
+  --chart-4: oklch(0.6 0.18 65);
+  --chart-5: oklch(0.7 0.14 40);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.98 0.01 65);
+  --sidebar-foreground: oklch(0.25 0.02 60);
+  --sidebar-primary: oklch(0.68 0.15 55);
+  --sidebar-primary-foreground: oklch(0.98 0.01 55);
+  --sidebar-accent: oklch(0.94 0.04 60);
+  --sidebar-accent-foreground: oklch(0.3 0.02 60);
+  --sidebar-border: oklch(0.88 0.02 60);
+  --sidebar-ring: oklch(0.68 0.15 55);
+}
+
+.dark {
+  /* Dark mode with warm orange tones */
+  --background: oklch(0.15 0.01 50);
+  --foreground: oklch(0.95 0.01 60);
+  --card: oklch(0.18 0.01 50);
+  --card-foreground: oklch(0.95 0.01 60);
+  --popover: oklch(0.18 0.01 50);
+  --popover-foreground: oklch(0.95 0.01 60);
+  --primary: oklch(0.7 0.15 55);
+  --primary-foreground: oklch(0.15 0.01 55);
+  --secondary: oklch(0.25 0.02 55);
+  --secondary-foreground: oklch(0.95 0.01 55);
+  --muted: oklch(0.22 0.02 55);
+  --muted-foreground: oklch(0.6 0.01 60);
+  --accent: oklch(0.28 0.03 50);
+  --accent-foreground: oklch(0.95 0.01 50);
+  --destructive: oklch(0.45 0.18 25);
+  --destructive-foreground: oklch(0.95 0.01 25);
+  --border: oklch(0.28 0.02 55);
+  --input: oklch(0.28 0.02 55);
+  --ring: oklch(0.7 0.15 55);
+  --chart-1: oklch(0.7 0.15 55);
+  --chart-2: oklch(0.75 0.12 45);
+  --chart-3: oklch(0.82 0.08 35);
+  --chart-4: oklch(0.6 0.18 65);
+  --chart-5: oklch(0.68 0.14 40);
+  --sidebar: oklch(0.2 0.02 50);
+  --sidebar-foreground: oklch(0.95 0.01 60);
+  --sidebar-primary: oklch(0.7 0.15 55);
+  --sidebar-primary-foreground: oklch(0.15 0.01 55);
+  --sidebar-accent: oklch(0.25 0.02 55);
+  --sidebar-accent-foreground: oklch(0.95 0.01 55);
+  --sidebar-border: oklch(0.28 0.02 55);
+  --sidebar-ring: oklch(0.7 0.15 55);
+}
+
+* {
+  border-color: var(--border);
+  outline-color: oklch(from var(--ring) l c h / 0.5);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1;
+  font-kerning: normal;
+}
+
+/* Force consistent font rendering across browsers */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure consistent line-height calculation */
+p,
+span,
+div {
+  line-height: 1.5;
+}
+
+/* Normalize button spacing */
+button {
+  line-height: 1.5;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+/* ============================================
+   CUSTOM UTILITY CLASSES (Non-conflicting with Tailwind)
+   ============================================ */
+
+/* Custom border radius using CSS variables */
+.rounded-md {
+  border-radius: calc(var(--radius) - 2px) !important;
+}
+
+.rounded-lg {
+  border-radius: var(--radius) !important;
+}
+
+.rounded-xl {
+  border-radius: calc(var(--radius) + 4px) !important;
+}
+
+/* Custom background colors with opacity (Tailwind doesn't support oklch by default) */
+.bg-background {
+  background-color: var(--background) !important;
+}
+
+.bg-card {
+  background-color: var(--card) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary) !important;
+}
+
+.bg-primary\/10 {
+  background-color: oklch(from var(--primary) l c h / 0.1) !important;
+}
+
+.bg-primary\/90 {
+  background-color: oklch(from var(--primary) l c h / 0.9) !important;
+}
+
+.bg-secondary {
+  background-color: var(--secondary) !important;
+}
+
+.bg-secondary\/80 {
+  background-color: oklch(from var(--secondary) l c h / 0.8) !important;
+}
+
+.bg-muted {
+  background-color: var(--muted) !important;
+}
+
+.bg-accent {
+  background-color: var(--accent) !important;
+}
+
+.bg-accent\/20 {
+  background-color: oklch(from var(--accent) l c h / 0.2) !important;
+}
+
+.bg-accent\/50 {
+  background-color: oklch(from var(--accent) l c h / 0.5) !important;
+}
+
+.bg-destructive {
+  background-color: var(--destructive) !important;
+}
+
+.bg-destructive\/10 {
+  background-color: oklch(from var(--destructive) l c h / 0.1) !important;
+}
+
+.bg-destructive\/5 {
+  background-color: oklch(from var(--destructive) l c h / 0.05) !important;
+}
+
+.bg-destructive\/90 {
+  background-color: oklch(from var(--destructive) l c h / 0.9) !important;
+}
+
+/* Custom text colors */
+.text-foreground {
+  color: var(--foreground) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-primary-foreground {
+  color: var(--primary-foreground) !important;
+}
+
+.text-secondary-foreground {
+  color: var(--secondary-foreground) !important;
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+
+.text-accent-foreground {
+  color: var(--accent-foreground) !important;
+}
+
+.text-destructive {
+  color: var(--destructive) !important;
+}
+
+.text-card-foreground {
+  color: var(--card-foreground) !important;
+}
+
+/* Custom border colors */
+.border-border {
+  border-color: var(--border) !important;
+}
+
+/* Custom hover states with oklch colors */
+.hover\:bg-primary\/90:hover {
+  background-color: oklch(from var(--primary) l c h / 0.9) !important;
+}
+
+.hover\:bg-accent:hover {
+  background-color: var(--accent) !important;
+}
+
+.hover\:bg-accent\/50:hover {
+  background-color: oklch(from var(--accent) l c h / 0.5) !important;
+}
+
+.hover\:text-accent-foreground:hover {
+  color: var(--accent-foreground) !important;
+}
+
+/* Custom focus states */
+.focus-visible\:ring-3:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px oklch(from var(--ring) l c h / 0.5);
+}
+
+/* Gradient utilities using CSS variables */
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+.from-primary\/10 {
+  --tw-gradient-from: oklch(from var(--primary) l c h / 0.1);
+  --tw-gradient-to: oklch(from var(--primary) l c h / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.via-background {
+  --tw-gradient-to: var(--background);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--background), var(--tw-gradient-to);
+}
+
+.to-accent\/20 {
+  --tw-gradient-to: oklch(from var(--accent) l c h / 0.2);
+}
+
+.from-destructive\/10 {
+  --tw-gradient-from: oklch(from var(--destructive) l c h / 0.1);
+  --tw-gradient-to: oklch(from var(--destructive) l c h / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-destructive\/5 {
+  --tw-gradient-to: oklch(from var(--destructive) l c h / 0.05);
+}
+
+.from-primary\/10 {
+  --tw-gradient-from: oklch(from var(--primary) l c h / 0.1);
+  --tw-gradient-to: oklch(from var(--primary) l c h / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-primary\/5 {
+  --tw-gradient-to: oklch(from var(--primary) l c h / 0.05);
+}

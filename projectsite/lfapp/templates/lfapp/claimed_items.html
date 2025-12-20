@@ -1,0 +1,87 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Success Stories - HanApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background">
+    {% include 'lfapp/navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+
+        <!-- Header -->
+        <section class="mb-8">
+            <div class="bg-gradient-to-br from-primary/10 via-background to-primary/5 rounded-xl p-8 md:p-12">
+                <h1 class="text-4xl font-bold mb-3 text-balance">Success Stories</h1>
+                <p class="text-xl text-muted-foreground text-pretty">
+                    Browse items that have been successfully reunited with their owners. HanApp's happy endings!
+                </p>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <section class="mb-8">
+            <form method="get" action="{% url 'claimed_items' %}" class="flex flex-col sm:flex-row gap-4 mb-4">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                    <input type="text" name="search" placeholder="Search success stories..." value="{{ request.GET.search }}" class="w-full pl-10 pr-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div class="sm:w-48">
+                    <select name="status" class="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                        <option value="">Claimed & Found</option>
+                        <option value="claimed" {% if request.GET.status == 'claimed' %}selected{% endif %}>Claimed</option>
+                        <option value="found" {% if request.GET.status == 'found' %}selected{% endif %}>Found</option>
+                    </select>
+                </div>
+                <div class="sm:w-48">
+                    <select name="category" class="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                        <option value="">All Categories</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all">
+                    Search
+                </button>
+            </form>
+
+            <div class="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <span class="font-medium text-foreground">{{ items|length }}</span>
+                {{ items|length|pluralize:"item,items" }} found
+            </div>
+        </section>
+
+        <!-- Items Grid -->
+        <section>
+            {% if items %}
+                <div class="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {% for item in items %}
+                        {% include 'lfapp/completed_item_card.html' with item=item %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-16">
+                    <div class="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <i data-lucide="inbox" class="h-8 w-8 text-muted-foreground"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">No success stories yet</h3>
+                    <p class="text-muted-foreground">
+                        {% if request.GET.search or request.GET.category %}
+                            Try adjusting your search or filter criteria
+                        {% else %}
+                            No items have been successfully reunited yet
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
+    </main>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% include 'lfapp/includes/item_modal_click.html' %}
+{% endblock %}

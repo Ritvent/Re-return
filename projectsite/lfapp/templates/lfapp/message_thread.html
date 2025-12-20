@@ -1,0 +1,556 @@
+{% extends 'lfapp/base.html' %}
+{% load static %}
+
+{% block title %}Chat with {{ other_user.get_full_name|default:other_user.username }} - HanApp{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Hide footer urgh */
+    footer {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="h-screen bg-slate-50/50 flex flex-col overflow-hidden">
+    <!-- Navbar (Fixed height assumed, or flex-none) -->
+    <div class="flex-none">
+        {% include 'lfapp/navbar.html' %}
+    </div>
+
+    <!-- Main Chat Container -->
+    <main class="flex-1 container mx-auto px-0 md:px-4 py-0 md:py-6 overflow-hidden flex flex-col">
+        <div class="w-full max-w-5xl mx-auto h-full bg-background md:rounded-2xl shadow-2xl border-x md:border border-border/50 flex flex-col overflow-hidden relative">
+            
+            <!-- 1. Header (Glassmorphism) -->
+            <div class="flex-none px-4 md:px-6 py-3 md:py-4 border-b border-border/40 bg-background/80 backdrop-blur-md z-20 flex items-center justify-between sticky top-0">
+                <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
+                    <!-- Back Button -->
+                    <a href="{% url 'messages_inbox' %}" class="p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors flex-shrink-0">
+                        <i data-lucide="arrow-left" class="h-5 w-5"></i>
+                    </a>
+
+                    <!-- User Info -->
+                    <div class="flex items-center gap-2 md:gap-3 overflow-hidden">
+                        <div class="relative flex-shrink-0">
+                            {% if other_user.google_profile_picture %}
+                                <img src="{{ other_user.google_profile_picture }}" alt="Profile" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border-2 border-background shadow-sm">
+                            {% else %}
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 border-background shadow-sm text-white font-bold text-xs md:text-sm">
+                                    {{ other_user.get_full_name|default:other_user.username|make_list|first|upper }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="leading-tight overflow-hidden">
+                            <h1 class="font-bold text-foreground text-sm md:text-base truncate">
+                                {{ other_user.get_full_name|default:other_user.username }}
+                            </h1>
+                            <p class="text-[10px] md:text-xs text-muted-foreground truncate">{{ other_user.email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item Context Badge -->
+                {% with item=root_message.item %}
+                <button type="button" onclick="openItemModal('thread-{{ item.id }}')"
+                   class="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-muted/50 hover:bg-muted transition-colors border border-border/50 group max-w-[150px] md:max-w-md flex-shrink-0 ml-2">
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-6 h-6 rounded-md object-cover flex-shrink-0 border border-border/30">
+                    {% else %}
+                    <div class="w-6 h-6 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="image-off" class="h-3 w-3 text-muted-foreground"></i>
+                    </div>
+                    {% endif %}
+                    <span class="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                        {{ item.title }}
+                    </span>
+                    <i data-lucide="expand" class="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0 hidden md:block"></i>
+                </button>
+                {% include 'lfapp/includes/item_modal.html' with item=item modal_id_prefix="thread-" %}
+                {% endwith %}
+            </div>
+
+            <!-- 2. Messages Area -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth bg-slate-50/30" id="messagesContainer">
+                <!-- Date Divider -->
+                <div class="flex justify-center py-2">
+                    <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider bg-muted/30 px-3 py-1 rounded-full">
+                        Conversation Started
+                    </span>
+                </div>
+
+                {% for message in thread_messages %}
+                <div class="flex w-full {% if message.sender == request.user %}justify-end{% else %}justify-start{% endif %} group animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div class="flex max-w-[85%] md:max-w-[70%] gap-2 md:gap-3 {% if message.sender == request.user %}flex-row-reverse{% endif %}">
+                        
+                        <!-- Profile Picture -->
+                        <div class="flex-shrink-0 self-end mb-1">
+                            {% if message.sender.google_profile_picture %}
+                                <img src="{{ message.sender.google_profile_picture }}" alt="Profile" class="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover border border-border shadow-sm">
+                            {% else %}
+                                <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-muted flex items-center justify-center border border-border shadow-sm">
+                                    <span class="text-[10px] font-bold text-muted-foreground">
+                                        {{ message.sender.get_full_name|default:message.sender.username|make_list|first|upper }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Message Bubble -->
+                        <div class="flex flex-col {% if message.sender == request.user %}items-end{% else %}items-start{% endif %}">
+                            
+                            <div class="relative group/bubble">
+                                <div class="px-4 py-2.5 md:py-3 shadow-sm relative text-sm
+                                    {% if message.sender == request.user %}
+                                        bg-primary text-primary-foreground rounded-2xl rounded-tr-sm
+                                    {% else %}
+                                        bg-white border border-border/50 text-foreground rounded-2xl rounded-tl-sm
+                                    {% endif %}">
+                                    
+                                    {% if message.is_deleted %}
+                                        <p class="italic text-muted-foreground/70 text-xs">Message removed</p>
+                                    {% else %}
+                                        {% if message.message %}
+                                        <p class="whitespace-pre-wrap leading-relaxed break-words break-all">{{ message.message }}</p>
+                                        {% endif %}
+
+                                        {% if message.image %}
+                                        <div class="mt-2 -mx-1">
+                                            <button onclick="openLightbox('{{ message.image.url }}')" class="block overflow-hidden rounded-lg w-full">
+                                                <img src="{{ message.image.url }}" 
+                                                     alt="Attachment" 
+                                                     class="w-full aspect-[4/3] md:aspect-video object-cover hover:scale-105 transition-transform duration-300">
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+
+                                <!-- Delete Button (Only for user's own messages and if not already deleted) -->
+                                {% if message.sender == request.user and not message.is_deleted %}
+                                <button onclick="confirmDelete('{{ message.id }}')" 
+                                        class="absolute top-1/2 -translate-y-1/2 -left-8 p-1.5 text-muted-foreground hover:text-destructive opacity-0 group-hover/bubble:opacity-100 transition-opacity"
+                                        title="Delete message">
+                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Timestamp -->
+                            <span class="text-[10px] text-muted-foreground mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                                {{ message.created_at|date:"M d, g:i A" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 3. Input Area -->
+            <div class="flex-none p-3 md:p-4 bg-background border-t border-border/50 z-20">
+                <form id="chat-form" method="post" enctype="multipart/form-data" class="relative flex items-end gap-2 max-w-4xl mx-auto w-full">
+                    {% csrf_token %}
+                    
+                    <!-- Image Upload Button -->
+                    <div class="relative">
+                        <input type="file" id="image" name="image" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
+                        <button type="button" onclick="document.getElementById('image').click()" 
+                                class="p-3 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                title="Attach Image">
+                            <i data-lucide="image-plus" class="h-5 w-5"></i>
+                        </button>
+                        
+                        <!-- Preview Popup -->
+                        <div id="imagePreview" class="hidden absolute bottom-full left-0 mb-4 p-2 md:p-3 bg-background rounded-lg shadow-xl border border-border animate-in zoom-in-95 duration-200 z-50 max-w-none min-w-[250px] md:min-w-[300px]">
+                            <div class="relative group">
+                                <img id="previewImg" src="" class="w-[250px] aspect-[4/3] object-cover md:max-h-96 md:min-h-64 md:w-auto md:aspect-auto md:object-contain rounded-md border border-border">
+                                <button type="button" onclick="clearImage()" class="absolute -top-2 -right-2 p-1 bg-destructive text-white rounded-full shadow-md hover:bg-destructive/90 transition-colors">
+                                    <i data-lucide="x" class="h-3 w-3 md:h-4 md:w-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Inline Error Message Removed from here -->
+                    </div>
+
+                    <!-- Text Input -->
+                    <div class="flex-1 relative">
+                        <!-- Inline Error Message -->
+                        <div id="error-message" class="hidden absolute -top-10 left-0 z-50 text-xs text-destructive font-semibold animate-in slide-in-from-bottom-1 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-md border border-destructive/20 flex items-center gap-1.5">
+                            <i data-lucide="alert-circle" class="h-3.5 w-3.5"></i>
+                            <span id="error-text"></span>
+                        </div>
+                        <textarea 
+                            id="message-input"
+                            name="message" 
+                            rows="1" 
+                            placeholder="Type a message..." 
+                            class="w-full py-3 px-4 bg-muted/30 border-0 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all resize-none max-h-32 min-h-[44px] shadow-inner"
+                            oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                    </div>
+
+                    <!-- Send Button -->
+                    <button type="submit" class="p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 active:scale-95">
+                        <i data-lucide="send-horizontal" class="h-5 w-5 ml-0.5"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="fixed inset-0 z-[100] bg-black/95 hidden flex items-center justify-center opacity-0 transition-opacity duration-300" onclick="closeLightbox()">
+    <button class="absolute top-4 right-4 text-white/70 hover:text-white p-2">
+        <i data-lucide="x" class="h-8 w-8"></i>
+    </button>
+    <img id="lightbox-img" src="" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl scale-95 transition-transform duration-300" onclick="event.stopPropagation()">
+</div>
+
+<script>
+    lucide.createIcons();
+    
+    // Auto-scroll to bottom
+    const messagesContainer = document.getElementById('messagesContainer');
+    
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Scroll on load
+    scrollToBottom();
+    
+    // Scroll on image load (if any)
+    window.addEventListener('load', scrollToBottom);
+
+    // Image handling
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+            hideError(); // Clear error on new file
+        }
+    }
+
+    function clearImage() {
+        document.getElementById('image').value = '';
+        document.getElementById('imagePreview').classList.add('hidden');
+        hideError(); // Clear error on clear
+    }
+
+    // Message Deletion
+    function confirmDelete(messageId) {
+        if (confirm('Are you sure you want to delete this message?')) {
+            window.location.href = `/messages/delete/${messageId}/`;
+        }
+    }
+
+    // Lightbox
+    function openLightbox(src) {
+        const lightbox = document.getElementById('lightbox');
+        const img = document.getElementById('lightbox-img');
+        
+        img.src = src;
+        lightbox.classList.remove('hidden');
+        // Small delay to allow display:block to apply before opacity transition
+        setTimeout(() => {
+            lightbox.classList.remove('opacity-0');
+            img.classList.remove('scale-95');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const img = document.getElementById('lightbox-img');
+        
+        lightbox.classList.add('opacity-0');
+        img.classList.add('scale-95');
+        
+        setTimeout(() => {
+            lightbox.classList.add('hidden');
+            img.src = '';
+            document.body.style.overflow = '';
+        }, 300);
+    }
+
+
+
+    // --- AJAX Send & Smart Polling ---
+
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const errorMessage = document.getElementById('error-message');
+    const threadId = "{{ root_message.id }}";
+    const currentUserId = "{{ request.user.id }}";
+    let lastMessageId = "{{ thread_messages.last.id|default:0 }}";
+    let pendingMessages = []; // Queue for optimistic messages
+
+    // Helper: Show/Hide Error
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        if (errorText) errorText.textContent = msg;
+        else errorDiv.textContent = msg; // Fallback
+        
+        errorDiv.classList.remove('hidden');
+    }
+
+    function hideError() {
+        errorMessage.classList.add('hidden');
+    }
+
+    // Hide error on input
+    messageInput.addEventListener('input', hideError);
+
+    // Submit on enter (Shift+Enter for new lien)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent default newline 
+            if (this.value.trim() !== '') {
+                chatForm.dispatchEvent(new Event('submit')); // Trigger submit
+            }
+        }
+    });
+
+    // Need to test if lost connection or high ms
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const messageText = messageInput.value.trim();
+        const imageInput = document.getElementById('image');
+        
+        if (!messageText && (!imageInput.files || imageInput.files.length === 0)) {
+            return;
+        }
+
+        // File check
+        if (imageInput.files.length > 0) {
+            const file = imageInput.files[0];
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showError('Invalid file type. Please select an image (JPEG, PNG, GIF, WEBP).');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                 showError('File is too large. Max size is 5MB.');
+                 return;
+            }
+        }
+
+        // 1. Capture Data
+        const formData = new FormData(chatForm);
+        const tempId = 'temp-' + Date.now();
+        const tempMsg = {
+            id: tempId,
+            message: messageText,
+            sender_id: currentUserId,
+            is_me: true,
+            created_at: 'Sending...',
+            profile_pic: "{{ request.user.google_profile_picture|default:'' }}",
+            sender_initial: "{{ request.user.first_name|first|upper }}",
+            image_url: imageInput.files[0] ? URL.createObjectURL(imageInput.files[0]) : null
+        };
+
+        // Add to pending queue
+        pendingMessages.push({
+            tempId: tempId,
+            message: messageText,
+            hasImage: !!imageInput.files.length
+        });
+
+        // 2. Optimistic Update
+        const msgElement = appendMessage(tempMsg);
+        msgElement.id = `msg-${tempId}`;
+        msgElement.classList.add('opacity-70'); 
+        scrollToBottom();
+
+        // 3. Clear Inputs
+        messageInput.value = '';
+        messageInput.style.height = '';
+        clearImage();
+        
+        // 4. Send Request
+        fetch(chatForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Success: Update the temp message
+                msgElement.classList.remove('opacity-70');
+                msgElement.id = `msg-${data.data.id}`; // Update ID
+                
+                // Update timestamp
+                const timeSpan = msgElement.querySelector('span.text-\\[10px\\]');
+                if (timeSpan) timeSpan.textContent = data.data.created_at;
+
+                // Add delete button
+                const bubbleContainer = msgElement.querySelector('.group\\/bubble');
+                if (bubbleContainer && !bubbleContainer.querySelector('button[onclick^="confirmDelete"]')) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.setAttribute('onclick', `confirmDelete('${data.data.id}')`);
+                    deleteBtn.className = 'absolute top-1/2 -translate-y-1/2 -left-8 p-1.5 text-muted-foreground hover:text-destructive opacity-0 group-hover/bubble:opacity-100 transition-opacity';
+                    deleteBtn.title = 'Delete message';
+                    deleteBtn.innerHTML = '<i data-lucide="trash-2" class="h-4 w-4"></i>';
+                    bubbleContainer.appendChild(deleteBtn);
+                    lucide.createIcons();
+                }
+
+                // Update lastMessageId
+                lastMessageId = data.data.id;
+
+                // Remove from pending queue
+                pendingMessages = pendingMessages.filter(m => m.tempId !== tempId);
+            } else {
+                showError(data.message || 'Error sending message');
+                msgElement.remove(); // Remove failed message
+                pendingMessages = pendingMessages.filter(m => m.tempId !== tempId); // Remove from queue
+                // Restore input? (Optional, maybe later)
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('An error occurred. Please check your internet connection and try again.');
+            msgElement.remove();
+            pendingMessages = pendingMessages.filter(m => m.tempId !== tempId); // Remove from queue
+        });
+    });
+
+    // 2. Smart Polling
+    function pollMessages() {
+        fetch(`/messages/get-new/${threadId}/?last_id=${lastMessageId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    // display only if it is not the same as the last message
+                    if (msg.id > lastMessageId) {
+                        // Deduplication for own messages (Optimistic UI race condition)
+                        if (msg.sender_id == currentUserId) {
+                            // Check if this message matches a pending one
+                            const pendingIdx = pendingMessages.findIndex(m => 
+                                m.message === msg.message && 
+                                (!!msg.image_url === m.hasImage)
+                            );
+
+                            if (pendingIdx !== -1) {
+                                
+                                // For duplicates, update the current to be "real".
+                                const pending = pendingMessages[pendingIdx];
+                                const el = document.getElementById('msg-' + pending.tempId);
+                                if (el) {
+                                    el.classList.remove('opacity-70');
+                                    el.id = `msg-${msg.id}`;
+                                    const timeSpan = el.querySelector('span.text-\\[10px\\]');
+                                    if (timeSpan) timeSpan.textContent = msg.created_at;
+                                }
+                                
+                                // Remove from pending queue
+                                pendingMessages.splice(pendingIdx, 1);
+                                lastMessageId = msg.id;
+                                return; // Skip append
+                            }
+                        }
+
+                        appendMessage(msg);
+                        lastMessageId = msg.id;
+                    }
+                });
+                scrollToBottom();
+            }
+        })
+        .catch(error => console.error('Polling error:', error));
+    }
+
+
+    const pollInterval = 12000; // 12 secs for now
+    setInterval(pollMessages, pollInterval);
+
+    // Helper: Append Message to DOM
+    function appendMessage(msg) {
+        const isMe = msg.is_me || (msg.sender_id == currentUserId); // Handle both formats
+        
+        const div = document.createElement('div');
+        div.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300`;
+        
+        let profileHtml = '';
+        if (msg.profile_pic) {
+            profileHtml = `<img src="${msg.profile_pic}" alt="Profile" class="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover border border-border shadow-sm">`;
+        } else {
+            profileHtml = `
+                <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-muted flex items-center justify-center border border-border shadow-sm">
+                    <span class="text-[10px] font-bold text-muted-foreground">
+                        ${msg.sender_initial}
+                    </span>
+                </div>`;
+        }
+
+        let imageHtml = '';
+        if (msg.image_url) {
+            imageHtml = `
+                <div class="mt-2 -mx-1">
+                    <button onclick="openLightbox('${msg.image_url}')" class="block overflow-hidden rounded-lg w-full">
+                        <img src="${msg.image_url}" 
+                             alt="Attachment" 
+                             class="w-full aspect-[4/3] md:aspect-video object-cover hover:scale-105 transition-transform duration-300">
+                    </button>
+                </div>`;
+        }
+
+        // Delete button for own messages 
+        let deleteButtonHtml = '';
+        if (isMe && msg.id && !String(msg.id).startsWith('temp-')) {
+            deleteButtonHtml = `
+                <button onclick="confirmDelete('${msg.id}')" 
+                        class="absolute top-1/2 -translate-y-1/2 -left-8 p-1.5 text-muted-foreground hover:text-destructive opacity-0 group-hover/bubble:opacity-100 transition-opacity"
+                        title="Delete message">
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                </button>`;
+        }
+
+        div.innerHTML = `
+            <div class="flex max-w-[85%] md:max-w-[70%] gap-2 md:gap-3 ${isMe ? 'flex-row-reverse' : ''}">
+                
+                <!-- Profile Picture -->
+                <div class="flex-shrink-0 self-end mb-1">
+                    ${profileHtml}
+                </div>
+
+                <!-- Message Bubble -->
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                    
+                    <div class="relative group/bubble">
+                        <div class="px-4 py-2.5 md:py-3 shadow-sm relative text-sm
+                            ${isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' : 'bg-white border border-border/50 text-foreground rounded-2xl rounded-tl-sm'}">
+                            
+                            ${msg.message ? `<p class="whitespace-pre-wrap leading-relaxed break-words break-all">${msg.message}</p>` : ''}
+                            ${imageHtml}
+                        </div>
+                        ${deleteButtonHtml}
+                    </div>
+                    
+                    <!-- Timestamp -->
+                    <span class="text-[10px] text-muted-foreground mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                        ${msg.created_at}
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(div);
+        lucide.createIcons();
+        return div;
+    }
+</script>
+
+{% include 'lfapp/includes/item_modal_click.html' %}
+{% endblock %}

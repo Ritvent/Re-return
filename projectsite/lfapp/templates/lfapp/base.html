@@ -1,0 +1,82 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HanApp - Find What You Lost{% endblock %}</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="{% static 'lfapp/images/hanapp-logo.ico' %}" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="{% static 'lfapp/images/hanapp-logo.ico' %}" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/svg+xml" href="{% static 'lfapp/images/hanapp-logo.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'lfapp/images/hanapp-logo.png' %}">
+    
+    <!-- Tailwind CSS CDN with custom config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: 'var(--background)',
+                        foreground: 'var(--foreground)',
+                        card: 'var(--card)',
+                        'card-foreground': 'var(--card-foreground)',
+                        popover: 'var(--popover)',
+                        'popover-foreground': 'var(--popover-foreground)',
+                        primary: 'var(--primary)',
+                        'primary-foreground': 'var(--primary-foreground)',
+                        secondary: 'var(--secondary)',
+                        'secondary-foreground': 'var(--secondary-foreground)',
+                        muted: 'var(--muted)',
+                        'muted-foreground': 'var(--muted-foreground)',
+                        accent: 'var(--accent)',
+                        'accent-foreground': 'var(--accent-foreground)',
+                        destructive: 'var(--destructive)',
+                        'destructive-foreground': 'var(--destructive-foreground)',
+                        border: 'var(--border)',
+                        input: 'var(--input)',
+                        ring: 'var(--ring)',
+                    },
+                    borderRadius: {
+                        lg: 'var(--radius)',
+                        md: 'calc(var(--radius) - 2px)',
+                        sm: 'calc(var(--radius) - 4px)',
+                    },
+                },
+            },
+        }
+    </script>
+    
+    <!-- Custom CSS with CSS Variables -->
+    <link rel="stylesheet" href="{% static 'lfapp/css/globals.css' %}">
+    
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="font-sans antialiased bg-background text-foreground min-h-screen flex flex-col">
+    <div class="flex-1">
+        {% block content %}{% endblock %}
+    </div>
+    
+    {% include 'lfapp/includes/footer.html' %}
+    
+    <!-- Initialize Lucide Icons -->
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    {% include 'lfapp/includes/toast.html' %}
+    {% include 'lfapp/includes/contact_modal.html' %}
+    {% include 'lfapp/includes/archive_modal.html' %}
+</body>
+</html>
+

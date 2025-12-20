@@ -1,0 +1,97 @@
+<!-- Toast Notifications for all templates -->
+{% if messages %}
+    {% if request.resolver_match.url_name not in 'messages_inbox,messages_sent' %}
+        {# Show toasts on all pages except messages pages #}
+        <div class="fixed top-24 left-1/2 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0 z-50 flex flex-col gap-2 w-full px-4 md:w-auto max-w-sm md:max-w-md pointer-events-none">
+            {% for message in messages %}
+                <div class="message-alert p-4 rounded-lg bg-background border border-primary text-foreground shadow-lg flex items-start gap-3 pointer-events-auto animate-in slide-in-from-right-5 fade-in duration-300" role="alert">
+                    <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="info" class="h-4 w-4 text-primary"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium break-words">{{ message }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {# Consume messages on excluded pages without displaying them #}
+        {% for message in messages %}{% endfor %}
+    {% endif %}
+{% endif %}
+
+<!-- Toast Notification Container -->
+<div id="toast-container" class="fixed left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 pointer-events-none bottom-4 md:bottom-auto md:right-4 md:left-auto md:translate-x-0 md:top-4 w-full px-4 md:w-auto">
+    
+</div>
+
+<script>
+    // fades after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const messages = document.querySelectorAll('.message-alert');
+        
+        messages.forEach(function(message) {
+            setTimeout(function() {
+                // Fade out effect
+                message.style.transition = 'all 0.5s ease';
+                message.style.opacity = '0';
+                message.style.transform = 'translateX(100%)';
+                
+                setTimeout(function() {
+                    message.remove();
+                }, 500);
+            }, 5000); // 5000ms = 5 seconds
+        });
+    });
+
+    /**
+     * Show a toast notification */
+
+    function showToast(message, type = 'success', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `
+            flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-2 opacity-0
+            pointer-events-auto min-w-0 max-w-sm md:max-w-md border
+            ${type === 'success' ? 'bg-background border-green-200 text-green-800' : 
+              type === 'error' ? 'bg-background border-red-200 text-red-800' : 
+              'bg-background border-blue-200 text-blue-800'}
+        `;
+        
+        // Icon based on type
+        let icon = '';
+        if (type === 'success') icon = '<i data-lucide="check-circle" class="h-5 w-5 text-green-600 flex-shrink-0"></i>';
+        else if (type === 'error') icon = '<i data-lucide="alert-circle" class="h-5 w-5 text-red-600 flex-shrink-0"></i>';
+        else icon = '<i data-lucide="info" class="h-5 w-5 text-blue-600 flex-shrink-0"></i>';
+        
+        toast.innerHTML = `
+            ${icon}
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium break-words">${message}</p>
+            </div>
+        `;
+        
+        // Add to container
+        container.appendChild(toast);
+        
+        // Initialize icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-2', 'opacity-0');
+        });
+        
+        // Remove after duration
+        setTimeout(() => {
+            toast.classList.add('translate-y-2', 'opacity-0');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, duration);
+    }
+</script>
